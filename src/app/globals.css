@@ -1,0 +1,234 @@
+@import "tailwindcss";
+
+@layer base {
+  :root,
+  [data-theme="paper-ledger"] {
+    --background: 40 20% 97.5%;
+    --foreground: 150 6% 12%;
+    
+    --card: 40 25% 99.5%;
+    --card-foreground: 150 6% 12%;
+    
+    --popover: 40 25% 99.5%;
+    --popover-foreground: 150 6% 12%;
+    
+    --surface: 40 18% 95%;
+    --surface-muted: 40 16% 91.5%;
+    
+    --muted: 40 14% 92%;
+    --muted-foreground: 140 3% 40%;
+    
+    --border: 40 12% 87.5%;
+    --input: 40 12% 87.5%;
+    
+    --ring: 172 42% 26%;
+    --primary: 172 42% 26%;
+    --primary-hover: 172 48% 21%;
+    --primary-foreground: 40 25% 98%;
+    
+    --secondary: 40 14% 93%;
+    --secondary-hover: 40 14% 89%;
+    --secondary-foreground: 150 6% 15%;
+    
+    --accent: 172 32% 93%;
+    --accent-foreground: 172 48% 19%;
+    
+    --success: 142 45% 32%;
+    --success-subtle: 142 35% 92%;
+    --success-foreground: 40 25% 98%;
+    
+    --warning: 38 72% 38%;
+    --warning-subtle: 38 60% 93%;
+    --warning-foreground: 40 25% 98%;
+    
+    --danger: 6 55% 42%;
+    --danger-subtle: 6 50% 93%;
+    --danger-foreground: 40 25% 98%;
+    
+    --radius: 0.75rem;
+
+    --shadow-gentle: 0 1px 2px 0 rgba(28, 25, 23, 0.04), 0 2px 6px -1px rgba(28, 25, 23, 0.02);
+    --shadow-card: 0 1px 3px 0 rgba(28, 25, 23, 0.05), 0 4px 12px -2px rgba(28, 25, 23, 0.03);
+  }
+
+  .dark,
+  [data-theme="night-shelf"] {
+    --background: 150 5% 7.5%;
+    --foreground: 40 15% 90%;
+    
+    --card: 150 5% 10.5%;
+    --card-foreground: 40 15% 90%;
+    
+    --popover: 150 5% 10.5%;
+    --popover-foreground: 40 15% 90%;
+    
+    --surface: 150 5% 13%;
+    --surface-muted: 150 5% 16%;
+    
+    --muted: 150 4% 17%;
+    --muted-foreground: 140 4% 60%;
+    
+    --border: 150 4% 18%;
+    --input: 150 4% 20%;
+    
+    --ring: 172 36% 46%;
+    --primary: 172 36% 44%;
+    --primary-hover: 172 42% 50%;
+    --primary-foreground: 150 6% 7%;
+    
+    --secondary: 150 4% 15%;
+    --secondary-hover: 150 4% 19%;
+    --secondary-foreground: 40 15% 90%;
+    
+    --accent: 172 25% 16%;
+    --accent-foreground: 172 36% 76%;
+    
+    --success: 142 42% 48%;
+    --success-subtle: 142 30% 16%;
+    --success-foreground: 150 6% 7%;
+    
+    --warning: 38 65% 55%;
+    --warning-subtle: 38 40% 16%;
+    --warning-foreground: 150 6% 7%;
+    
+    --danger: 6 60% 58%;
+    --danger-subtle: 6 35% 17%;
+    --danger-foreground: 150 6% 7%;
+
+    --shadow-gentle: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 4px 12px -2px rgba(0, 0, 0, 0.25);
+  }
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Custom Component Utility Classes */
+.sift-card {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-gentle);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sift-card-interactive {
+  cursor: pointer;
+}
+.sift-card-interactive:hover {
+  border-color: hsl(var(--muted-foreground) / 0.35);
+  box-shadow: var(--shadow-card);
+}
+
+.sift-input {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+.sift-input:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.18);
+}
+.sift-input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.sift-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  padding: 0.55rem 1rem;
+  min-height: 2.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+  user-select: none;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.sift-btn:active {
+  transform: scale(0.985);
+}
+.sift-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sift-btn-primary {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+.sift-btn-primary:hover:not(:disabled) {
+  background-color: hsl(var(--primary-hover));
+  border-color: hsl(var(--primary-hover));
+}
+
+.sift-btn-secondary {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border-color: hsl(var(--border));
+}
+.sift-btn-secondary:hover:not(:disabled) {
+  background-color: hsl(var(--secondary-hover));
+}
+
+.sift-btn-ghost {
+  background-color: transparent;
+  color: hsl(var(--muted-foreground));
+  border-color: transparent;
+}
+.sift-btn-ghost:hover:not(:disabled) {
+  background-color: hsl(var(--surface));
+  color: hsl(var(--foreground));
+}
+
+.sift-btn-danger {
+  background-color: hsl(var(--danger-subtle));
+  color: hsl(var(--danger));
+  border-color: hsl(var(--danger) / 0.2);
+}
+.sift-btn-danger:hover:not(:disabled) {
+  background-color: hsl(var(--danger));
+  color: hsl(var(--danger-foreground));
+}
+
+.sift-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Mobile Touch Targets & Safe Padding */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom-padding {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
