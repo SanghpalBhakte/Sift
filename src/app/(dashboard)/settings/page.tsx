@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
+import { useAuth } from '@/context/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Select } from '@/components/ui/Select';
@@ -10,19 +11,16 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
-import { isSupabaseConfigured } from '@/lib/supabase/client';
-import { Palette, Bell, Database, User, RotateCcw, Check, Sparkles } from 'lucide-react';
+import { Palette, Database, User, RotateCcw, Check, LogOut, Sparkles } from 'lucide-react';
 
 export default function SettingsPage() {
   const { theme, resolvedTheme } = useTheme();
-  const { profile, updateProfile, resetToSampleData } = useSubscriptions();
+  const { user, signOut, isConfigured } = useAuth();
+  const { profile, updateProfile, resetToSampleData, populateStarterTemplates } = useSubscriptions();
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [currency, setCurrency] = useState(profile?.currency_preference || 'USD');
   const [name, setName] = useState(profile?.full_name || '');
-  const [email, setEmail] = useState(profile?.email || '');
-
-  const hasSupabase = isSupabaseConfigured();
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +35,7 @@ export default function SettingsPage() {
   const handleResetData = async () => {
     if (
       window.confirm(
-        'Reset local subscription dataset to the initial Paper Ledger sample catalog?'
+        'Clear all subscriptions and reset to sample starter data?'
       )
     ) {
       await resetToSampleData();
@@ -63,7 +61,43 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      {/* 1. Theme Identity & Appearance */}
+      {/* 1. Account & Session */}
+      {user ? (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-[hsl(var(--primary))]" />
+              <CardTitle>Account & Session</CardTitle>
+            </div>
+            <Badge variant="primary" size="sm">
+              Authenticated
+            </Badge>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[hsl(var(--muted-foreground))]">Signed in as</span>
+              <span className="font-semibold text-[hsl(var(--foreground))] font-mono">
+                {user.email}
+              </span>
+            </div>
+
+            <div className="pt-2 border-t border-[hsl(var(--border))] flex items-center justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut()}
+                className="text-xs text-[hsl(var(--danger))] hover:bg-[hsl(var(--danger-subtle))] gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* 2. Theme Identity & Appearance */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -86,7 +120,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* 2. Profile & Currency Settings */}
+      {/* 3. Workspace & Currency Preferences */}
       <form onSubmit={handleSaveProfile}>
         <Card>
           <CardHeader>
@@ -105,11 +139,10 @@ export default function SettingsPage() {
               />
 
               <Input
-                label="Email"
+                label="Primary Email"
                 type="email"
                 placeholder="alex@sift.studio"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={user?.email || profile?.email || ''}
                 disabled
                 helperText="Primary workspace identifier"
               />
@@ -137,42 +170,41 @@ export default function SettingsPage() {
         </Card>
       </form>
 
-      {/* 3. Database & Supabase Integration Status */}
+      {/* 4. Database & Supabase Cloud Status */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-[hsl(var(--primary))]" />
             <CardTitle>Database & Cloud Sync</CardTitle>
           </div>
-          <Badge variant={hasSupabase ? 'success' : 'default'} size="sm">
-            {hasSupabase ? 'Supabase Connected' : 'Local / Offline Mode'}
+          <Badge variant={isConfigured ? 'success' : 'default'} size="sm">
+            {isConfigured ? 'Supabase Connected' : 'Local / Offline Mode'}
           </Badge>
         </CardHeader>
         <CardContent className="space-y-3 text-xs text-[hsl(var(--muted-foreground))]">
-          {hasSupabase ? (
+          {isConfigured ? (
             <p>
               Sift is securely connected to your Supabase PostgreSQL instance with Row Level
-              Security enabled on all subscription tables.
+              Security enforced on all subscription records.
             </p>
           ) : (
             <p>
-              Sift is currently operating in <strong>Local Mode</strong> with reactive browser
-              storage. To sync with a cloud Supabase project, provide your Supabase URL and anon key
-              in <code className="px-1.5 py-0.5 rounded bg-[hsl(var(--surface))] font-mono text-[11px]">.env.local</code>.
+              Sift is currently operating in <strong>Local Mode</strong>. To sync with Supabase,
+              provide credentials in <code className="px-1.5 py-0.5 rounded bg-[hsl(var(--surface))] font-mono text-[11px]">.env.local</code>.
             </p>
           )}
 
           <div className="pt-2 border-t border-[hsl(var(--border))] flex items-center justify-between">
-            <span className="text-[11px]">Restore initial sample dataset</span>
+            <span className="text-[11px]">Populate starter templates</span>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleResetData}
+              onClick={() => populateStarterTemplates()}
               className="gap-1 text-xs"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset Sample Data
+              <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              Load Sample Data
             </Button>
           </div>
         </CardContent>

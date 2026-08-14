@@ -108,10 +108,12 @@ export interface DashboardStats {
   monthlyTotal: number;
   yearlyProjected: number;
   activeCount: number;
+  pausedCount: number;
   trialCount: number;
   cancelCandidateCount: number;
   potentialMonthlySavings: number;
   upcomingRenewalsCount: number;
+  nextUpcomingRenewal: Subscription | null;
 }
 
 export interface SubscriptionFilters {

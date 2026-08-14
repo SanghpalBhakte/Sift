@@ -12,6 +12,7 @@ import {
 } from '../lib/types';
 import { subscriptionService } from '../lib/services/subscriptionService';
 import { calculateDashboardStats } from '../lib/utils/analytics';
+import { useAuth } from './AuthContext';
 
 interface SubscriptionContextType {
   subscriptions: Subscription[];
@@ -27,6 +28,7 @@ interface SubscriptionContextType {
   deleteSubscription: (id: string) => Promise<void>;
   toggleStatus: (id: string, currentStatus: string) => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  populateStarterTemplates: () => Promise<void>;
   resetToSampleData: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -34,6 +36,7 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -70,7 +73,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     loadAll();
-  }, [loadAll]);
+  }, [loadAll, user]);
 
   const addSubscription = async (data: SubscriptionFormData): Promise<Subscription> => {
     const created = await subscriptionService.createSubscription(data);
@@ -105,6 +108,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setProfile(updated);
   };
 
+  const handlePopulateStarterTemplates = async (): Promise<void> => {
+    await subscriptionService.populateStarterTemplates();
+    await loadAll();
+  };
+
   const handleResetToSampleData = async (): Promise<void> => {
     subscriptionService.resetToSampleData();
     await loadAll();
@@ -130,6 +138,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         deleteSubscription,
         toggleStatus,
         updateProfile: handleUpdateProfile,
+        populateStarterTemplates: handlePopulateStarterTemplates,
         resetToSampleData: handleResetToSampleData,
         refresh: loadAll,
       }}

@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { Database } from './types';
 
 export function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,9 +17,8 @@ export function createClient() {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
   if (!isSupabaseConfigured()) {
-    // Return null or dummy client if not configured so callers can use service fallback
     return null;
   }
 
-  return createBrowserClient(url, anonKey);
+  return createBrowserClient<Database>(url, anonKey);
 }

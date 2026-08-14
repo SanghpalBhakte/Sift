@@ -4,18 +4,25 @@ import { isUpcomingSoon } from './dates';
 
 export function calculateDashboardStats(subscriptions: Subscription[]): DashboardStats {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
+  const pausedSubs = subscriptions.filter((s) => s.status === 'paused');
   const trialSubs = subscriptions.filter((s) => s.is_trial && s.status === 'active');
   const cancelCandidates = subscriptions.filter(
     (s) => s.value_rating === 'cancel_candidate' && s.status === 'active'
   );
 
   const monthlyTotal = activeSubs.reduce(
-    (acc, sub) => acc + (sub.monthly_amount || normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
+    (acc, sub) =>
+      acc +
+      (sub.monthly_amount ||
+        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
     0
   );
 
   const potentialMonthlySavings = cancelCandidates.reduce(
-    (acc, sub) => acc + (sub.monthly_amount || normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
+    (acc, sub) =>
+      acc +
+      (sub.monthly_amount ||
+        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
     0
   );
 
@@ -23,14 +30,22 @@ export function calculateDashboardStats(subscriptions: Subscription[]): Dashboar
     isUpcomingSoon(s.next_renewal_date, 7)
   ).length;
 
+  // Find nearest renewal among active subscriptions
+  const sortedActive = [...activeSubs].sort(
+    (a, b) => new Date(a.next_renewal_date).getTime() - new Date(b.next_renewal_date).getTime()
+  );
+  const nextUpcomingRenewal = sortedActive.length > 0 ? sortedActive[0] : null;
+
   return {
     monthlyTotal: Math.round(monthlyTotal * 100) / 100,
     yearlyProjected: Math.round(monthlyTotal * 12 * 100) / 100,
     activeCount: activeSubs.length,
+    pausedCount: pausedSubs.length,
     trialCount: trialSubs.length,
     cancelCandidateCount: cancelCandidates.length,
     potentialMonthlySavings: Math.round(potentialMonthlySavings * 100) / 100,
     upcomingRenewalsCount,
+    nextUpcomingRenewal,
   };
 }
 
@@ -47,7 +62,10 @@ export function calculateCategoryBreakdown(
 ): CategorySpendItem[] {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
   const totalMonthly = activeSubs.reduce(
-    (acc, sub) => acc + (sub.monthly_amount || normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
+    (acc, sub) =>
+      acc +
+      (sub.monthly_amount ||
+        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
     0
   );
 
@@ -67,7 +85,9 @@ export function calculateCategoryBreakdown(
 
   activeSubs.forEach((sub) => {
     const catId = sub.category_id || 'uncategorized';
-    const monthly = sub.monthly_amount || normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+    const monthly =
+      sub.monthly_amount ||
+      normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
     const existing = categoryMap.get(catId) || { total: 0, count: 0 };
     categoryMap.set(catId, {
       total: existing.total + monthly,
@@ -107,7 +127,10 @@ export function calculateValueRatingBreakdown(
 ): ValueRatingBreakdown[] {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
   const totalMonthly = activeSubs.reduce(
-    (acc, sub) => acc + (sub.monthly_amount || normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
+    (acc, sub) =>
+      acc +
+      (sub.monthly_amount ||
+        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
     0
   );
 
@@ -121,7 +144,10 @@ export function calculateValueRatingBreakdown(
   return ratings.map((r) => {
     const subs = activeSubs.filter((s) => s.value_rating === r.rating);
     const monthly = subs.reduce(
-      (acc, s) => acc + (s.monthly_amount || normalizeMonthlyAmount(s.amount, s.billing_cycle, s.custom_interval_days)),
+      (acc, s) =>
+        acc +
+        (s.monthly_amount ||
+          normalizeMonthlyAmount(s.amount, s.billing_cycle, s.custom_interval_days)),
       0
     );
 

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
 
 export const metadata: Metadata = {
@@ -47,7 +48,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
         <ThemeProvider>
-          <SubscriptionProvider>{children}</SubscriptionProvider>
+          <AuthProvider>
+            <SubscriptionProvider>{children}</SubscriptionProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -2,11 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, LogOut, User } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { Button } from '../ui/Button';
+import { useAuth } from '@/context/AuthContext';
 
 export function Header() {
+  const { user, signOut, isConfigured } = useAuth();
+
   return (
     <header className="sticky top-0 z-30 w-full bg-[hsl(var(--background)/0.85)] backdrop-blur-md border-b border-[hsl(var(--border))] transition-colors">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
@@ -40,6 +43,23 @@ export function Header() {
               <span className="xs:hidden">Add</span>
             </Button>
           </Link>
+
+          {user ? (
+            <button
+              type="button"
+              onClick={() => signOut()}
+              title={`Sign out (${user.email})`}
+              className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          ) : isConfigured ? (
+            <Link href="/login">
+              <Button variant="ghost" size="sm" className="text-xs">
+                Sign In
+              </Button>
+            </Link>
+          ) : null}
         </div>
       </div>
     </header>
