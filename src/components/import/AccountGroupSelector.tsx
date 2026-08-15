@@ -5,8 +5,11 @@ import { AccountGroup } from '@/lib/utils/multiAccountDetector';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { CreditCard, Layers, ArrowRight, Check, CheckCircle2, CheckCheck } from 'lucide-react';
+import { Select } from '../ui/Select';
+import { CreditCard, Layers, ArrowRight, Check, CheckCircle2, CheckCheck, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+
+const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'INR', 'JPY', 'AUD', 'CHF', 'SGD', 'NZD', 'BRL', 'MXN'];
 
 interface AccountGroupSelectorProps {
   accountColumn: string;
@@ -14,6 +17,8 @@ interface AccountGroupSelectorProps {
   totalRows: number;
   selectedGroupKey: string | 'ALL';
   completedGroupKeys: string[];
+  groupCurrencies?: Record<string, string>;
+  onUpdateGroupCurrency?: (groupKey: string, currency: string) => void;
   onSelectGroup: (key: string | 'ALL') => void;
   onContinue: () => void;
   onBack: () => void;
@@ -26,6 +31,8 @@ export function AccountGroupSelector({
   totalRows,
   selectedGroupKey,
   completedGroupKeys = [],
+  groupCurrencies = {},
+  onUpdateGroupCurrency,
   onSelectGroup,
   onContinue,
   onBack,
@@ -55,9 +62,9 @@ export function AccountGroupSelector({
           {allCompleted ? 'All Account Batches Processed' : 'Select Account Batch to Import'}
         </h2>
         <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-lg">
-          We found {groups.length} distinct sub-accounts or card members in the{' '}
+          We found {groups.length} distinct sub-accounts in the{' '}
           <strong className="font-mono text-[hsl(var(--foreground))]">{accountColumn}</strong>{' '}
-          column. Process each batch consecutively without re-uploading.
+          column. You can confirm or override the currency per account batch.
         </p>
       </div>
 
@@ -109,6 +116,7 @@ export function AccountGroupSelector({
         {groups.map((group) => {
           const isCompleted = completedGroupKeys.includes(group.accountKey);
           const isSelected = selectedGroupKey === group.accountKey;
+          const currentCurr = groupCurrencies[group.accountKey] || group.customCurrency || group.inferredCurrency || 'USD';
 
           return (
             <div
@@ -119,7 +127,7 @@ export function AccountGroupSelector({
                 }
               }}
               className={cn(
-                'p-4 rounded-xl border transition-all flex items-center justify-between gap-3 shadow-xs',
+                'p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs',
                 isCompleted
                   ? 'border-[hsl(var(--success)/0.3)] bg-[hsl(var(--success-subtle)/0.3)] opacity-85 cursor-default'
                   : isSelected
@@ -154,17 +162,39 @@ export function AccountGroupSelector({
                     )}
                   </div>
                   <div className="text-xs text-[hsl(var(--muted-foreground))] font-mono truncate">
-                    ID: {group.accountKey}
+                    ID: {group.accountKey} · {group.rowCount} transactions
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-mono text-[hsl(var(--muted-foreground))]">
-                  {group.rowCount} txs
-                </span>
+              {/* Currency Selector & Badge */}
+              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[hsl(var(--border))]">
+                {!isCompleted && onUpdateGroupCurrency ? (
+                  <div
+                    className="flex items-center gap-1.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Coins className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
+                    <select
+                      value={currentCurr}
+                      onChange={(e) => onUpdateGroupCurrency(group.accountKey, e.target.value)}
+                      className="text-xs font-semibold font-mono bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-md px-2 py-1 text-[hsl(var(--foreground))] cursor-pointer hover:border-[hsl(var(--primary))]"
+                    >
+                      {POPULAR_CURRENCIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <Badge variant="outline" size="sm" className="font-mono">
+                    {currentCurr}
+                  </Badge>
+                )}
+
                 {isSelected && !isCompleted ? (
-                  <CheckCircle2 className="w-5 h-5 text-[hsl(var(--primary))]" />
+                  <CheckCircle2 className="w-5 h-5 text-[hsl(var(--primary))] shrink-0" />
                 ) : null}
               </div>
             </div>

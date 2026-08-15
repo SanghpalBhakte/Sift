@@ -4,6 +4,8 @@ export interface AccountGroup {
   label: string;
   rowCount: number;
   sampleRows: Record<string, string>[];
+  inferredCurrency?: string;
+  customCurrency?: string;
 }
 
 export interface MultiAccountDetectionResult {
@@ -31,12 +33,47 @@ const ACCOUNT_COLUMN_KEYWORDS = [
   'account id',
 ];
 
+const CURRENCY_COLUMN_KEYWORDS = ['currency', 'curr', 'iso currency', 'trans currency'];
+
+/**
+ * Infer probable currency for a set of transaction rows
+ */
+function inferGroupCurrency(headers: string[], groupRows: Record<string, string>[]): string | undefined {
+  // 1. Check currency column
+  for (const h of headers) {
+    const norm = h.toLowerCase().trim();
+    if (CURRENCY_COLUMN_KEYWORDS.some((kw) => norm === kw || norm.includes(kw))) {
+      for (const row of groupRows.slice(0, 5)) {
+        const val = (row[h] || '').trim().toUpperCase();
+        if (['USD', 'EUR', 'GBP', 'CAD', 'INR', 'JPY', 'AUD', 'CHF', 'SGD', 'NZD', 'SEK', 'NOK', 'BRL'].includes(val)) {
+          return val;
+        }
+      }
+    }
+  }
+
+  // 2. Check amount strings for currency symbols
+  for (const row of groupRows.slice(0, 5)) {
+    const joined = Object.values(row).join(' ');
+    if (joined.includes('€')) return 'EUR';
+    if (joined.includes('£')) return 'GBP';
+    if (joined.includes('₹')) return 'INR';
+    if (joined.includes('¥')) return 'JPY';
+    if (joined.includes('C$') || joined.includes('CAD')) return 'CAD';
+    if (joined.includes('A$') || joined.includes('AUD')) return 'AUD';
+    if (joined.includes('$')) return 'USD';
+  }
+
+  return undefined;
+}
+
 /**
  * Scans CSV headers and rows to detect if a file contains transactions from multiple accounts or cards
  */
 export function detectMultiAccountGroups(
   headers: string[],
-  rows: Record<string, string>[]
+  rows: Record<string, string>[],
+  defaultCurrency: string = 'USD'
 ): MultiAccountDetectionResult {
   if (!headers || headers.length === 0 || !rows || rows.length === 0) {
     return {
@@ -90,7 +127,7 @@ export function detectMultiAccountGroups(
     };
   }
 
-  // 3. Construct structured AccountGroup objects
+  // 3. Construct structured AccountGroup objects with currency detection
   const groups: AccountGroup[] = [];
   let index = 1;
 
@@ -102,12 +139,16 @@ export function detectMultiAccountGroups(
       cleanLabel = `Card ending in ${last4}`;
     }
 
+    const inferred = inferGroupCurrency(headers, groupRows) || defaultCurrency;
+
     groups.push({
       id: `acc-grp-${index++}`,
       accountKey: key,
       label: cleanLabel,
       rowCount: groupRows.length,
       sampleRows: groupRows.slice(0, 3),
+      inferredCurrency: inferred,
+      customCurrency: inferred,
     });
   }
 

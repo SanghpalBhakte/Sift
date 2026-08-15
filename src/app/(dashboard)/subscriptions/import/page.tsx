@@ -14,6 +14,7 @@ import {
   findSavedMapping,
   saveConfirmedMapping,
   detectBankSource,
+  saveCustomBankRule,
 } from '@/lib/utils/statementMappingMemory';
 import {
   detectMultiAccountGroups,
@@ -38,6 +39,7 @@ import {
   AlertCircle,
   FileType,
   Layers,
+  Coins,
 } from 'lucide-react';
 
 type ImportStep = 'upload' | 'account_select' | 'map' | 'review' | 'success';
@@ -59,6 +61,7 @@ export default function StatementImportPage() {
   const [accountGroups, setAccountGroups] = useState<AccountGroup[]>([]);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | 'ALL'>('ALL');
   const [completedGroupKeys, setCompletedGroupKeys] = useState<string[]>([]);
+  const [groupCurrencies, setGroupCurrencies] = useState<Record<string, string>>({});
   const [sessionImportedTotal, setSessionImportedTotal] = useState(0);
 
   const [columnMapping, setColumnMapping] = useState<CsvColumnMapping>({
@@ -77,7 +80,11 @@ export default function StatementImportPage() {
   const [isRememberedFormat, setIsRememberedFormat] = useState(false);
   const [bankName, setBankName] = useState('Custom Statement Format');
 
-  const currency = profile?.currency_preference || 'USD';
+  const profileCurrency = profile?.currency_preference || 'USD';
+  const activeBatchCurrency =
+    selectedGroupKey !== 'ALL'
+      ? groupCurrencies[selectedGroupKey] || profileCurrency
+      : profileCurrency;
 
   // Step 1A: CSV File Loaded
   const handleCsvLoaded = (csvContent: string, name: string) => {
@@ -97,10 +104,15 @@ export default function StatementImportPage() {
     setSessionImportedTotal(0);
 
     // Check for multi-account CSV
-    const multiAccount = detectMultiAccountGroups(headers, rows);
+    const multiAccount = detectMultiAccountGroups(headers, rows, profileCurrency);
     if (multiAccount.hasMultipleAccounts && multiAccount.groups.length > 1) {
       setAccountColumn(multiAccount.accountColumn);
       setAccountGroups(multiAccount.groups);
+      const currMap: Record<string, string> = {};
+      multiAccount.groups.forEach((g) => {
+        currMap[g.accountKey] = g.customCurrency || g.inferredCurrency || profileCurrency;
+      });
+      setGroupCurrencies(currMap);
       setSelectedGroupKey(multiAccount.groups[0].accountKey);
       setFilteredCsvRows(rows);
       setStep('account_select');
@@ -152,6 +164,13 @@ export default function StatementImportPage() {
     startAccountBatch(selectedGroupKey);
   };
 
+  const handleUpdateGroupCurrency = (groupKey: string, newCurr: string) => {
+    setGroupCurrencies((prev) => ({
+      ...prev,
+      [groupKey]: newCurr,
+    }));
+  };
+
   // Step 1C: PDF Statement Loaded
   const handlePdfLoaded = async (file: File) => {
     setUploadError(null);
@@ -174,7 +193,7 @@ export default function StatementImportPage() {
       }
 
       setNormalizedTransactions(result.transactions);
-      const detected = detectRecurringCandidates(result.transactions, categories, currency);
+      const detected = detectRecurringCandidates(result.transactions, categories, profileCurrency);
       setCandidates(detected);
       setStep('review');
     } catch (err: any) {
@@ -186,16 +205,44 @@ export default function StatementImportPage() {
   };
 
   // Step 2: Columns Confirmed (for CSV)
-  const handleConfirmMapping = (confirmedMapping: CsvColumnMapping, customBankName?: string) => {
+  const handleConfirmMapping = (
+    confirmedMapping: CsvColumnMapping,
+    customBankName?: string,
+    saveAsCustomRule?: boolean
+  ) => {
     setColumnMapping(confirmedMapping);
     if (customBankName) {
       setBankName(customBankName);
     }
     saveConfirmedMapping(csvHeaders, confirmedMapping, customBankName, fileName);
+
+    // If user opted to save this unrecognized format as an auto-rule
+    if (saveAsCustomRule && customBankName && customBankName !== 'Custom Statement Format') {
+      const mappedKeywords = [
+        confirmedMapping.dateColumn,
+        confirmedMapping.descriptionColumn,
+        confirmedMapping.amountColumn || confirmedMapping.debitColumn,
+      ]
+        .filter(Boolean)
+        .map((k) => (k as string).toLowerCase().trim());
+
+      saveCustomBankRule({
+        bankName: customBankName.trim(),
+        filePattern: fileName ? fileName.replace(/\.[^/.]+$/, '').toLowerCase() : undefined,
+        headerKeywords: Array.from(new Set(mappedKeywords)),
+        isEnabled: true,
+      });
+    }
+
+    const currentBatchCurrency =
+      selectedGroupKey !== 'ALL'
+        ? groupCurrencies[selectedGroupKey] || profileCurrency
+        : profileCurrency;
+
     const normalized = normalizeTransactions(filteredCsvRows, confirmedMapping);
     setNormalizedTransactions(normalized);
 
-    const detected = detectRecurringCandidates(normalized, categories, currency);
+    const detected = detectRecurringCandidates(normalized, categories, currentBatchCurrency);
     setCandidates(detected);
     setStep('review');
   };
@@ -271,7 +318,9 @@ export default function StatementImportPage() {
   };
 
   // Consecutive Batch Navigation
-  const remainingGroups = accountGroups.filter((g) => !completedGroupKeys.includes(g.accountKey) && g.accountKey !== selectedGroupKey);
+  const remainingGroups = accountGroups.filter(
+    (g) => !completedGroupKeys.includes(g.accountKey) && g.accountKey !== selectedGroupKey
+  );
   const nextPendingGroup = remainingGroups[0];
 
   const handleProceedToNextAccount = () => {
@@ -378,6 +427,8 @@ export default function StatementImportPage() {
           totalRows={csvRows.length}
           selectedGroupKey={selectedGroupKey}
           completedGroupKeys={completedGroupKeys}
+          groupCurrencies={groupCurrencies}
+          onUpdateGroupCurrency={handleUpdateGroupCurrency}
           onSelectGroup={setSelectedGroupKey}
           onContinue={handleAccountGroupConfirmed}
           onBack={() => setStep('upload')}
@@ -393,6 +444,7 @@ export default function StatementImportPage() {
           initialMapping={columnMapping}
           isRememberedFormat={isRememberedFormat}
           bankName={bankName}
+          batchCurrency={activeBatchCurrency}
           onConfirmMapping={handleConfirmMapping}
           onBack={() => (accountGroups.length > 1 ? setStep('account_select') : setStep('upload'))}
         />
@@ -412,6 +464,9 @@ export default function StatementImportPage() {
                   <span>
                     {candidates.length} Discovered Recurring Service{candidates.length === 1 ? '' : 's'}
                   </span>
+                  <Badge variant="outline" size="sm" className="font-mono flex items-center gap-1">
+                    <Coins className="w-3 h-3 text-[hsl(var(--primary))]" /> {activeBatchCurrency}
+                  </Badge>
                 </div>
                 <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
                   Scanned {normalizedTransactions.length} statement transactions from{' '}
@@ -426,7 +481,7 @@ export default function StatementImportPage() {
 
               <div className="text-left sm:text-right">
                 <div className="text-sm sm:text-base font-bold text-[hsl(var(--foreground))]">
-                  +<AnimatedCurrency value={selectedMonthlyTotal} currency={currency} />
+                  +<AnimatedCurrency value={selectedMonthlyTotal} currency={activeBatchCurrency} />
                   <span className="text-xs font-normal text-[hsl(var(--muted-foreground))]">/mo</span>
                 </div>
                 <div className="text-xs text-[hsl(var(--muted-foreground))]">
@@ -592,7 +647,7 @@ export default function StatementImportPage() {
             <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
               Added <strong>{importedBatchCount} subscription{importedBatchCount === 1 ? '' : 's'}</strong>{' '}
               from {selectedGroupKey !== 'ALL' ? `Account (${selectedGroupKey})` : 'your statement'} to
-              the Sift ledger.
+              the Sift ledger in <strong className="font-mono">{activeBatchCurrency}</strong>.
             </p>
             {sessionImportedTotal > importedBatchCount ? (
               <div className="pt-1">

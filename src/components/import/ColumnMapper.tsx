@@ -6,7 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { Table, ArrowRight, AlertCircle, Sparkles, RefreshCw, Building } from 'lucide-react';
+import { Badge } from '../ui/Badge';
+import { Table, ArrowRight, AlertCircle, Sparkles, RefreshCw, Building, Coins } from 'lucide-react';
 import { autoDetectColumnMapping } from '@/lib/utils/csvParser';
 
 interface ColumnMapperProps {
@@ -15,7 +16,12 @@ interface ColumnMapperProps {
   initialMapping: CsvColumnMapping;
   isRememberedFormat?: boolean;
   bankName?: string;
-  onConfirmMapping: (mapping: CsvColumnMapping, customBankName?: string) => void;
+  batchCurrency?: string;
+  onConfirmMapping: (
+    mapping: CsvColumnMapping,
+    customBankName?: string,
+    saveAsCustomRule?: boolean
+  ) => void;
   onBack: () => void;
 }
 
@@ -25,12 +31,18 @@ export function ColumnMapper({
   initialMapping,
   isRememberedFormat = false,
   bankName = 'Custom Statement Format',
+  batchCurrency = 'USD',
   onConfirmMapping,
   onBack,
 }: ColumnMapperProps) {
   const [mapping, setMapping] = useState<CsvColumnMapping>(initialMapping);
   const [isRemembered, setIsRemembered] = useState(isRememberedFormat);
-  const [customBankLabel, setCustomBankLabel] = useState(bankName);
+  const [customBankLabel, setCustomBankLabel] = useState(
+    bankName === 'Custom Statement Format' ? '' : bankName
+  );
+
+  const isUnrecognized = !isRemembered && (!bankName || bankName === 'Custom Statement Format');
+  const [saveAsCustomRule, setSaveAsCustomRule] = useState(isUnrecognized);
   const [error, setError] = useState<string | null>(null);
 
   const handleResetToAuto = () => {
@@ -54,15 +66,21 @@ export function ColumnMapper({
     }
 
     setError(null);
-    onConfirmMapping(mapping, customBankLabel);
+    const finalBankLabel = customBankLabel.trim() || 'Custom Statement Format';
+    onConfirmMapping(mapping, finalBankLabel, saveAsCustomRule);
   };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="space-y-1">
-        <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
-          Confirm Statement Column Mapping
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
+            Confirm Statement Column Mapping
+          </h2>
+          <Badge variant="outline" size="sm" className="font-mono flex items-center gap-1">
+            <Coins className="w-3 h-3" /> Account Currency: {batchCurrency}
+          </Badge>
+        </div>
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
           Verify or adjust the column mappings below to ensure accurate recurring charge detection.
         </p>
@@ -74,7 +92,7 @@ export function ColumnMapper({
           <div className="flex items-center gap-2 text-[hsl(var(--primary))]">
             <Sparkles className="w-4 h-4 shrink-0" />
             <span>
-              <strong>Recognized {customBankLabel} Layout:</strong> Applied your saved column mapping for this bank format.
+              <strong>Recognized {customBankLabel || 'Statement'} Layout:</strong> Applied your saved column mapping.
             </span>
           </div>
           <button
@@ -163,23 +181,49 @@ export function ColumnMapper({
             </Select>
           </div>
 
-          {/* Bank/Source Identifier Tag */}
-          <div className="pt-2 border-t border-[hsl(var(--border))]">
-            <div className="flex items-center gap-2">
-              <Building className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
-              <label className="text-xs font-semibold text-[hsl(var(--muted-foreground))]">
-                Bank / Statement Profile Label
-              </label>
+          {/* Bank/Source Identifier Tag & Auto-Rule Save Suggestion */}
+          <div className="pt-3 border-t border-[hsl(var(--border))] space-y-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Building className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                <label className="text-xs font-semibold text-[hsl(var(--foreground))]">
+                  Bank / Statement Profile Label
+                </label>
+              </div>
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                Label this statement source so Sift can remember column assignments for this bank layout.
+              </p>
+              <Input
+                value={customBankLabel}
+                onChange={(e) => setCustomBankLabel(e.target.value)}
+                placeholder="e.g. Coastal Credit Union, N26, Wise Business"
+                className="max-w-xs text-xs h-8"
+              />
             </div>
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5 mb-2">
-              We remember this mapping under this bank name so future monthly statements map instantly.
-            </p>
-            <Input
-              value={customBankLabel}
-              onChange={(e) => setCustomBankLabel(e.target.value)}
-              placeholder="e.g. Chase Sapphire, Amex Gold, Revolut"
-              className="max-w-xs text-xs h-8"
-            />
+
+            {/* Auto-Rule Suggestion for Unrecognized Layouts */}
+            {isUnrecognized ? (
+              <div className="p-3 rounded-xl border border-[hsl(var(--primary)/0.2)] bg-[hsl(var(--primary)/0.04)] flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="save-custom-rule-checkbox"
+                  checked={saveAsCustomRule}
+                  onChange={(e) => setSaveAsCustomRule(e.target.checked)}
+                  className="mt-0.5 rounded text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))] cursor-pointer"
+                />
+                <label htmlFor="save-custom-rule-checkbox" className="text-xs space-y-0.5 cursor-pointer">
+                  <div className="font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                    Save this format as a reusable recognition rule?
+                  </div>
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+                    Sift will remember the header layout ({mapping.dateColumn || 'Date'},{' '}
+                    {mapping.descriptionColumn || 'Description'}, {mapping.amountColumn || 'Amount'})
+                    to recognize and auto-map future statements from this bank.
+                  </p>
+                </label>
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
