@@ -20,6 +20,7 @@ import {
 } from '@/lib/utils/backup';
 import { RestoreModal } from '@/components/backup/RestoreModal';
 import { clearSavedStatementMappings } from '@/lib/utils/statementMappingMemory';
+import { CustomBankRulesManager } from '@/components/settings/CustomBankRulesManager';
 import {
   Palette,
   Database,
@@ -739,7 +740,10 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* 5. Account & Security Session */}
+      {/* 5. Custom Bank Statement Recognition Rules */}
+      <CustomBankRulesManager />
+
+      {/* 6. Account & Security Session */}
       {user ? (
         <Card>
           <CardHeader>

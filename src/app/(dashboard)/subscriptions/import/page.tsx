@@ -15,16 +15,19 @@ import {
   saveConfirmedMapping,
   detectBankSource,
 } from '@/lib/utils/statementMappingMemory';
+import {
+  detectMultiAccountGroups,
+  AccountGroup,
+} from '@/lib/utils/multiAccountDetector';
 import { parsePdfStatement } from '@/lib/utils/pdfParser';
 import { detectRecurringCandidates } from '@/lib/utils/recurringDetector';
 import { StatementDropzone } from '@/components/import/CsvDropzone';
+import { AccountGroupSelector } from '@/components/import/AccountGroupSelector';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { CandidateReviewCard } from '@/components/import/CandidateReviewCard';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
-import { formatCurrency } from '@/lib/utils/currency';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -32,13 +35,9 @@ import {
   Inbox,
   AlertCircle,
   FileType,
-  Filter,
-  CheckCheck,
-  XCircle,
-  HelpCircle,
 } from 'lucide-react';
 
-type ImportStep = 'upload' | 'map' | 'review' | 'success';
+type ImportStep = 'upload' | 'account_select' | 'map' | 'review' | 'success';
 type ReviewFilter = 'all' | 'selected' | 'unselected' | 'flagged';
 
 export default function StatementImportPage() {
@@ -50,6 +49,13 @@ export default function StatementImportPage() {
   const [fileType, setFileType] = useState<'csv' | 'pdf'>('csv');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
+  const [filteredCsvRows, setFilteredCsvRows] = useState<Record<string, string>[]>([]);
+  
+  // Multi-account detection state
+  const [accountColumn, setAccountColumn] = useState<string | null>(null);
+  const [accountGroups, setAccountGroups] = useState<AccountGroup[]>([]);
+  const [selectedGroupKey, setSelectedGroupKey] = useState<string | 'ALL'>('ALL');
+
   const [columnMapping, setColumnMapping] = useState<CsvColumnMapping>({
     dateColumn: '',
     descriptionColumn: '',
@@ -83,6 +89,19 @@ export default function StatementImportPage() {
     setCsvHeaders(headers);
     setCsvRows(rows);
 
+    // Check for multi-account CSV
+    const multiAccount = detectMultiAccountGroups(headers, rows);
+    if (multiAccount.hasMultipleAccounts && multiAccount.groups.length > 1) {
+      setAccountColumn(multiAccount.accountColumn);
+      setAccountGroups(multiAccount.groups);
+      setSelectedGroupKey('ALL');
+      setFilteredCsvRows(rows);
+      setStep('account_select');
+      return;
+    }
+
+    // Standard single-account flow
+    setFilteredCsvRows(rows);
     const saved = findSavedMapping(headers, name);
     if (saved) {
       setColumnMapping(saved.mapping);
@@ -98,7 +117,30 @@ export default function StatementImportPage() {
     setStep('map');
   };
 
-  // Step 1B: PDF Statement Loaded
+  // Step 1B: Account Group Selected
+  const handleAccountGroupConfirmed = () => {
+    let rowsToUse = csvRows;
+    if (selectedGroupKey !== 'ALL' && accountColumn) {
+      rowsToUse = csvRows.filter((r) => r[accountColumn] === selectedGroupKey);
+    }
+    setFilteredCsvRows(rowsToUse);
+
+    const saved = findSavedMapping(csvHeaders, fileName);
+    if (saved) {
+      setColumnMapping(saved.mapping);
+      setBankName(saved.bankName);
+      setIsRememberedFormat(true);
+    } else {
+      const detectedMapping = autoDetectColumnMapping(csvHeaders);
+      const detectedBank = detectBankSource(csvHeaders, fileName);
+      setColumnMapping(detectedMapping);
+      setBankName(detectedBank);
+      setIsRememberedFormat(false);
+    }
+    setStep('map');
+  };
+
+  // Step 1C: PDF Statement Loaded
   const handlePdfLoaded = async (file: File) => {
     setUploadError(null);
     setIsProcessingPdf(true);
@@ -136,7 +178,7 @@ export default function StatementImportPage() {
       setBankName(customBankName);
     }
     saveConfirmedMapping(csvHeaders, confirmedMapping, customBankName, fileName);
-    const normalized = normalizeTransactions(csvRows, confirmedMapping);
+    const normalized = normalizeTransactions(filteredCsvRows, confirmedMapping);
     setNormalizedTransactions(normalized);
 
     const detected = detectRecurringCandidates(normalized, categories, currency);
@@ -172,6 +214,11 @@ export default function StatementImportPage() {
     setIsImporting(true);
     let count = 0;
 
+    const accountContext =
+      selectedGroupKey !== 'ALL' && accountColumn
+        ? ` (${accountColumn}: ${selectedGroupKey})`
+        : '';
+
     try {
       for (const candidate of selectedCandidates) {
         await addSubscription({
@@ -186,7 +233,7 @@ export default function StatementImportPage() {
           is_trial: false,
           reminder_offsets: profile?.default_reminder_days || [7, 3, 1],
           value_rating: candidate.valueRating,
-          notes: `Imported from ${fileType.toUpperCase()}: ${fileName} (${candidate.transactionCount} charges detected)`,
+          notes: `Imported from ${bankName || fileType.toUpperCase()}: ${fileName}${accountContext} (${candidate.transactionCount} charges)`,
         });
         count++;
       }
@@ -246,17 +293,25 @@ export default function StatementImportPage() {
           <span className={step === 'upload' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
             1. Upload
           </span>
+          {step === 'account_select' || accountGroups.length > 1 ? (
+            <>
+              <span>→</span>
+              <span className={step === 'account_select' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
+                Account
+              </span>
+            </>
+          ) : null}
           <span>→</span>
           {fileType === 'csv' ? (
             <>
               <span className={step === 'map' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
-                2. Map
+                Map
               </span>
               <span>→</span>
             </>
           ) : null}
           <span className={step === 'review' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
-            {fileType === 'csv' ? '3. Preview' : '2. Preview'}
+            Preview
           </span>
         </div>
       </div>
@@ -281,16 +336,29 @@ export default function StatementImportPage() {
         />
       ) : null}
 
+      {/* STEP 1.5: Multi-Account Selector */}
+      {step === 'account_select' && accountColumn ? (
+        <AccountGroupSelector
+          accountColumn={accountColumn}
+          groups={accountGroups}
+          totalRows={csvRows.length}
+          selectedGroupKey={selectedGroupKey}
+          onSelectGroup={setSelectedGroupKey}
+          onContinue={handleAccountGroupConfirmed}
+          onBack={() => setStep('upload')}
+        />
+      ) : null}
+
       {/* STEP 2: Map Columns (CSV Only) */}
       {step === 'map' ? (
         <ColumnMapper
           headers={csvHeaders}
-          previewRows={csvRows}
+          previewRows={filteredCsvRows}
           initialMapping={columnMapping}
           isRememberedFormat={isRememberedFormat}
           bankName={bankName}
           onConfirmMapping={handleConfirmMapping}
-          onBack={() => setStep('upload')}
+          onBack={() => (accountGroups.length > 1 ? setStep('account_select') : setStep('upload'))}
         />
       ) : null}
 
@@ -312,6 +380,11 @@ export default function StatementImportPage() {
                 <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
                   Scanned {normalizedTransactions.length} statement transactions from{' '}
                   <span className="font-mono">{fileName}</span>
+                  {selectedGroupKey !== 'ALL' && accountColumn ? (
+                    <span className="text-[hsl(var(--primary))] font-semibold ml-1">
+                      (Group: {selectedGroupKey})
+                    </span>
+                  ) : null}
                 </div>
               </div>
 

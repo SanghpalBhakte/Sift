@@ -1,6 +1,7 @@
 import { CsvColumnMapping } from '../types';
 
 const STORAGE_KEY = 'sift_saved_statement_mappings_v2';
+const CUSTOM_RULES_KEY = 'sift_custom_bank_rules_v1';
 
 export interface SavedStatementMapping {
   signature: string;
@@ -11,8 +12,19 @@ export interface SavedStatementMapping {
   useCount: number;
 }
 
+export interface CustomBankRule {
+  id: string;
+  bankName: string;
+  filePattern?: string; // regex or substring matching file name
+  headerKeywords: string[]; // header strings required (all or subset)
+  headerRegexPattern?: string; // optional regex testing any header line
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
- * Known Bank Fingerprint Rules
+ * Built-in Bank Fingerprint Rules
  */
 interface BankRule {
   name: string;
@@ -21,7 +33,7 @@ interface BankRule {
   optionalHeaders: string[];
 }
 
-const BANK_RULES: BankRule[] = [
+const BUILTIN_BANK_RULES: BankRule[] = [
   {
     name: 'Chase',
     fileKeywords: ['chase', 'activity'],
@@ -79,14 +91,182 @@ const BANK_RULES: BankRule[] = [
 ];
 
 /**
- * Detect the likely issuing bank from file name and CSV headers
+ * Safe regular expression execution with timeout & error bounds
+ */
+export function safeRegexMatch(pattern: string, input: string): boolean {
+  if (!pattern || !input) return false;
+  // Limit input size to prevent catastrophic backtracking
+  const boundedInput = input.slice(0, 1000);
+  try {
+    const re = new RegExp(pattern.trim(), 'i');
+    return re.test(boundedInput);
+  } catch (err) {
+    console.warn(`Invalid regex pattern "${pattern}":`, err);
+    return false;
+  }
+}
+
+/**
+ * Test if a custom bank rule matches given headers and filename
+ */
+export function testCustomRule(
+  rule: CustomBankRule,
+  headers: string[],
+  fileName: string = ''
+): { matches: boolean; matchedBy: string[] } {
+  const matchedBy: string[] = [];
+  const normFile = fileName.toLowerCase();
+  const normHeaders = headers.map((h) => h.toLowerCase().trim());
+  const headerJoined = headers.join(' | ');
+
+  // 1. Test File Pattern
+  if (rule.filePattern && rule.filePattern.trim()) {
+    const filePat = rule.filePattern.trim();
+    const isRegex = filePat.startsWith('/') || filePat.includes('.*') || filePat.includes('\\');
+    const fileMatched = isRegex
+      ? safeRegexMatch(filePat.replace(/^\/|\/$/g, ''), normFile)
+      : normFile.includes(filePat.toLowerCase());
+
+    if (fileMatched) {
+      matchedBy.push(`File pattern: "${filePat}"`);
+    } else {
+      // If file pattern was specified but failed, rule does not match
+      return { matches: false, matchedBy: [] };
+    }
+  }
+
+  // 2. Test Header Keywords
+  if (rule.headerKeywords && rule.headerKeywords.length > 0) {
+    const cleanKeywords = rule.headerKeywords.map((k) => k.toLowerCase().trim()).filter(Boolean);
+    const allKeywordsPresent = cleanKeywords.every((kw) =>
+      normHeaders.some((h) => h.includes(kw))
+    );
+
+    if (allKeywordsPresent) {
+      matchedBy.push(`Keywords matched: [${cleanKeywords.join(', ')}]`);
+    } else {
+      return { matches: false, matchedBy: [] };
+    }
+  }
+
+  // 3. Test Header Regex Pattern
+  if (rule.headerRegexPattern && rule.headerRegexPattern.trim()) {
+    const pat = rule.headerRegexPattern.trim();
+    if (safeRegexMatch(pat, headerJoined)) {
+      matchedBy.push(`Header regex: "${pat}"`);
+    } else {
+      return { matches: false, matchedBy: [] };
+    }
+  }
+
+  return {
+    matches: matchedBy.length > 0,
+    matchedBy,
+  };
+}
+
+/**
+ * Retrieve user-defined custom bank recognition rules
+ */
+export function getCustomBankRules(): CustomBankRule[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_RULES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.warn('Failed to read custom bank rules:', err);
+    return [];
+  }
+}
+
+/**
+ * Persist or update a custom bank recognition rule
+ */
+export function saveCustomBankRule(
+  rule: Omit<CustomBankRule, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
+): CustomBankRule {
+  const existing = getCustomBankRules();
+  const now = new Date().toISOString();
+
+  let savedRule: CustomBankRule;
+
+  if (rule.id && existing.some((r) => r.id === rule.id)) {
+    savedRule = {
+      ...existing.find((r) => r.id === rule.id)!,
+      ...rule,
+      updatedAt: now,
+    };
+    const nextRules = existing.map((r) => (r.id === rule.id ? savedRule : r));
+    localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(nextRules));
+  } else {
+    savedRule = {
+      id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      bankName: rule.bankName.trim(),
+      filePattern: rule.filePattern?.trim() || undefined,
+      headerKeywords: rule.headerKeywords || [],
+      headerRegexPattern: rule.headerRegexPattern?.trim() || undefined,
+      isEnabled: rule.isEnabled ?? true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const nextRules = [savedRule, ...existing];
+    localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(nextRules));
+  }
+
+  return savedRule;
+}
+
+/**
+ * Delete a custom bank recognition rule
+ */
+export function deleteCustomBankRule(id: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getCustomBankRules();
+    const filtered = existing.filter((r) => r.id !== id);
+    localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(filtered));
+  } catch (err) {
+    console.warn('Failed to delete custom bank rule:', err);
+  }
+}
+
+/**
+ * Toggle enable/disable status for a custom bank rule
+ */
+export function toggleCustomBankRule(id: string, isEnabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getCustomBankRules();
+    const updated = existing.map((r) => (r.id === id ? { ...r, isEnabled, updatedAt: new Date().toISOString() } : r));
+    localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('Failed to toggle custom bank rule:', err);
+  }
+}
+
+/**
+ * Detect the likely issuing bank using:
+ * 1. User-defined custom rules (Priority)
+ * 2. Built-in bank fingerprints (Chase, Amex, Revolut, etc.)
+ * 3. Fallback: "Custom Statement Format"
  */
 export function detectBankSource(headers: string[], fileName: string = ''): string {
+  // 1. Check enabled user-defined custom bank rules
+  const customRules = getCustomBankRules().filter((r) => r.isEnabled);
+  for (const rule of customRules) {
+    const testResult = testCustomRule(rule, headers, fileName);
+    if (testResult.matches) {
+      return rule.bankName;
+    }
+  }
+
   const normFile = fileName.toLowerCase().replace(/[^a-z0-9]/g, '');
   const normHeaders = headers.map((h) => h.toLowerCase().trim());
 
-  // 1. Check for strong file keyword + header match
-  for (const rule of BANK_RULES) {
+  // 2. Check built-in bank rules (File match + required headers)
+  for (const rule of BUILTIN_BANK_RULES) {
     const hasFileMatch = rule.fileKeywords.some((kw) => normFile.includes(kw.replace(/[^a-z0-9]/g, '')));
     const hasRequired = rule.requiredHeaders.every((req) =>
       normHeaders.some((h) => h.includes(req))
@@ -97,8 +277,8 @@ export function detectBankSource(headers: string[], fileName: string = ''): stri
     }
   }
 
-  // 2. Check for unique header combinations
-  for (const rule of BANK_RULES) {
+  // 3. Check built-in bank rules (Header combination match)
+  for (const rule of BUILTIN_BANK_RULES) {
     const matchedRequired = rule.requiredHeaders.filter((req) =>
       normHeaders.some((h) => h.includes(req))
     );
@@ -175,7 +355,7 @@ export function findSavedMapping(
 
   // 2. Check for same bank profile with compatible headers
   if (detectedBank !== 'Custom Statement Format') {
-    const bankMatches = saved.filter((s) => s.bankName === detectedBank);
+    const bankMatches = saved.filter((s) => s.bankName.toLowerCase() === detectedBank.toLowerCase());
     for (const item of bankMatches) {
       if (validateMappingWithHeaders(item.mapping, headers)) {
         return {
@@ -256,7 +436,6 @@ export function saveConfirmedMapping(
       nextSaved = [...saved];
       nextSaved[existingIndex] = updatedEntry;
     } else {
-      // Keep up to 25 bank format profiles
       nextSaved = [updatedEntry, ...saved.slice(0, 24)];
     }
 
