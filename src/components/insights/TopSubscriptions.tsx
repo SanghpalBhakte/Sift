@@ -1,0 +1,93 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { TopSubscriptionItem } from '@/lib/types';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { formatCurrency, formatCycle } from '@/lib/utils/currency';
+import { ValueRatingTag } from '../ui/ValueRatingTag';
+import { Award, ArrowRight } from 'lucide-react';
+
+interface TopSubscriptionsProps {
+  items: TopSubscriptionItem[];
+  currency?: string;
+}
+
+export function TopSubscriptions({ items, currency = 'USD' }: TopSubscriptionsProps) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Award className="w-4 h-4 text-[hsl(var(--primary))]" />
+          <div>
+            <CardTitle>Top Cost Drivers</CardTitle>
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
+              Subscriptions accounting for the largest share of spend
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/subscriptions"
+          className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] flex items-center gap-1 transition-colors"
+        >
+          View all <ArrowRight className="w-3 h-3" />
+        </Link>
+      </CardHeader>
+
+      <CardContent className="space-y-3 pt-1">
+        <div className="divide-y divide-[hsl(var(--border))]">
+          {items.map(({ subscription, monthlyAmount, percentageOfTotal }, index) => (
+            <div
+              key={subscription.id}
+              className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-5 text-center text-xs font-mono text-[hsl(var(--muted-foreground))] font-semibold">
+                  #{index + 1}
+                </span>
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href={`/subscriptions/${subscription.id}/edit`}
+                      className="text-sm font-semibold text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors truncate"
+                    >
+                      {subscription.name}
+                    </Link>
+                    <ValueRatingTag rating={subscription.value_rating} size="sm" />
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
+                    <span>{subscription.category?.name || 'General'}</span>
+                    <span>·</span>
+                    <span>
+                      {formatCurrency(subscription.amount, subscription.currency)}
+                      {formatCycle(subscription.billing_cycle, subscription.custom_interval_days)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right shrink-0">
+                <div className="text-sm font-bold text-[hsl(var(--foreground))]">
+                  {formatCurrency(monthlyAmount, currency)}
+                  <span className="text-[10px] font-normal text-[hsl(var(--muted-foreground))] ml-0.5">
+                    /mo
+                  </span>
+                </div>
+                <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-mono">
+                  {percentageOfTotal}% of total
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

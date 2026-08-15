@@ -107,13 +107,36 @@ export interface SubscriptionEvent {
 export interface DashboardStats {
   monthlyTotal: number;
   yearlyProjected: number;
+  averageMonthlySpend: number;
   activeCount: number;
   pausedCount: number;
   trialCount: number;
   cancelCandidateCount: number;
   potentialMonthlySavings: number;
   upcomingRenewalsCount: number;
+  upcoming30DaysTotal: number;
   nextUpcomingRenewal: Subscription | null;
+}
+
+export interface SpendTrendPoint {
+  monthLabel: string; // e.g. 'May', 'Jun'
+  yearMonth: string;  // e.g. '2026-05'
+  totalMonthly: number;
+  activeCount: number;
+}
+
+export interface TopSubscriptionItem {
+  subscription: Subscription;
+  monthlyAmount: number;
+  percentageOfTotal: number;
+}
+
+export interface UpcomingPaymentItem {
+  subscription: Subscription;
+  renewalDate: string;
+  amount: number;
+  daysUntil: number;
+  isUrgent: boolean;
 }
 
 export interface SubscriptionFilters {

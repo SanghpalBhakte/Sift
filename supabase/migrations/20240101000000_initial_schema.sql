@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Sift - Subscription & Recurring Payments Database Schema
--- Migration: 20240101000000_initial_schema.sql
+-- Migration: 20240101000000_initial_schema.sql (Idempotent)
 -- =============================================================================
 
 -- Enable required extensions
@@ -27,7 +27,7 @@ alter table public.profiles enable row level security;
 -- -----------------------------------------------------------------------------
 create table if not exists public.categories (
   id uuid primary key default uuid_generate_v4(),
-  user_id uuid references public.profiles(id) on delete cascade, -- NULL indicates system-wide default category
+  user_id uuid references public.profiles(id) on delete cascade,
   name text not null,
   slug text not null,
   color text not null default 'moss',
@@ -117,7 +117,7 @@ create table if not exists public.subscription_events (
 alter table public.subscription_events enable row level security;
 
 -- -----------------------------------------------------------------------------
--- Indexes for Performance
+-- Performance Indexes
 -- -----------------------------------------------------------------------------
 create index if not exists idx_subscriptions_user_id on public.subscriptions(user_id);
 create index if not exists idx_subscriptions_status on public.subscriptions(user_id, status);
@@ -127,70 +127,84 @@ create index if not exists idx_reminders_user_date on public.reminders(user_id, 
 create index if not exists idx_subscription_events_sub on public.subscription_events(subscription_id, created_at desc);
 
 -- -----------------------------------------------------------------------------
--- Row Level Security (RLS) Policies
+-- Row Level Security (RLS) Policies (Idempotent with DROP IF EXISTS)
 -- -----------------------------------------------------------------------------
 
 -- Profiles RLS
+drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
   on public.profiles for update
   using (auth.uid() = id);
 
+drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
   on public.profiles for insert
   with check (auth.uid() = id);
 
--- Categories RLS (system categories have user_id IS NULL)
+-- Categories RLS
+drop policy if exists "Users can view own and system categories" on public.categories;
 create policy "Users can view own and system categories"
   on public.categories for select
   using (user_id is null or auth.uid() = user_id);
 
+drop policy if exists "Users can insert custom categories" on public.categories;
 create policy "Users can insert custom categories"
   on public.categories for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update own custom categories" on public.categories;
 create policy "Users can update own custom categories"
   on public.categories for update
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete own custom categories" on public.categories;
 create policy "Users can delete own custom categories"
   on public.categories for delete
   using (auth.uid() = user_id);
 
 -- Payment Methods RLS
+drop policy if exists "Users can view own payment methods" on public.payment_methods;
 create policy "Users can view own payment methods"
   on public.payment_methods for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can manage own payment methods" on public.payment_methods;
 create policy "Users can manage own payment methods"
   on public.payment_methods for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- Subscriptions RLS
+drop policy if exists "Users can view own subscriptions" on public.subscriptions;
 create policy "Users can view own subscriptions"
   on public.subscriptions for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can manage own subscriptions" on public.subscriptions;
 create policy "Users can manage own subscriptions"
   on public.subscriptions for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- Reminders RLS
+drop policy if exists "Users can view and manage own reminders" on public.reminders;
 create policy "Users can view and manage own reminders"
   on public.reminders for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- Subscription Events RLS
+drop policy if exists "Users can view own subscription events" on public.subscription_events;
 create policy "Users can view own subscription events"
   on public.subscription_events for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert own subscription events" on public.subscription_events;
 create policy "Users can insert own subscription events"
   on public.subscription_events for insert
   with check (auth.uid() = user_id);
@@ -204,7 +218,8 @@ create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.profiles (id, email, full_name)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'full_name', ''));
+  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'full_name', ''))
+  on conflict (id) do nothing;
   return new;
 end;
 $$ language plpgsql security definer;
@@ -224,10 +239,25 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at
   before update on public.profiles
   for each row execute procedure public.handle_updated_at();
 
+drop trigger if exists set_subscriptions_updated_at on public.subscriptions;
 create trigger set_subscriptions_updated_at
   before update on public.subscriptions
   for each row execute procedure public.handle_updated_at();
+
+-- -----------------------------------------------------------------------------
+-- System Categories Seed
+-- -----------------------------------------------------------------------------
+insert into public.categories (id, user_id, name, slug, color, icon)
+values
+  ('10000000-0000-0000-0000-000000000001', null, 'Software & Dev', 'software-dev', 'moss', 'terminal'),
+  ('10000000-0000-0000-0000-000000000002', null, 'Infrastructure & Cloud', 'infra-cloud', 'slate', 'server'),
+  ('10000000-0000-0000-0000-000000000003', null, 'Productivity & Notes', 'productivity', 'ochre', 'edit-3'),
+  ('10000000-0000-0000-0000-000000000004', null, 'Media & Reading', 'media-reading', 'terracotta', 'book-open'),
+  ('10000000-0000-0000-0000-000000000005', null, 'Health & Routine', 'health-routine', 'sage', 'heart'),
+  ('10000000-0000-0000-0000-000000000006', null, 'Utilities & Sync', 'utilities-sync', 'stone', 'home')
+on conflict (id) do nothing;
