@@ -35,7 +35,9 @@ Sift/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                   # GitHub Actions CI/CD workflow (tests, cache, Vercel deploy)
-├── .env.example                     # Documented environment variables
+├── docs/
+│   └── PRODUCTION_READINESS.md      # Launch readiness checklist & environment audit
+├── .env.example                     # Documented environment variables template
 ├── .gitignore                       # Clean Git exclusion rules
 ├── README.md                        # Documentation & setup guide
 ├── next.config.mjs                  # Next.js configuration
@@ -152,6 +154,12 @@ Configure these environment variables in your Vercel Project Settings:
 - `VAPID_SUBJECT`: Mailto contact for Web Push (`mailto:support@sift.app`).
 - `RESEND_API_KEY`: Resend API key for transactional emails.
 - `CRON_SECRET`: Secret header token for triggering `/api/reminders/dispatch`.
+
+---
+
+## 📋 Production Readiness & Launch Checklist
+
+For complete pre-launch verification, environment audits, and the 9-step launch-day smoke test, refer to the [Production Readiness Guide](file:///docs/PRODUCTION_READINESS.md).
 
 ---
 
