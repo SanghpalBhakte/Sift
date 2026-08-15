@@ -12,6 +12,8 @@ export type PaymentMethodType =
   | 'apple_pay'
   | 'other';
 
+export type BrowserNotificationStatus = 'default' | 'granted' | 'denied' | 'unsupported';
+
 export interface Profile {
   id: string;
   email: string;
@@ -19,6 +21,9 @@ export interface Profile {
   currency_preference: string;
   theme_preference: 'paper-ledger' | 'night-shelf' | 'system';
   default_reminder_days: number[];
+  notifications_enabled?: boolean;
+  notify_renewals?: boolean;
+  notify_trials?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -86,6 +91,33 @@ export interface Reminder {
   subscription?: Subscription;
 }
 
+export type AlertSeverity = 'urgent' | 'warning' | 'info';
+export type AlertType = 'renewal_today' | 'renewal_upcoming' | 'trial_ending' | 'renewal_overdue';
+
+export interface AppAlert {
+  id: string;
+  subscriptionId: string;
+  subscriptionName: string;
+  type: AlertType;
+  title: string;
+  message: string;
+  targetDate: string;
+  daysUntil: number;
+  amount: number;
+  currency: string;
+  severity: AlertSeverity;
+  cancelUrl?: string;
+  isTrial: boolean;
+  status: SubscriptionStatus;
+}
+
+export interface NotificationPreferences {
+  enabled: boolean;
+  notifyRenewals: boolean;
+  notifyTrials: boolean;
+  offsets: number[];
+}
+
 export interface SubscriptionEvent {
   id: string;
   user_id: string;
@@ -119,8 +151,8 @@ export interface DashboardStats {
 }
 
 export interface SpendTrendPoint {
-  monthLabel: string; // e.g. 'May', 'Jun'
-  yearMonth: string;  // e.g. '2026-05'
+  monthLabel: string;
+  yearMonth: string;
   totalMonthly: number;
   activeCount: number;
 }

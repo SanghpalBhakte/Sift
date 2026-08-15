@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 
 export const metadata: Metadata = {
   title: 'Sift — Calm Recurring Spend Workspace',
@@ -49,7 +50,9 @@ export default function RootLayout({
       <body className="antialiased min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
         <ThemeProvider>
           <AuthProvider>
-            <SubscriptionProvider>{children}</SubscriptionProvider>
+            <SubscriptionProvider>
+              <NotificationProvider>{children}</NotificationProvider>
+            </SubscriptionProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

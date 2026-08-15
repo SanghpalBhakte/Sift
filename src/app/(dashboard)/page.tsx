@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useAuth } from '@/context/AuthContext';
 import { MetricCard } from '@/components/ui/MetricCard';
+import { AlertsBanner } from '@/components/reminders/AlertsBanner';
 import { UpcomingRenewals } from '@/components/subscriptions/UpcomingRenewals';
 import { TrialAlerts } from '@/components/subscriptions/TrialAlerts';
 import { CancelCandidates } from '@/components/subscriptions/CancelCandidates';
@@ -16,10 +17,7 @@ import {
   Plus,
   CreditCard,
   Sparkles,
-  CalendarClock,
   ArrowRight,
-  ShieldCheck,
-  Layers,
   Inbox,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -135,6 +133,9 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* 0. In-App Urgent Alerts Banner */}
+      <AlertsBanner />
 
       {/* 1. Top Overview Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
