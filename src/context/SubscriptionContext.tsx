@@ -97,6 +97,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     loadAll();
+
+    // Background reconnect sync for exchange rates
+    const cleanup = exchangeRateService.initReconnectSync((updatedRates) => {
+      setExchangeRates(updatedRates);
+    });
+
+    return () => cleanup();
   }, [loadAll, user]);
 
   const addSubscription = async (data: SubscriptionFormData): Promise<Subscription> => {

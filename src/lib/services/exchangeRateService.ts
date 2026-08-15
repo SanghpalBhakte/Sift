@@ -7,6 +7,7 @@ import { ExchangeRatesData } from '../types';
 
 const CACHE_KEY = 'sift_exchange_rates_cache_v1';
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+const RECONNECT_MIN_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes debounce for reconnect sync
 
 // Reliable static baseline exchange rates (Base: USD)
 export const DEFAULT_OFFLINE_RATES: Record<string, number> = {
@@ -32,12 +33,14 @@ export const DEFAULT_OFFLINE_RATES: Record<string, number> = {
 
 class ExchangeRateService {
   private inMemoryCache: ExchangeRatesData | null = null;
+  private lastReconnectSyncTime = 0;
+  private isFetching = false;
 
   /**
-   * Returns current exchange rates from cache, live API, or fallback
+   * Returns current exchange rates from memory, localStorage, or live API
    */
   async getExchangeRates(forceRefresh = false): Promise<ExchangeRatesData> {
-    // 1. Check in-memory cache
+    // 1. Check in-memory cache if not forcing refresh
     if (!forceRefresh && this.inMemoryCache && !this.isExpired(this.inMemoryCache.updatedAt)) {
       return this.inMemoryCache;
     }
@@ -58,7 +61,13 @@ class ExchangeRateService {
       }
     }
 
-    // 3. Fetch from primary open API (Open Exchange Rates API / Frankfurter)
+    // 3. Fetch from primary live open endpoints
+    if (this.isFetching) {
+      // Prevent duplicate parallel requests
+      return this.inMemoryCache || this.getOfflineBaseline();
+    }
+
+    this.isFetching = true;
     try {
       const liveData = await this.fetchLiveRates();
       this.inMemoryCache = liveData;
@@ -80,24 +89,68 @@ class ExchangeRateService {
         return { ...this.inMemoryCache, isStale: true };
       }
 
-      // Final fallback to static baseline
-      const fallbackData: ExchangeRatesData = {
-        base: 'USD',
-        rates: DEFAULT_OFFLINE_RATES,
-        updatedAt: new Date().toISOString(),
-        source: 'Offline Static Baseline',
-        isStale: true,
-      };
+      // Check stored stale cache
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem(CACHE_KEY);
+          if (stored) {
+            const parsed: ExchangeRatesData = JSON.parse(stored);
+            this.inMemoryCache = { ...parsed, isStale: true };
+            return this.inMemoryCache;
+          }
+        } catch {
+          // Fallback
+        }
+      }
 
-      return fallbackData;
+      // Final fallback to static baseline
+      return this.getOfflineBaseline();
+    } finally {
+      this.isFetching = false;
     }
+  }
+
+  /**
+   * Set up network online/offline listeners for smooth reconnect refresh
+   */
+  initReconnectSync(onSyncSuccess?: (data: ExchangeRatesData) => void): () => void {
+    if (typeof window === 'undefined') return () => {};
+
+    const handleOnline = async () => {
+      const now = Date.now();
+      // Debounce reconnect sync to avoid spamming on unstable Wi-Fi
+      if (now - this.lastReconnectSyncTime < RECONNECT_MIN_INTERVAL_MS) {
+        return;
+      }
+
+      const cached = this.inMemoryCache;
+      const isStale = !cached || this.isExpired(cached.updatedAt);
+
+      // Refresh in background if stale or missing
+      if (isStale) {
+        this.lastReconnectSyncTime = now;
+        try {
+          const updated = await this.getExchangeRates(true);
+          if (onSyncSuccess) {
+            onSyncSuccess(updated);
+          }
+        } catch (err) {
+          console.warn('Background reconnect exchange rate sync failed:', err);
+        }
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
   }
 
   /**
    * Fetches latest exchange rates from open endpoint
    */
   private async fetchLiveRates(): Promise<ExchangeRatesData> {
-    // Primary: open.er-api.com (160+ currencies, fast, open)
+    // Primary: open.er-api.com (ECB & Central Banks, reliable, HTTPS)
     try {
       const res = await fetch('https://open.er-api.com/v6/latest/USD', {
         headers: { Accept: 'application/json' },
@@ -110,6 +163,7 @@ class ExchangeRateService {
             rates: { ...DEFAULT_OFFLINE_RATES, ...data.rates },
             updatedAt: new Date().toISOString(),
             source: 'Open Exchange Rates (ECB / Central Banks)',
+            isStale: false,
           };
         }
       }
@@ -117,7 +171,7 @@ class ExchangeRateService {
       // try secondary
     }
 
-    // Secondary fallback: Frankfurter
+    // Secondary fallback: Frankfurter API
     const fallbackRes = await fetch('https://api.frankfurter.dev/v1/latest?base=USD');
     const data = await fallbackRes.json();
     return {
@@ -125,6 +179,7 @@ class ExchangeRateService {
       rates: { ...DEFAULT_OFFLINE_RATES, USD: 1.0, ...(data.rates || {}) },
       updatedAt: new Date().toISOString(),
       source: 'Frankfurter (European Central Bank)',
+      isStale: false,
     };
   }
 
@@ -152,6 +207,16 @@ class ExchangeRateService {
     const converted = amountInUSD * toRate;
 
     return Math.round(converted * 100) / 100;
+  }
+
+  private getOfflineBaseline(): ExchangeRatesData {
+    return {
+      base: 'USD',
+      rates: DEFAULT_OFFLINE_RATES,
+      updatedAt: new Date().toISOString(),
+      source: 'Offline Static Baseline',
+      isStale: true,
+    };
   }
 
   private isExpired(isoTimestamp: string): boolean {

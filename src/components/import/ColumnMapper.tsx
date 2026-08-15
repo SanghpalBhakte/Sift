@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { CsvColumnMapping } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Select } from '../ui/Select';
+import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { Table, ArrowRight, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { Table, ArrowRight, AlertCircle, Sparkles, RefreshCw, Building } from 'lucide-react';
 import { autoDetectColumnMapping } from '@/lib/utils/csvParser';
 
 interface ColumnMapperProps {
@@ -13,7 +14,8 @@ interface ColumnMapperProps {
   previewRows: Record<string, string>[];
   initialMapping: CsvColumnMapping;
   isRememberedFormat?: boolean;
-  onConfirmMapping: (mapping: CsvColumnMapping) => void;
+  bankName?: string;
+  onConfirmMapping: (mapping: CsvColumnMapping, customBankName?: string) => void;
   onBack: () => void;
 }
 
@@ -22,11 +24,13 @@ export function ColumnMapper({
   previewRows,
   initialMapping,
   isRememberedFormat = false,
+  bankName = 'Custom Statement Format',
   onConfirmMapping,
   onBack,
 }: ColumnMapperProps) {
   const [mapping, setMapping] = useState<CsvColumnMapping>(initialMapping);
   const [isRemembered, setIsRemembered] = useState(isRememberedFormat);
+  const [customBankLabel, setCustomBankLabel] = useState(bankName);
   const [error, setError] = useState<string | null>(null);
 
   const handleResetToAuto = () => {
@@ -50,7 +54,7 @@ export function ColumnMapper({
     }
 
     setError(null);
-    onConfirmMapping(mapping);
+    onConfirmMapping(mapping, customBankLabel);
   };
 
   return (
@@ -64,22 +68,29 @@ export function ColumnMapper({
         </p>
       </div>
 
-      {/* Remembered Format Banner */}
+      {/* Remembered / Detected Format Banner */}
       {isRemembered ? (
         <div className="p-3.5 rounded-xl bg-[hsl(var(--primary)/0.06)] border border-[hsl(var(--primary)/0.25)] flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-[hsl(var(--primary))]">
             <Sparkles className="w-4 h-4 shrink-0" />
             <span>
-              <strong>Recognized Statement Layout:</strong> Applied your saved column mapping for this bank format.
+              <strong>Recognized {customBankLabel} Layout:</strong> Applied your saved column mapping for this bank format.
             </span>
           </div>
           <button
             type="button"
             onClick={handleResetToAuto}
-            className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1 hover:underline shrink-0"
+            className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1 hover:underline shrink-0 cursor-pointer"
           >
-            <RefreshCw className="w-3 h-3" /> Reset
+            <RefreshCw className="w-3 h-3" /> Reset to Default
           </button>
+        </div>
+      ) : customBankLabel && customBankLabel !== 'Custom Statement Format' ? (
+        <div className="p-3 rounded-xl bg-[hsl(var(--surface)/0.6)] border border-[hsl(var(--border))] flex items-center gap-2 text-xs text-[hsl(var(--muted-foreground))]">
+          <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+          <span>
+            Detected potential <strong>{customBankLabel}</strong> format. Verify column assignments below.
+          </span>
         </div>
       ) : null}
 
@@ -150,6 +161,25 @@ export function ColumnMapper({
                 </option>
               ))}
             </Select>
+          </div>
+
+          {/* Bank/Source Identifier Tag */}
+          <div className="pt-2 border-t border-[hsl(var(--border))]">
+            <div className="flex items-center gap-2">
+              <Building className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
+              <label className="text-xs font-semibold text-[hsl(var(--muted-foreground))]">
+                Bank / Statement Profile Label
+              </label>
+            </div>
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5 mb-2">
+              We remember this mapping under this bank name so future monthly statements map instantly.
+            </p>
+            <Input
+              value={customBankLabel}
+              onChange={(e) => setCustomBankLabel(e.target.value)}
+              placeholder="e.g. Chase Sapphire, Amex Gold, Revolut"
+              className="max-w-xs text-xs h-8"
+            />
           </div>
         </CardContent>
       </Card>

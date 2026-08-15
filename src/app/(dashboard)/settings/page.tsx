@@ -562,9 +562,22 @@ export default function SettingsPage() {
                   <div className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
                     Exchange Rate Engine
+                    {ratesSyncSuccess ? (
+                      <Badge variant="success" size="sm">
+                        Updated
+                      </Badge>
+                    ) : exchangeRates.isStale ? (
+                      <Badge variant="warning" size="sm">
+                        Cached (Offline Safe)
+                      </Badge>
+                    ) : (
+                      <Badge variant="success" size="sm">
+                        Live & Active
+                      </Badge>
+                    )}
                   </div>
                   <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                    {exchangeRates.source} · Updated {formatDate(exchangeRates.updatedAt)}
+                    {exchangeRates.source} · Last sync {formatDate(exchangeRates.updatedAt)} (auto-refreshes on reconnect)
                   </div>
                 </div>
 

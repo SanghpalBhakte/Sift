@@ -13,6 +13,7 @@ import {
 import {
   findSavedMapping,
   saveConfirmedMapping,
+  detectBankSource,
 } from '@/lib/utils/statementMappingMemory';
 import { parsePdfStatement } from '@/lib/utils/pdfParser';
 import { detectRecurringCandidates } from '@/lib/utils/recurringDetector';
@@ -63,6 +64,7 @@ export default function StatementImportPage() {
   const [importedCount, setImportedCount] = useState(0);
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('all');
   const [isRememberedFormat, setIsRememberedFormat] = useState(false);
+  const [bankName, setBankName] = useState('Custom Statement Format');
 
   const currency = profile?.currency_preference || 'USD';
 
@@ -81,13 +83,16 @@ export default function StatementImportPage() {
     setCsvHeaders(headers);
     setCsvRows(rows);
 
-    const saved = findSavedMapping(headers);
+    const saved = findSavedMapping(headers, name);
     if (saved) {
       setColumnMapping(saved.mapping);
+      setBankName(saved.bankName);
       setIsRememberedFormat(true);
     } else {
       const detectedMapping = autoDetectColumnMapping(headers);
+      const detectedBank = detectBankSource(headers, name);
       setColumnMapping(detectedMapping);
+      setBankName(detectedBank);
       setIsRememberedFormat(false);
     }
     setStep('map');
@@ -125,9 +130,12 @@ export default function StatementImportPage() {
   };
 
   // Step 2: Columns Confirmed (for CSV)
-  const handleConfirmMapping = (confirmedMapping: CsvColumnMapping) => {
+  const handleConfirmMapping = (confirmedMapping: CsvColumnMapping, customBankName?: string) => {
     setColumnMapping(confirmedMapping);
-    saveConfirmedMapping(csvHeaders, confirmedMapping);
+    if (customBankName) {
+      setBankName(customBankName);
+    }
+    saveConfirmedMapping(csvHeaders, confirmedMapping, customBankName, fileName);
     const normalized = normalizeTransactions(csvRows, confirmedMapping);
     setNormalizedTransactions(normalized);
 
@@ -280,6 +288,7 @@ export default function StatementImportPage() {
           previewRows={csvRows}
           initialMapping={columnMapping}
           isRememberedFormat={isRememberedFormat}
+          bankName={bankName}
           onConfirmMapping={handleConfirmMapping}
           onBack={() => setStep('upload')}
         />
