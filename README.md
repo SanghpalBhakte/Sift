@@ -116,17 +116,16 @@ Sift utilizes a unified GitHub Actions pipeline ([`.github/workflows/ci.yml`](fi
 ### Why Vercel?
 Vercel is the native runtime platform for Next.js 15 App Router, Server Components, and Edge/Node Route Handlers (`/api/push/*`, `/api/reminders/dispatch`). It requires zero custom build adapters or edge runtime polyfills.
 
-### Deployment Gating & Workflow Architecture
+### Deployment & CI Architecture
 
 ```mermaid
 flowchart LR
-    A[Push to main / PR] --> B[GitHub Actions: CI Quality Checks\nTypecheck, Lint, Tests]
-    A --> C[Vercel Git Integration\nAutomatic Build & Deploy]
-    B -->|Verified| D[Production Ready Release]
+    A[Push / Pull Request] --> B[GitHub Actions\nCI Quality Checks: Typecheck, Lint, Tests]
+    A --> C[Vercel Git Integration\nCloud Build & Deployment]
 ```
 
-1. **GitHub Actions CI (`quality`)**: Runs `npm run typecheck`, `npm run lint`, and `npm test` on Node.js 20 with npm dependency caching.
-2. **Vercel Native Deployment**: Automatic build and deployment directly via Vercel's official GitHub integration, supporting native Deployment Checks for `lint` and `typecheck`.
+1. **GitHub Actions CI (`quality`)**: Runs sequential automated checks (`npm run typecheck`, `npm run lint`, `npm test`) on Node.js 20 with npm dependency caching to validate code quality on every push and pull request.
+2. **Vercel Native Deployment**: Automatic build and deployment handled directly by Vercel's GitHub app integration (building production releases on `main` and preview URLs on pull requests). Optional Vercel native Deployment Checks can be configured in the Vercel dashboard.
 
 ### Production Environment Variables (Set in Vercel Dashboard)
 
@@ -145,13 +144,13 @@ Configure these environment variables in your Vercel Project Settings:
 
 ## 📋 Production Readiness & Launch Checklist
 
-For complete pre-launch verification, environment audits, and the 9-step launch-day smoke test, refer to the [Production Readiness Guide](file:///docs/PRODUCTION_READINESS.md).
+For pre-launch verification, environment audits, and the 9-step launch-day smoke test, refer to the [Production Readiness Guide](file:///docs/PRODUCTION_READINESS.md).
 
 ---
 
-## 🚀 Continuous Deployment
+## 🚀 Continuous Integration & Delivery
 
-Sift features continuous integration and automated deployment with GitHub Actions and Vercel. Every commit to `main` executes the unit test suite and automatically deploys a verified prebuilt release.
+Sift maintains a low-coupling CI/CD workflow: GitHub Actions verifies code quality (type safety, lint standards, and unit test pass rates), while Vercel's Git integration independently builds and deploys the application.
 
 ---
 

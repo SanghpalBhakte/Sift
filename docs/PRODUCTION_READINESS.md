@@ -33,10 +33,8 @@ This operational audit document provides a complete pre-launch and post-deployme
 - [ ] **Node.js Version**: `20.x` LTS.
 - [ ] **Root Directory**: `./`
 - [ ] **Production Domain**: Configure custom domain with automatic SSL/TLS certificate renewal.
-- [ ] **GitHub Secrets Configured**:
-  - `VERCEL_TOKEN`: Added in GitHub repository secrets.
-  - `VERCEL_ORG_ID`: Added in GitHub repository secrets.
-  - `VERCEL_PROJECT_ID`: Added in GitHub repository secrets.
+- [ ] **Git Integration**: Repository connected via official Vercel GitHub integration (production branch: `main`).
+- [ ] **Deployment Checks (Optional)**: Enable native lint and typecheck deployment checks under Project Settings.
 
 ---
 
