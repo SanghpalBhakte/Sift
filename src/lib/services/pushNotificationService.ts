@@ -81,6 +81,8 @@ export class PushNotificationService {
       return { success: false, error: 'Web Push notifications are not supported by this browser.' };
     }
 
+    // Note: The VAPID Public Key is intentionally public and client-facing, as mandated
+    // by the W3C Push API specification for PushManager.subscribe({ applicationServerKey }).
     const key = vapidPublicKey || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!key) {
       return { success: false, error: 'Web Push VAPID public key is not configured.' };
