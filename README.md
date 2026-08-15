@@ -19,7 +19,7 @@ Sift helps individuals and independent creators track recurring services, upcomi
 - **Language**: [TypeScript](https://www.typescriptlang.org/) (Strict Mode)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with semantic CSS token architecture
 - **Testing**: [Vitest](https://vitest.dev/) (Deterministic unit tests for calculations & business logic)
-- **CI / Automation**: GitHub Actions pipeline for automated test execution and dependency caching
+- **CI / CD Automation**: GitHub Actions pipeline for automated test execution, dependency caching, and CI-gated Vercel deployment
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Database & Auth**: [Supabase](https://supabase.com/) (PostgreSQL with Row Level Security and per-user access policies)
 - **Web Push**: Native browser push alerts via Service Worker and VAPID Web Push
@@ -34,7 +34,7 @@ Sift helps individuals and independent creators track recurring services, upcomi
 Sift/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                   # GitHub Actions CI workflow (tests & caching)
+│       └── ci.yml                   # GitHub Actions CI/CD workflow (tests, cache, Vercel deploy)
 ├── .env.example                     # Documented environment variables
 ├── .gitignore                       # Clean Git exclusion rules
 ├── README.md                        # Documentation & setup guide
@@ -104,17 +104,54 @@ Or watch mode during active development:
 npx vitest
 ```
 
-### GitHub Actions CI Pipeline
+---
 
-- **Workflow File**: [`.github/workflows/ci.yml`](file:///.github/workflows/ci.yml)
-- **Triggers**: Automated runs on every `push` and `pull_request` to the `main` branch.
-- **Environment**: Linux (`ubuntu-latest`), Node.js `20.x` LTS.
-- **Dependency Caching**: Native `actions/setup-node` npm cache keyed against `package-lock.json` for fast ~10s execution runs.
-- **Execution Step**: Clean `npm ci` followed by `npm test`.
+## 🚢 CI/CD & Deployment Automation
 
-#### Interpreting CI Results
-- ✅ **Green check**: All unit test assertions passed.
-- ❌ **Red cross**: A calculation regression or test assertion failure occurred. Inspect the **Run Unit Tests** step in the GitHub Actions tab to identify the failing test case.
+Sift utilizes a unified GitHub Actions pipeline ([`.github/workflows/ci.yml`](file:///.github/workflows/ci.yml)) with automated testing and **Vercel** deployment.
+
+### Why Vercel?
+Vercel is the native runtime platform for Next.js 15 App Router, Server Components, and Edge/Node Route Handlers (`/api/push/*`, `/api/reminders/dispatch`). It requires zero custom build adapters or edge runtime polyfills.
+
+### Deployment Gating & Workflow Architecture
+
+```mermaid
+flowchart LR
+    A[Push / PR] --> B[Run Unit Tests]
+    B -->|Tests Pass| C{Target Branch?}
+    B -->|Tests Fail| D[❌ Block Deploy]
+    C -->|pull_request| E[🚀 Deploy Preview URL]
+    C -->|push to main| F[🌟 Deploy to Production]
+```
+
+1. **Job 1 (`test`)**: Runs `npm ci` and `npm test` using Node.js 20 with npm dependency caching.
+2. **Job 2 (`deploy`)**:
+   - Strictly gated by `needs: [test]` (only runs if unit tests pass 100%).
+   - If triggered on a **Pull Request**, builds and deploys an ephemeral **Preview URL**.
+   - If triggered on a **Push to `main`**, builds with `--prod` and deploys to **Production**.
+
+### Required GitHub Repository Secrets
+
+To enable automated deployments, add these secrets under **Settings > Secrets and variables > Actions** in your GitHub repository:
+
+| Secret Name | Description | Where to find |
+| :--- | :--- | :--- |
+| `VERCEL_TOKEN` | Personal Access Token | [Vercel Account Tokens](https://vercel.com/account/tokens) |
+| `VERCEL_ORG_ID` | Vercel Team / User ID | Found in `.vercel/project.json` after running `vercel link` |
+| `VERCEL_PROJECT_ID` | Vercel Project ID | Found in project settings on the Vercel dashboard |
+
+### Production Environment Variables (Set in Vercel Dashboard)
+
+Configure these environment variables in your Vercel Project Settings:
+
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous client key.
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (for server-side push/reminder dispatch).
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: Web Push VAPID public key.
+- `VAPID_PRIVATE_KEY`: Web Push VAPID private key.
+- `VAPID_SUBJECT`: Mailto contact for Web Push (`mailto:support@sift.app`).
+- `RESEND_API_KEY`: Resend API key for transactional emails.
+- `CRON_SECRET`: Secret header token for triggering `/api/reminders/dispatch`.
 
 ---
 
