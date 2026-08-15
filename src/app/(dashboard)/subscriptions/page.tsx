@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { SubscriptionList } from '@/components/subscriptions/SubscriptionList';
 import { Button } from '@/components/ui/Button';
-import { Plus } from 'lucide-react';
+import { Plus, UploadCloud } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
 
 export default function SubscriptionsPage() {
@@ -27,12 +27,21 @@ export default function SubscriptionsPage() {
           </p>
         </div>
 
-        <Link href="/subscriptions/new">
-          <Button variant="primary" size="sm" className="gap-1.5 shadow-xs">
-            <Plus className="w-3.5 h-3.5" />
-            Add Subscription
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/subscriptions/import">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+              <UploadCloud className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              Import Statement
+            </Button>
+          </Link>
+
+          <Link href="/subscriptions/new">
+            <Button variant="primary" size="sm" className="gap-1.5 shadow-xs">
+              <Plus className="w-3.5 h-3.5" />
+              Add Subscription
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Subscription List with full interactive filters */}

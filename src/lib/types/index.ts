@@ -185,3 +185,41 @@ export type SubscriptionFormData = Omit<
   Subscription,
   'id' | 'user_id' | 'created_at' | 'updated_at' | 'monthly_amount' | 'category' | 'payment_method'
 >;
+
+// -----------------------------------------------------------------------------
+// CSV Import & Recurring Detection Models
+// -----------------------------------------------------------------------------
+
+export interface NormalizedTransaction {
+  id: string;
+  date: string; // YYYY-MM-DD
+  rawDescription: string;
+  cleanMerchant: string;
+  amount: number; // positive debit/charge amount
+}
+
+export interface RecurringCandidate {
+  id: string;
+  merchantName: string;
+  amount: number;
+  currency: string;
+  billingCycle: BillingCycle;
+  frequencyDays: number;
+  confidence: 'high' | 'medium' | 'low';
+  transactionCount: number;
+  firstDate: string;
+  lastDate: string;
+  estimatedNextRenewal: string;
+  matchedTransactions: NormalizedTransaction[];
+  suggestedCategoryId?: string | null;
+  valueRating: ValueRating;
+  selected: boolean;
+}
+
+export interface CsvColumnMapping {
+  dateColumn: string;
+  descriptionColumn: string;
+  amountColumn: string;
+  debitColumn?: string;
+  creditColumn?: string;
+}
