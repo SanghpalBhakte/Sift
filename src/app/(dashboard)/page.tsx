@@ -26,6 +26,8 @@ import {
   UploadCloud,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
+import { CurrencySwitcher } from '@/components/ui/CurrencySwitcher';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -154,7 +156,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="hidden sm:block">
+            <CurrencySwitcher />
+          </div>
           <Link href="/subscriptions/new">
             <Button variant="primary" size="sm" className="gap-1.5 shadow-xs">
               <Plus className="w-3.5 h-3.5" />
@@ -190,7 +195,7 @@ export default function DashboardPage() {
         {/* Monthly Recurring Total */}
         <MetricCard
           label="Monthly Recurring"
-          value={formatCurrency(stats.monthlyTotal, targetCurrency)}
+          value={<AnimatedCurrency value={stats.monthlyTotal} currency={targetCurrency} />}
           subtitle={`Converted to ${targetCurrency}`}
           trend={{
             text: `Across ${stats.activeCount} active items`,
@@ -201,7 +206,7 @@ export default function DashboardPage() {
         {/* Yearly Recurring Total */}
         <MetricCard
           label="Yearly Projected"
-          value={formatCurrency(stats.yearlyProjected, targetCurrency)}
+          value={<AnimatedCurrency value={stats.yearlyProjected} currency={targetCurrency} />}
           subtitle={`~${formatCurrency(stats.monthlyTotal, targetCurrency)}/month`}
           trend={{
             text: 'Annual commitment',
@@ -213,9 +218,11 @@ export default function DashboardPage() {
         <MetricCard
           label="Next Renewal"
           value={
-            nextRenewal
-              ? formatCurrency(nextRenewal.amount, nextRenewal.currency)
-              : 'None'
+            nextRenewal ? (
+              <AnimatedCurrency value={nextRenewal.amount} currency={nextRenewal.currency} />
+            ) : (
+              'None'
+            )
           }
           subtitle={
             nextRenewal ? (

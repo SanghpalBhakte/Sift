@@ -22,6 +22,8 @@ import {
 } from '@/lib/utils/annualOptimization';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
+import { CurrencySwitcher } from '@/components/ui/CurrencySwitcher';
 import {
   Lightbulb,
   Plus,
@@ -133,20 +135,26 @@ export default function InsightsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="pb-2 border-b border-[hsl(var(--border))]">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
-          Recurring Spend Insights
-        </h1>
-        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-          Clear visibility on recurring burn, cost drivers, and annual plan arbitrage
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[hsl(var(--border))]">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+            Recurring Spend Insights
+          </h1>
+          <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+            Clear visibility on recurring burn, cost drivers, and annual plan arbitrage
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <CurrencySwitcher />
+        </div>
       </div>
 
       {/* 1. Top-Level Stat Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           label="Monthly Recurring"
-          value={formatCurrency(stats.monthlyTotal, currency)}
+          value={<AnimatedCurrency value={stats.monthlyTotal} currency={currency} />}
           subtitle="Normalized run-rate"
           trend={{
             text: `${stats.activeCount} active items`,
@@ -156,7 +164,7 @@ export default function InsightsPage() {
 
         <MetricCard
           label="Annual Commitment"
-          value={formatCurrency(stats.yearlyProjected, currency)}
+          value={<AnimatedCurrency value={stats.yearlyProjected} currency={currency} />}
           subtitle="12-month projection"
           trend={{
             text: 'Current baseline',
@@ -166,7 +174,7 @@ export default function InsightsPage() {
 
         <MetricCard
           label="Average Tool Cost"
-          value={formatCurrency(stats.averageMonthlySpend, currency)}
+          value={<AnimatedCurrency value={stats.averageMonthlySpend} currency={currency} />}
           subtitle="Per active subscription/mo"
           trend={{
             text: 'Across active tools',
@@ -176,7 +184,7 @@ export default function InsightsPage() {
 
         <MetricCard
           label="Next 30 Days Due"
-          value={formatCurrency(stats.upcoming30DaysTotal, currency)}
+          value={<AnimatedCurrency value={stats.upcoming30DaysTotal} currency={currency} />}
           subtitle={`${upcoming30Days.length} upcoming charges`}
           trend={{
             text: 'Near-term cashflow',

@@ -17,6 +17,8 @@ import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { CandidateReviewCard } from '@/components/import/CandidateReviewCard';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
 import { formatCurrency } from '@/lib/utils/currency';
 import {
   ArrowLeft,
@@ -25,9 +27,14 @@ import {
   Inbox,
   AlertCircle,
   FileType,
+  Filter,
+  CheckCheck,
+  XCircle,
+  HelpCircle,
 } from 'lucide-react';
 
 type ImportStep = 'upload' | 'map' | 'review' | 'success';
+type ReviewFilter = 'all' | 'selected' | 'unselected' | 'flagged';
 
 export default function StatementImportPage() {
   const router = useRouter();
@@ -50,6 +57,7 @@ export default function StatementImportPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('all');
 
   const currency = profile?.currency_preference || 'USD';
 
@@ -173,6 +181,9 @@ export default function StatementImportPage() {
   };
 
   const selectedCount = candidates.filter((c) => c.selected).length;
+  const unselectedCount = candidates.length - selectedCount;
+  const flaggedCount = candidates.filter((c) => c.confidence === 'low' || c.transactionCount === 1).length;
+
   const selectedMonthlyTotal = candidates
     .filter((c) => c.selected)
     .reduce((acc, c) => {
@@ -180,6 +191,13 @@ export default function StatementImportPage() {
       if (c.billingCycle === 'quarterly') return acc + c.amount / 3;
       return acc + c.amount;
     }, 0);
+
+  const filteredCandidates = candidates.filter((c) => {
+    if (reviewFilter === 'selected') return c.selected;
+    if (reviewFilter === 'unselected') return !c.selected;
+    if (reviewFilter === 'flagged') return c.confidence === 'low' || c.transactionCount === 1;
+    return true;
+  });
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-12">
@@ -217,7 +235,7 @@ export default function StatementImportPage() {
             </>
           ) : null}
           <span className={step === 'review' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
-            {fileType === 'csv' ? '3. Review' : '2. Review'}
+            {fileType === 'csv' ? '3. Preview' : '2. Preview'}
           </span>
         </div>
       </div>
@@ -253,32 +271,106 @@ export default function StatementImportPage() {
         />
       ) : null}
 
-      {/* STEP 3: Review Candidates */}
+      {/* STEP 3: Interactive Review & Selection Preview */}
       {step === 'review' ? (
         <div className="space-y-6">
-          {/* Summary bar */}
-          <div className="p-4 rounded-xl bg-[hsl(var(--surface)/0.6)] border border-[hsl(var(--border))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                {fileType === 'pdf' ? (
-                  <FileType className="w-4 h-4 text-[hsl(var(--primary))]" />
-                ) : null}
-                <span>
-                  {candidates.length} Recurring Service{candidates.length === 1 ? '' : 's'} Detected
-                </span>
+          {/* Summary KPI Bar */}
+          <div className="p-4 sm:p-5 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[hsl(var(--border))]">
+              <div>
+                <div className="text-sm font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+                  {fileType === 'pdf' ? (
+                    <FileType className="w-4 h-4 text-[hsl(var(--primary))]" />
+                  ) : null}
+                  <span>
+                    {candidates.length} Discovered Recurring Service{candidates.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+                <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                  Scanned {normalizedTransactions.length} statement transactions from{' '}
+                  <span className="font-mono">{fileName}</span>
+                </div>
               </div>
-              <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                Scanned {normalizedTransactions.length} statement transactions from{' '}
-                <span className="font-mono">{fileName}</span>
+
+              <div className="text-left sm:text-right">
+                <div className="text-sm sm:text-base font-bold text-[hsl(var(--foreground))]">
+                  +<AnimatedCurrency value={selectedMonthlyTotal} currency={currency} />
+                  <span className="text-xs font-normal text-[hsl(var(--muted-foreground))]">/mo</span>
+                </div>
+                <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                  {selectedCount} of {candidates.length} selected to save
+                </div>
               </div>
             </div>
 
-            <div className="text-left sm:text-right">
-              <div className="text-sm font-bold text-[hsl(var(--foreground))] font-mono">
-                +{formatCurrency(selectedMonthlyTotal, currency)}/mo
+            {/* Quick Filter Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[hsl(var(--surface))] border border-[hsl(var(--border))] text-xs">
+                <button
+                  type="button"
+                  onClick={() => setReviewFilter('all')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                    reviewFilter === 'all'
+                      ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs font-semibold'
+                      : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                  }`}
+                >
+                  All ({candidates.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReviewFilter('selected')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                    reviewFilter === 'selected'
+                      ? 'bg-[hsl(var(--card))] text-[hsl(var(--primary))] shadow-xs font-semibold'
+                      : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                  }`}
+                >
+                  Selected ({selectedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReviewFilter('unselected')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                    reviewFilter === 'unselected'
+                      ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs font-semibold'
+                      : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                  }`}
+                >
+                  Excluded ({unselectedCount})
+                </button>
+                {flaggedCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setReviewFilter('flagged')}
+                    className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                      reviewFilter === 'flagged'
+                        ? 'bg-[hsl(var(--card))] text-[hsl(var(--warning))] shadow-xs font-semibold'
+                        : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--warning))]'
+                    }`}
+                  >
+                    Review Needed ({flaggedCount})
+                  </button>
+                ) : null}
               </div>
-              <div className="text-xs text-[hsl(var(--muted-foreground))]">
-                {selectedCount} selected for import
+
+              {/* Bulk Toggle Controls */}
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => handleSelectAll(true)}
+                  className="text-[11px] text-[hsl(var(--primary))] hover:underline font-medium cursor-pointer"
+                >
+                  Select All
+                </button>
+                <span className="text-[hsl(var(--border))]">·</span>
+                <button
+                  type="button"
+                  onClick={() => handleSelectAll(false)}
+                  className="text-[11px] text-[hsl(var(--muted-foreground))] hover:underline font-medium cursor-pointer"
+                >
+                  Deselect All
+                </button>
               </div>
             </div>
           </div>
@@ -307,42 +399,22 @@ export default function StatementImportPage() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs px-1">
-                <span className="text-[hsl(var(--muted-foreground))] font-medium">
-                  Review & customize before adding to your ledger:
-                </span>
+            <div className="space-y-3">
+              {filteredCandidates.map((candidate) => (
+                <CandidateReviewCard
+                  key={candidate.id}
+                  candidate={candidate}
+                  categories={categories}
+                  onToggleSelect={toggleCandidateSelect}
+                  onUpdateCandidate={handleUpdateCandidate}
+                />
+              ))}
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAll(true)}
-                    className="text-[11px] text-[hsl(var(--primary))] hover:underline"
-                  >
-                    Select All
-                  </button>
-                  <span>·</span>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAll(false)}
-                    className="text-[11px] text-[hsl(var(--muted-foreground))] hover:underline"
-                  >
-                    Deselect All
-                  </button>
+              {filteredCandidates.length === 0 ? (
+                <div className="p-8 text-center bg-[hsl(var(--surface)/0.4)] rounded-xl border border-[hsl(var(--border))] text-xs text-[hsl(var(--muted-foreground))]">
+                  No candidates match the selected filter.
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                {candidates.map((candidate) => (
-                  <CandidateReviewCard
-                    key={candidate.id}
-                    candidate={candidate}
-                    categories={categories}
-                    onToggleSelect={toggleCandidateSelect}
-                    onUpdateCandidate={handleUpdateCandidate}
-                  />
-                ))}
-              </div>
+              ) : null}
             </div>
           )}
 
@@ -364,9 +436,9 @@ export default function StatementImportPage() {
               disabled={selectedCount === 0}
               isLoading={isImporting}
               onClick={handleExecuteImport}
-              className="gap-1.5 shadow-xs"
+              className="gap-1.5 shadow-xs font-semibold"
             >
-              <Plus className="w-4 h-4" /> Import {selectedCount} Subscription{selectedCount === 1 ? '' : 's'}
+              <Plus className="w-4 h-4" /> Import {selectedCount} Selected Subscription{selectedCount === 1 ? '' : 's'}
             </Button>
           </div>
         </div>
@@ -384,7 +456,7 @@ export default function StatementImportPage() {
               Import Completed Successfully!
             </h2>
             <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
-              Added <strong>{importedCount} new subscription{importedCount === 1 ? '' : 's'}</strong> to
+              Added <strong>{importedCount} subscription{importedCount === 1 ? '' : 's'}</strong> to
               your Sift ledger. Renewal schedules and burn rates have been recalculated.
             </p>
           </div>

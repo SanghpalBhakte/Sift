@@ -7,6 +7,7 @@ import { LayoutDashboard, CreditCard, PieChart, Settings, Plus, Sparkles } from 
 import { cn } from '@/lib/utils/cn';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { formatCurrency } from '@/lib/utils/currency';
+import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
 
 export function DesktopSidebar() {
   const pathname = usePathname();
@@ -76,7 +77,10 @@ export function DesktopSidebar() {
           <div className="flex items-center justify-between text-[11px] text-[hsl(var(--muted-foreground))]">
             <span>Monthly Run-rate</span>
             <span className="font-semibold text-[hsl(var(--foreground))]">
-              {formatCurrency(stats.monthlyTotal, profile?.currency_preference || 'USD')}
+              <AnimatedCurrency
+                value={stats.monthlyTotal}
+                currency={profile?.currency_preference || 'USD'}
+              />
             </span>
           </div>
 

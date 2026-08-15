@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { formatDate } from '@/lib/utils/dates';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
-import { ChevronDown, ChevronUp, Sparkles, Layers } from 'lucide-react';
+import { ChevronDown, ChevronUp, Sparkles, Layers, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface CandidateReviewCardProps {
@@ -47,8 +47,8 @@ export function CandidateReviewCard({
       );
     }
     return (
-      <Badge variant="outline" size="sm">
-        Possible Recurring
+      <Badge variant="outline" size="sm" className="gap-1 text-[hsl(var(--warning))]">
+        <AlertCircle className="w-2.5 h-2.5" /> Verify Recurrence
       </Badge>
     );
   };
@@ -59,7 +59,7 @@ export function CandidateReviewCard({
         'rounded-xl border transition-all shadow-xs',
         candidate.selected
           ? 'border-[hsl(var(--primary))] bg-[hsl(var(--card))] ring-1 ring-[hsl(var(--primary)/0.2)]'
-          : 'border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.4)] opacity-75'
+          : 'border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.35)] opacity-65 hover:opacity-90'
       )}
     >
       <div className="p-4 sm:p-5 space-y-3">
@@ -69,6 +69,7 @@ export function CandidateReviewCard({
           <div className="flex items-start gap-3 min-w-0">
             <input
               type="checkbox"
+              id={`candidate-checkbox-${candidate.id}`}
               checked={candidate.selected}
               onChange={() => onToggleSelect(candidate.id)}
               className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))] mt-1 cursor-pointer shrink-0"
@@ -82,12 +83,12 @@ export function CandidateReviewCard({
                     onChange={(e) =>
                       onUpdateCandidate(candidate.id, { merchantName: e.target.value })
                     }
-                    className="h-8 text-sm"
+                    className="h-8 text-sm font-medium"
                   />
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="p-1 text-xs text-[hsl(var(--primary))] font-semibold"
+                    className="p-1 text-xs text-[hsl(var(--primary))] font-semibold hover:underline cursor-pointer"
                   >
                     Done
                   </button>
@@ -102,6 +103,12 @@ export function CandidateReviewCard({
                     {candidate.merchantName}
                   </h3>
                   {getConfidenceBadge()}
+
+                  {!candidate.selected ? (
+                    <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] italic">
+                      (Excluded from import)
+                    </span>
+                  ) : null}
 
                   {hasDescriptorDrift ? (
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[hsl(var(--surface))] border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
@@ -119,7 +126,7 @@ export function CandidateReviewCard({
                 </span>
                 <span>·</span>
                 <span>
-                  Latest: {formatDate(candidate.lastDate)}
+                  Latest charge: {formatDate(candidate.lastDate)}
                 </span>
               </div>
             </div>
@@ -208,7 +215,7 @@ export function CandidateReviewCard({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1 font-medium transition-colors"
+            className="text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1 font-medium transition-colors cursor-pointer"
           >
             {isExpanded ? (
               <>
