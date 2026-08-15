@@ -10,8 +10,9 @@ import {
   autoDetectColumnMapping,
   normalizeTransactions,
 } from '@/lib/utils/csvParser';
+import { parsePdfStatement } from '@/lib/utils/pdfParser';
 import { detectRecurringCandidates } from '@/lib/utils/recurringDetector';
-import { CsvDropzone } from '@/components/import/CsvDropzone';
+import { StatementDropzone } from '@/components/import/CsvDropzone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { CandidateReviewCard } from '@/components/import/CandidateReviewCard';
 import { Button } from '@/components/ui/Button';
@@ -20,20 +21,21 @@ import { formatCurrency } from '@/lib/utils/currency';
 import {
   ArrowLeft,
   CheckCircle2,
-  FileSpreadsheet,
   Plus,
-  Sparkles,
   Inbox,
+  AlertCircle,
+  FileType,
 } from 'lucide-react';
 
 type ImportStep = 'upload' | 'map' | 'review' | 'success';
 
-export default function CsvImportPage() {
+export default function StatementImportPage() {
   const router = useRouter();
   const { categories, profile, addSubscription } = useSubscriptions();
 
   const [step, setStep] = useState<ImportStep>('upload');
   const [fileName, setFileName] = useState<string>('');
+  const [fileType, setFileType] = useState<'csv' | 'pdf'>('csv');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
   const [columnMapping, setColumnMapping] = useState<CsvColumnMapping>({
@@ -44,18 +46,22 @@ export default function CsvImportPage() {
 
   const [normalizedTransactions, setNormalizedTransactions] = useState<NormalizedTransaction[]>([]);
   const [candidates, setCandidates] = useState<RecurringCandidate[]>([]);
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
 
   const currency = profile?.currency_preference || 'USD';
 
-  // Step 1: File Loaded
-  const handleFileLoaded = (csvContent: string, name: string) => {
+  // Step 1A: CSV File Loaded
+  const handleCsvLoaded = (csvContent: string, name: string) => {
+    setUploadError(null);
     setFileName(name);
+    setFileType('csv');
     const { headers, rows } = parseRawCsv(csvContent);
 
     if (headers.length === 0 || rows.length === 0) {
-      alert('The CSV file could not be parsed. Please check the file structure.');
+      setUploadError('The CSV file could not be parsed. Please check the file structure.');
       return;
     }
 
@@ -64,12 +70,41 @@ export default function CsvImportPage() {
 
     const detectedMapping = autoDetectColumnMapping(headers);
     setColumnMapping(detectedMapping);
-
-    // If auto-detection succeeded with high confidence, normalize and proceed to mapping
     setStep('map');
   };
 
-  // Step 2: Columns Confirmed
+  // Step 1B: PDF Statement Loaded
+  const handlePdfLoaded = async (file: File) => {
+    setUploadError(null);
+    setIsProcessingPdf(true);
+    setFileName(file.name);
+    setFileType('pdf');
+
+    try {
+      const result = await parsePdfStatement(file);
+
+      if (!result.success) {
+        setUploadError(
+          result.error ||
+            'Could not extract transactions from this PDF. Please try exporting a standard CSV from your bank.'
+        );
+        setIsProcessingPdf(false);
+        return;
+      }
+
+      setNormalizedTransactions(result.transactions);
+      const detected = detectRecurringCandidates(result.transactions, categories, currency);
+      setCandidates(detected);
+      setStep('review');
+    } catch (err: any) {
+      console.error('PDF parsing error:', err);
+      setUploadError(`Failed to process PDF statement: ${err.message}`);
+    } finally {
+      setIsProcessingPdf(false);
+    }
+  };
+
+  // Step 2: Columns Confirmed (for CSV)
   const handleConfirmMapping = (confirmedMapping: CsvColumnMapping) => {
     setColumnMapping(confirmedMapping);
     const normalized = normalizeTransactions(csvRows, confirmedMapping);
@@ -122,7 +157,7 @@ export default function CsvImportPage() {
           is_trial: false,
           reminder_offsets: profile?.default_reminder_days || [7, 3, 1],
           value_rating: candidate.valueRating,
-          notes: `Imported from ${fileName} (${candidate.transactionCount} transactions detected)`,
+          notes: `Imported from ${fileType.toUpperCase()}: ${fileName} (${candidate.transactionCount} charges detected)`,
         });
         count++;
       }
@@ -159,10 +194,10 @@ export default function CsvImportPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">
-              Import Statement CSV
+              Import Statement (CSV & PDF)
             </h1>
             <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              Detect recurring subscriptions from bank or card statements
+              Detect recurring subscriptions from bank, card, or digital PDF statements
             </p>
           </div>
         </div>
@@ -173,22 +208,41 @@ export default function CsvImportPage() {
             1. Upload
           </span>
           <span>→</span>
-          <span className={step === 'map' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
-            2. Map
-          </span>
-          <span>→</span>
+          {fileType === 'csv' ? (
+            <>
+              <span className={step === 'map' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
+                2. Map
+              </span>
+              <span>→</span>
+            </>
+          ) : null}
           <span className={step === 'review' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
-            3. Review
+            {fileType === 'csv' ? '3. Review' : '2. Review'}
           </span>
         </div>
       </div>
 
-      {/* STEP 1: Upload */}
-      {step === 'upload' ? (
-        <CsvDropzone onFileLoaded={handleFileLoaded} />
+      {/* Upload Error Banner */}
+      {uploadError ? (
+        <div className="p-4 rounded-xl bg-[hsl(var(--danger-subtle))] border border-[hsl(var(--danger)/0.3)] text-xs text-[hsl(var(--danger))] flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-semibold">Statement Extraction Notice</div>
+            <p className="leading-relaxed text-[11px]">{uploadError}</p>
+          </div>
+        </div>
       ) : null}
 
-      {/* STEP 2: Map Columns */}
+      {/* STEP 1: Upload */}
+      {step === 'upload' ? (
+        <StatementDropzone
+          onCsvLoaded={handleCsvLoaded}
+          onPdfLoaded={handlePdfLoaded}
+          isProcessingPdf={isProcessingPdf}
+        />
+      ) : null}
+
+      {/* STEP 2: Map Columns (CSV Only) */}
       {step === 'map' ? (
         <ColumnMapper
           headers={csvHeaders}
@@ -205,8 +259,13 @@ export default function CsvImportPage() {
           {/* Summary bar */}
           <div className="p-4 rounded-xl bg-[hsl(var(--surface)/0.6)] border border-[hsl(var(--border))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-bold text-[hsl(var(--foreground))]">
-                {candidates.length} Recurring Service{candidates.length === 1 ? '' : 's'} Detected
+              <div className="text-sm font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+                {fileType === 'pdf' ? (
+                  <FileType className="w-4 h-4 text-[hsl(var(--primary))]" />
+                ) : null}
+                <span>
+                  {candidates.length} Recurring Service{candidates.length === 1 ? '' : 's'} Detected
+                </span>
               </div>
               <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
                 Scanned {normalizedTransactions.length} statement transactions from{' '}
@@ -241,10 +300,10 @@ export default function CsvImportPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setStep('map')}
+                onClick={() => setStep('upload')}
                 className="text-xs"
               >
-                Adjust Column Mapping
+                Upload Different Statement
               </Button>
             </div>
           ) : (
@@ -293,9 +352,9 @@ export default function CsvImportPage() {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setStep('map')}
+              onClick={() => (fileType === 'csv' ? setStep('map') : setStep('upload'))}
             >
-              Back to Mapping
+              {fileType === 'csv' ? 'Back to Mapping' : 'Back to Upload'}
             </Button>
 
             <Button

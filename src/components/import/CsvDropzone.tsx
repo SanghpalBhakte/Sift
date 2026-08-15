@@ -2,11 +2,21 @@
 
 import React, { useState, useRef } from 'react';
 import { Button } from '../ui/Button';
-import { Card, CardContent } from '../ui/Card';
-import { Upload, FileText, Download, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Badge } from '../ui/Badge';
+import {
+  Upload,
+  FileText,
+  Download,
+  ShieldCheck,
+  AlertCircle,
+  FileType,
+  FileSpreadsheet,
+} from 'lucide-react';
 
-interface CsvDropzoneProps {
-  onFileLoaded: (csvContent: string, fileName: string) => void;
+interface StatementDropzoneProps {
+  onCsvLoaded: (csvContent: string, fileName: string) => void;
+  onPdfLoaded: (file: File) => void;
+  isProcessingPdf?: boolean;
 }
 
 const SAMPLE_CSV_CONTENT = `Date,Description,Amount,Type
@@ -26,31 +36,42 @@ const SAMPLE_CSV_CONTENT = `Date,Description,Amount,Type
 2026-08-15,GITHUB INC SAN FRANCISCO,20.00,Debit
 2026-08-28,CHATGPT SUBSCRIPTION OPENAI,20.00,Debit`;
 
-export function CsvDropzone({ onFileLoaded }: CsvDropzoneProps) {
+export function StatementDropzone({
+  onCsvLoaded,
+  onPdfLoaded,
+  isProcessingPdf = false,
+}: StatementDropzoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const processFile = (file: File) => {
     setError(null);
-    if (!file.name.toLowerCase().endsWith('.csv') && !file.name.toLowerCase().endsWith('.txt')) {
-      setError('Please upload a valid .csv file exported from your bank or card statement.');
+    const lowerName = file.name.toLowerCase();
+
+    if (lowerName.endsWith('.pdf')) {
+      onPdfLoaded(file);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      if (!content || !content.trim()) {
-        setError('The selected file appears to be empty.');
-        return;
-      }
-      onFileLoaded(content, file.name);
-    };
-    reader.onerror = () => {
-      setError('Failed to read the file. Please try again.');
-    };
-    reader.readAsText(file);
+    if (lowerName.endsWith('.csv') || lowerName.endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        if (!content || !content.trim()) {
+          setError('The selected file appears to be empty.');
+          return;
+        }
+        onCsvLoaded(content, file.name);
+      };
+      reader.onerror = () => {
+        setError('Failed to read the file. Please try again.');
+      };
+      reader.readAsText(file);
+      return;
+    }
+
+    setError('Please upload a valid .csv, .txt, or text-based .pdf statement file.');
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -83,7 +104,7 @@ export function CsvDropzone({ onFileLoaded }: CsvDropzoneProps) {
   };
 
   const handleLoadSampleDirectly = () => {
-    onFileLoaded(SAMPLE_CSV_CONTENT, 'sample-bank-statement.csv');
+    onCsvLoaded(SAMPLE_CSV_CONTENT, 'sample-bank-statement.csv');
   };
 
   return (
@@ -99,7 +120,7 @@ export function CsvDropzone({ onFileLoaded }: CsvDropzoneProps) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !isProcessingPdf && fileInputRef.current?.click()}
         className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all cursor-pointer group ${
           isDragging
             ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.05)]'
@@ -109,7 +130,7 @@ export function CsvDropzone({ onFileLoaded }: CsvDropzoneProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.txt"
+          accept=".csv,.txt,.pdf"
           className="hidden"
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
@@ -120,21 +141,39 @@ export function CsvDropzone({ onFileLoaded }: CsvDropzoneProps) {
 
         <div className="space-y-4 max-w-sm mx-auto">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-[hsl(var(--surface))] flex items-center justify-center text-[hsl(var(--primary))] group-hover:scale-105 transition-transform shadow-xs">
-            <Upload className="w-7 h-7" />
+            {isProcessingPdf ? (
+              <div className="w-6 h-6 border-2 border-[hsl(var(--primary))] border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Upload className="w-7 h-7" />
+            )}
           </div>
 
           <div className="space-y-1.5">
             <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">
-              Upload Bank or Card Statement CSV
+              {isProcessingPdf ? 'Extracting Statement PDF...' : 'Upload Statement CSV or PDF'}
             </h3>
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              Drag and drop your exported <code className="font-mono text-[11px]">.csv</code> file
-              here, or click to browse.
+            <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
+              Drag and drop your bank or card statement here, or click to browse.
             </p>
           </div>
 
-          <Button type="button" variant="outline" size="sm" className="pointer-events-none text-xs">
-            Choose CSV File
+          <div className="flex items-center justify-center gap-2">
+            <Badge variant="outline" size="sm" className="gap-1 text-[11px]">
+              <FileSpreadsheet className="w-3 h-3 text-[hsl(var(--primary))]" /> CSV / TXT
+            </Badge>
+            <Badge variant="outline" size="sm" className="gap-1 text-[11px]">
+              <FileType className="w-3 h-3 text-[hsl(var(--primary))]" /> Digital PDF
+            </Badge>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            isLoading={isProcessingPdf}
+            className="pointer-events-none text-xs"
+          >
+            Choose Statement File
           </Button>
         </div>
       </div>
@@ -147,16 +186,16 @@ export function CsvDropzone({ onFileLoaded }: CsvDropzoneProps) {
             100% Client-Side Privacy
           </div>
           <p className="text-[11px] leading-relaxed">
-            Your statement file is parsed entirely inside your browser. Raw bank transactions are
-            never uploaded to or stored on any server. Only subscriptions you explicitly approve will
-            be added to your ledger.
+            All statement files (both CSV and PDF) are parsed locally inside your browser with zero
+            server uploads. Non-subscription charges are discarded, and only subscriptions you
+            approve are added to your ledger.
           </p>
         </div>
       </div>
 
       {/* Sample Statement Testing */}
       <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[hsl(var(--muted-foreground))]">
-        <span>Want to test without real bank statements?</span>
+        <span>Want to test without uploading real bank statements?</span>
         <div className="flex items-center gap-2">
           <Button
             type="button"
@@ -182,3 +221,6 @@ export function CsvDropzone({ onFileLoaded }: CsvDropzoneProps) {
     </div>
   );
 }
+
+// Backward compatibility export alias
+export const CsvDropzone = StatementDropzone;
