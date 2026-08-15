@@ -684,6 +684,22 @@ export default function SettingsPage() {
                 type="button"
                 variant="ghost"
                 size="sm"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('sift_onboarding_dismissed_v1');
+                    window.location.href = '/';
+                  }
+                }}
+                className="gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Reset Onboarding Guide
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => populateStarterTemplates()}
                 className="gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               >
