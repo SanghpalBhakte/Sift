@@ -16,7 +16,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label ? (
           <label
             htmlFor={inputId}
-            className="block text-xs font-medium text-[hsl(var(--foreground))]"
+            className="block text-xs font-medium text-foreground"
           >
             {label}
           </label>
@@ -27,15 +27,23 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           className={cn(
             'sift-input',
-            error && 'border-[hsl(var(--danger))] focus:border-[hsl(var(--danger))] focus:ring-[hsl(var(--danger)/0.2)]',
+            error && 'border-danger focus:border-danger',
             className
           )}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={
+            error ? `${inputId}-error` : helperText ? `${inputId}-hint` : undefined
+          }
           {...props}
         />
         {error ? (
-          <p className="text-[11px] text-[hsl(var(--danger))]">{error}</p>
+          <p id={`${inputId}-error`} className="text-[11px] text-danger leading-snug">
+            {error}
+          </p>
         ) : helperText ? (
-          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{helperText}</p>
+          <p id={`${inputId}-hint`} className="text-[11px] text-muted-foreground leading-snug">
+            {helperText}
+          </p>
         ) : null}
       </div>
     );

@@ -13,26 +13,26 @@ export function Badge({
   children,
   ...props
 }: BadgeProps) {
-  const variantStyles = {
-    default: 'bg-[hsl(var(--surface))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))]',
-    primary: 'bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] border border-[hsl(var(--primary)/0.25)]',
-    accent: 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] border border-[hsl(var(--primary)/0.2)]',
-    success: 'bg-[hsl(var(--success-subtle))] text-[hsl(var(--success))] border border-[hsl(var(--success)/0.25)]',
-    warning: 'bg-[hsl(var(--warning-subtle))] text-[hsl(var(--warning))] border border-[hsl(var(--warning)/0.25)]',
-    danger: 'bg-[hsl(var(--danger-subtle))] text-[hsl(var(--danger))] border border-[hsl(var(--danger)/0.25)]',
-    outline: 'bg-transparent text-[hsl(var(--foreground))] border border-[hsl(var(--border))]',
-    muted: 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]',
+  const variantStyles: Record<NonNullable<BadgeProps['variant']>, string> = {
+    default:  'bg-surface text-muted-foreground border border-border',
+    primary:  'bg-primary/10 text-primary border border-primary/20',
+    accent:   'bg-accent text-accent-foreground border border-primary/15',
+    success:  'bg-success-subtle text-success border border-success/20',
+    warning:  'bg-warning-subtle text-warning border border-warning/20',
+    danger:   'bg-danger-subtle text-danger border border-danger/20',
+    outline:  'bg-transparent text-foreground border border-border',
+    muted:    'bg-muted text-muted-foreground border border-transparent',
   };
 
-  const sizeStyles = {
-    sm: 'text-[11px] px-2 py-0.5 font-medium',
-    md: 'text-xs px-2.5 py-1 font-medium',
+  const sizeStyles: Record<NonNullable<BadgeProps['size']>, string> = {
+    sm: 'text-[10px] px-1.5 py-0.5',
+    md: 'text-[11px] px-2 py-0.5',
   };
 
   return (
     <span
       className={cn(
-        'sift-badge inline-flex items-center gap-1 rounded-full leading-none transition-colors',
+        'sift-badge rounded-badge',
         variantStyles[variant],
         sizeStyles[size],
         className

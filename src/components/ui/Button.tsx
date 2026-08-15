@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils/cn';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
-  size?: 'sm' | 'md' | 'lg' | 'icon';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
 }
 
@@ -20,19 +20,20 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const variantStyles = {
-      primary: 'sift-btn-primary',
+    const variantStyles: Record<NonNullable<ButtonProps['variant']>, string> = {
+      primary:   'sift-btn-primary',
       secondary: 'sift-btn-secondary',
-      ghost: 'sift-btn-ghost',
-      danger: 'sift-btn-danger',
-      outline: 'bg-transparent border border-[hsl(var(--border))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))]',
+      ghost:     'sift-btn-ghost',
+      outline:   'sift-btn-outline',
+      danger:    'sift-btn-danger',
     };
 
-    const sizeStyles = {
-      sm: 'px-3 py-1.5 text-xs min-h-[2rem] rounded-md',
-      md: 'px-4 py-2 text-sm min-h-[2.5rem] rounded-lg',
-      lg: 'px-5 py-2.5 text-base min-h-[3rem] rounded-lg',
-      icon: 'p-2 min-h-[2.25rem] min-w-[2.25rem] rounded-lg',
+    const sizeStyles: Record<NonNullable<ButtonProps['size']>, string> = {
+      xs:   'px-2.5 py-1 text-[11px] min-h-[1.75rem] rounded-sm gap-1',
+      sm:   'px-3 py-1.5 text-xs min-h-[2rem] rounded-md gap-1.5',
+      md:   'px-4 py-2 text-sm min-h-[2.5rem] rounded-btn gap-2',
+      lg:   'px-5 py-2.5 text-sm min-h-[2.875rem] rounded-btn gap-2',
+      icon: 'p-2 min-h-[2.25rem] min-w-[2.25rem] rounded-btn',
     };
 
     return (
@@ -40,7 +41,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={cn(
-          'sift-btn font-medium transition-all inline-flex items-center justify-center gap-2',
+          'sift-btn font-medium transition-all inline-flex items-center justify-center',
           variantStyles[variant],
           sizeStyles[size],
           className
@@ -48,7 +49,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isLoading ? (
-          <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          <span className="inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin shrink-0" />
         ) : null}
         {children}
       </button>

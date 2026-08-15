@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Plus, LogOut, Bell, User } from 'lucide-react';
+import { Plus, LogOut, Bell } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { Button } from '../ui/Button';
 import { useAuth } from '@/context/AuthContext';
@@ -15,28 +15,30 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-[hsl(var(--background)/0.85)] backdrop-blur-md border-b border-[hsl(var(--border))] transition-colors">
+      <header className="sticky top-0 z-30 w-full bg-background/85 backdrop-blur-md border-b border-border transition-colors">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-7 h-7 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center text-[hsl(var(--primary-foreground))] font-bold text-sm tracking-tight shadow-xs">
+            <Link href="/" className="flex items-center gap-2.5 group" aria-label="Sift home">
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm tracking-tight shadow-xs shrink-0">
                 S
               </div>
-              <div className="flex flex-col">
-                <span className="font-semibold tracking-tight text-sm text-[hsl(var(--foreground))]">
+              <div className="flex flex-col leading-none">
+                <span className="font-semibold tracking-tight text-sm text-foreground">
                   Sift
                 </span>
               </div>
             </Link>
-            <span className="hidden sm:inline-block text-[11px] text-[hsl(var(--muted-foreground))] border-l border-[hsl(var(--border))] pl-3">
+            <span className="hidden sm:inline-block text-[11px] text-muted-foreground border-l border-border pl-3">
               Recurring spend workspace
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
-            {/* Bell Reminders Trigger */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+
+            {/* Reminders bell */}
             <button
               type="button"
               onClick={toggleAlertPanel}
@@ -45,14 +47,17 @@ export function Header() {
                   ? `${totalAlertsCount} upcoming alerts`
                   : 'Upcoming reminders & alerts'
               }
-              className="relative p-2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] rounded-lg transition-colors"
+              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4" aria-hidden="true" />
               {totalAlertsCount > 0 ? (
                 <span
-                  className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white ${
-                    urgentAlertsCount > 0 ? 'bg-[hsl(var(--danger))]' : 'bg-[hsl(var(--primary))]'
+                  className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                    urgentAlertsCount > 0
+                      ? 'bg-danger text-danger-foreground'
+                      : 'bg-primary text-primary-foreground'
                   }`}
+                  aria-label={`${totalAlertsCount} alerts`}
                 >
                   {totalAlertsCount}
                 </span>
@@ -65,10 +70,10 @@ export function Header() {
 
             <Link href="/subscriptions/new">
               <Button variant="primary" size="sm" className="gap-1.5 shadow-xs">
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                 <span className="hidden xs:inline">Add Subscription</span>
                 <span className="xs:hidden">Add</span>
-                <kbd className="hidden sm:inline-flex text-[10px] bg-white/20 border border-white/25 rounded px-1 font-mono font-normal">
+                <kbd className="hidden sm:inline-flex text-[10px] bg-primary-foreground/20 border border-primary-foreground/20 rounded px-1 font-mono font-normal">
                   N
                 </kbd>
               </Button>
@@ -79,9 +84,9 @@ export function Header() {
                 type="button"
                 onClick={() => signOut()}
                 title={`Sign out (${user.email})`}
-                className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] rounded-lg transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4" aria-hidden="true" />
               </button>
             ) : isConfigured ? (
               <Link href="/login">

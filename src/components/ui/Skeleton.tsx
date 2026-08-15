@@ -9,7 +9,7 @@ export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-md bg-[hsl(var(--surface-muted))] opacity-80',
+        'animate-pulse rounded-md bg-surface-muted',
         className
       )}
       {...props}
@@ -19,10 +19,10 @@ export function Skeleton({ className, ...props }: SkeletonProps) {
 
 export function MetricCardSkeleton() {
   return (
-    <div className="sift-card p-4 space-y-2.5">
-      <Skeleton className="h-3 w-24" />
-      <Skeleton className="h-7 w-28" />
-      <Skeleton className="h-2.5 w-32" />
+    <div className="sift-card p-4 sm:p-5 space-y-3">
+      <Skeleton className="h-2.5 w-20" />
+      <Skeleton className="h-8 w-24" />
+      <Skeleton className="h-2 w-32" />
     </div>
   );
 }
@@ -34,14 +34,14 @@ export function SubscriptionCardSkeleton() {
         <div className="space-y-2 flex-1">
           <div className="flex items-center gap-2">
             <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-14 rounded-full" />
+            <Skeleton className="h-4 w-12 rounded-badge" />
           </div>
-          <Skeleton className="h-3 w-48" />
+          <Skeleton className="h-3 w-44" />
           <Skeleton className="h-2.5 w-36" />
         </div>
-        <div className="space-y-1.5 flex flex-col items-end">
+        <div className="space-y-2 flex flex-col items-end">
           <Skeleton className="h-5 w-20" />
-          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-14" />
         </div>
       </div>
     </div>

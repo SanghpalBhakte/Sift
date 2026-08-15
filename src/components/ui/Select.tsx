@@ -22,7 +22,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         {label ? (
           <label
             htmlFor={selectId}
-            className="block text-xs font-medium text-[hsl(var(--foreground))]"
+            className="block text-xs font-medium text-foreground"
           >
             {label}
           </label>
@@ -32,10 +32,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             ref={ref}
             className={cn(
-              'sift-input appearance-none pr-8 cursor-pointer bg-[hsl(var(--card))]',
-              error && 'border-[hsl(var(--danger))]',
+              'sift-input appearance-none pr-8 cursor-pointer bg-card',
+              error && 'border-danger',
               className
             )}
+            aria-invalid={error ? 'true' : undefined}
             {...props}
           >
             {options
@@ -46,19 +47,17 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 ))
               : children}
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-[hsl(var(--muted-foreground))]">
-            <svg
-              className="w-4 h-4 fill-current"
-              viewBox="0 0 20 20"
-            >
+          {/* Chevron icon */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-muted-foreground">
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" aria-hidden="true">
               <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
             </svg>
           </div>
         </div>
         {error ? (
-          <p className="text-[11px] text-[hsl(var(--danger))]">{error}</p>
+          <p className="text-[11px] text-danger leading-snug">{error}</p>
         ) : helperText ? (
-          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{helperText}</p>
+          <p className="text-[11px] text-muted-foreground leading-snug">{helperText}</p>
         ) : null}
       </div>
     );

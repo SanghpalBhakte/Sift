@@ -36,8 +36,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F8F7F3' },
-    { media: '(prefers-color-scheme: dark)', color: '#111413' },
+    { media: '(prefers-color-scheme: light)', color: '#F9F8F5' },
+    { media: '(prefers-color-scheme: dark)', color: '#111318' },
   ],
 };
 
@@ -48,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${plusJakartaSans.className} antialiased min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]`}>
+      <body className={`${plusJakartaSans.className} antialiased min-h-screen bg-background text-foreground`}>
         <ThemeProvider>
           <AuthProvider>
             <SubscriptionProvider>

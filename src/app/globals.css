@@ -1,233 +1,436 @@
 @import "tailwindcss";
 
+/* ================================================================
+   SIFT DESIGN TOKEN SYSTEM
+   
+   Architecture (Tailwind v4):
+   ─────────────────────────────────────────────────────────────────
+   @theme {} defines the utility API exactly once. Values reference
+   CSS custom properties that are overridden per-theme in :root and
+   .dark / [data-theme]. Never duplicate @theme per theme state.
+   
+   Token namespaces → Tailwind utilities generated:
+     --color-*    → bg-*, text-*, border-*, ring-*, shadow-* etc.
+     --radius-*   → rounded-*
+     --shadow-*   → shadow-*
+     --ease-*     → ease-*
+     --tracking-* → tracking-*
+     --font-*     → font-*
+   
+   Usage examples:
+     bg-card           background: hsl(var(--card))
+     text-foreground   color: hsl(var(--foreground))
+     text-muted-foreground
+     border-border
+     rounded-card      border-radius: 0.75rem (--radius-card)
+     shadow-card       box-shadow: var(--_shadow-card) — theme-aware
+     ease-snappy       cubic-bezier(0.2, 0, 0, 1)
+     tracking-widest
+   ================================================================ */
+
+/* ── Token API: declared once. Values reference runtime CSS vars. ── */
+@theme {
+  /* ── Colors: --color-* namespace ───────────────────────────────── */
+
+  /* Backgrounds & surfaces */
+  --color-background:           hsl(var(--background));
+  --color-foreground:           hsl(var(--foreground));
+
+  --color-card:                 hsl(var(--card));
+  --color-card-foreground:      hsl(var(--card-foreground));
+
+  --color-popover:              hsl(var(--popover));
+  --color-popover-foreground:   hsl(var(--popover-foreground));
+
+  --color-surface:              hsl(var(--surface));
+  --color-surface-muted:        hsl(var(--surface-muted));
+  --color-surface-raised:       hsl(var(--surface-raised));
+
+  /* Text tones */
+  --color-muted:                hsl(var(--muted));
+  --color-muted-foreground:     hsl(var(--muted-foreground));
+
+  /* Borders & inputs */
+  --color-border:               hsl(var(--border));
+  --color-border-strong:        hsl(var(--border-strong));
+  --color-input:                hsl(var(--input));
+  --color-ring:                 hsl(var(--ring));
+
+  /* Primary accent — muted teal-sage */
+  --color-primary:              hsl(var(--primary));
+  --color-primary-hover:        hsl(var(--primary-hover));
+  --color-primary-foreground:   hsl(var(--primary-foreground));
+
+  /* Secondary */
+  --color-secondary:            hsl(var(--secondary));
+  --color-secondary-hover:      hsl(var(--secondary-hover));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  /* Accent tint */
+  --color-accent:               hsl(var(--accent));
+  --color-accent-foreground:    hsl(var(--accent-foreground));
+
+  /* Semantic status colors */
+  --color-success:              hsl(var(--success));
+  --color-success-subtle:       hsl(var(--success-subtle));
+  --color-success-foreground:   hsl(var(--success-foreground));
+
+  --color-warning:              hsl(var(--warning));
+  --color-warning-subtle:       hsl(var(--warning-subtle));
+  --color-warning-foreground:   hsl(var(--warning-foreground));
+
+  --color-danger:               hsl(var(--danger));
+  --color-danger-subtle:        hsl(var(--danger-subtle));
+  --color-danger-foreground:    hsl(var(--danger-foreground));
+
+  /* ── Border Radius: --radius-* namespace ───────────────────────── */
+  --radius-none:   0px;
+  --radius-xs:     0.2rem;
+  --radius-sm:     0.375rem;
+  --radius-md:     0.5rem;
+  --radius-lg:     0.75rem;
+  --radius-xl:     1rem;
+  --radius-2xl:    1.25rem;
+  --radius-3xl:    1.5rem;
+  --radius-full:   9999px;
+  /* Component-semantic aliases */
+  --radius-card:   0.75rem;
+  --radius-btn:    0.5rem;
+  --radius-badge:  0.375rem;
+  --radius-input:  0.5rem;
+  --radius-modal:  1rem;
+
+  /* ── Shadows: --shadow-* namespace ─────────────────────────────── */
+  /* Static scale (light-mode appropriate): */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.09), 0 8px 10px -6px rgb(0 0 0 / 0.06);
+  /* Theme-aware aliases (reference CSS vars overridden per theme): */
+  --shadow-card:    var(--_shadow-card);
+  --shadow-popover: var(--_shadow-popover);
+
+  /* ── Easing: --ease-* namespace ────────────────────────────────── */
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+  --ease-linear: linear;
+
+  /* ── Letter Spacing: --tracking-* namespace ────────────────────── */
+  --tracking-tighter: -0.04em;
+  --tracking-tight:   -0.02em;
+  --tracking-snug:    -0.01em;
+  --tracking-normal:   0em;
+  --tracking-wide:     0.02em;
+  --tracking-wider:    0.05em;
+  --tracking-widest:   0.1em;
+
+  /* ── Font Families: --font-* namespace ─────────────────────────── */
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+
+/* ================================================================
+   THEME VALUES — Override CSS vars per active theme.
+   @theme references these; never define @theme inside a selector.
+   ================================================================ */
+
 @layer base {
+  /* ─── Light Mode: "Paper Ledger" ───────────────────────────────── */
   :root,
   [data-theme="paper-ledger"] {
-    --background: 38 20% 97%;
-    --foreground: 160 10% 12%;
-    
-    --card: 0 0% 100%;
-    --card-foreground: 160 10% 12%;
-    
-    --popover: 0 0% 100%;
-    --popover-foreground: 160 10% 12%;
-    
-    --surface: 38 16% 94%;
-    --surface-muted: 38 14% 90.5%;
-    
-    --muted: 38 12% 91%;
-    --muted-foreground: 150 4% 42%;
-    
-    --border: 38 12% 87%;
-    --input: 38 12% 87%;
-    
-    --ring: 152 40% 24%;
-    --primary: 152 40% 24%;
-    --primary-hover: 152 45% 18%;
-    --primary-foreground: 0 0% 100%;
-    
-    --secondary: 38 14% 93%;
-    --secondary-hover: 38 14% 88%;
-    --secondary-foreground: 160 10% 15%;
-    
-    --accent: 152 30% 93%;
-    --accent-foreground: 152 45% 18%;
-    
-    --success: 150 46% 32%;
-    --success-subtle: 150 35% 93%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 35 75% 36%;
-    --warning-subtle: 35 60% 93%;
-    --warning-foreground: 0 0% 100%;
-    
-    --danger: 8 65% 44%;
-    --danger-subtle: 8 55% 94%;
-    --danger-foreground: 0 0% 100%;
-    
-    --radius: 0.75rem;
+    /* Backgrounds */
+    --background:            38 18% 97.5%;
+    --card:                  0 0% 100%;
+    --card-foreground:       220 15% 11%;
+    --popover:               0 0% 100%;
+    --popover-foreground:    220 15% 11%;
+    --surface:               38 14% 93%;
+    --surface-muted:         38 10% 89%;
+    --surface-raised:        0 0% 100%;
 
-    --shadow-gentle: 0 1px 2px 0 rgba(26, 32, 30, 0.03), 0 2px 6px -1px rgba(26, 32, 30, 0.02);
-    --shadow-card: 0 1px 3px 0 rgba(26, 32, 30, 0.04), 0 4px 12px -2px rgba(26, 32, 30, 0.03);
+    /* Text */
+    --foreground:            220 15% 11%;
+    --muted:                 38 10% 91%;
+    --muted-foreground:      220 8% 46%;
+
+    /* Borders */
+    --border:                38 12% 86.5%;
+    --border-strong:         220 8% 72%;
+    --input:                 38 12% 88%;
+    --ring:                  168 35% 26%;
+
+    /* Primary — muted teal-sage */
+    --primary:               168 35% 26%;
+    --primary-hover:         168 40% 20%;
+    --primary-foreground:    0 0% 100%;
+
+    /* Secondary */
+    --secondary:             38 12% 92%;
+    --secondary-hover:       38 12% 87%;
+    --secondary-foreground:  220 12% 16%;
+
+    /* Accent tint */
+    --accent:                168 28% 92%;
+    --accent-foreground:     168 40% 19%;
+
+    /* Semantic */
+    --success:               152 42% 30%;
+    --success-subtle:        152 38% 93%;
+    --success-foreground:    0 0% 100%;
+
+    --warning:               33 78% 36%;
+    --warning-subtle:        33 65% 93%;
+    --warning-foreground:    0 0% 100%;
+
+    --danger:                4 68% 44%;
+    --danger-subtle:         4 60% 95%;
+    --danger-foreground:     0 0% 100%;
+
+    /* Theme-aware shadow values */
+    --_shadow-card:    0 1px 2px 0 rgb(26 32 30 / 0.04), 0 2px 8px -2px rgb(26 32 30 / 0.03);
+    --_shadow-popover: 0 8px 24px -4px rgb(26 32 30 / 0.10), 0 2px 8px -2px rgb(26 32 30 / 0.07);
   }
 
+  /* ─── Dark Mode: "Night Shelf" — warm-slate, not green-tinted ─── */
   .dark,
   [data-theme="night-shelf"] {
-    --background: 155 12% 7%;
-    --foreground: 40 10% 92%;
-    
-    --card: 155 10% 10%;
-    --card-foreground: 40 10% 92%;
-    
-    --popover: 155 10% 10%;
-    --popover-foreground: 40 10% 92%;
-    
-    --surface: 155 8% 13%;
-    --surface-muted: 155 8% 16%;
-    
-    --muted: 155 6% 17%;
-    --muted-foreground: 150 4% 58%;
-    
-    --border: 155 8% 17%;
-    --input: 155 8% 19%;
-    
-    --ring: 153 41% 45%;
-    --primary: 153 41% 45%;
-    --primary-hover: 153 45% 52%;
-    --primary-foreground: 155 12% 7%;
-    
-    --secondary: 155 6% 15%;
-    --secondary-hover: 155 6% 19%;
-    --secondary-foreground: 40 10% 92%;
-    
-    --accent: 153 25% 15%;
-    --accent-foreground: 153 40% 75%;
-    
-    --success: 150 42% 48%;
-    --success-subtle: 150 30% 15%;
-    --success-foreground: 155 12% 7%;
-    
-    --warning: 35 65% 55%;
-    --warning-subtle: 35 40% 16%;
-    --warning-foreground: 155 12% 7%;
-    
-    --danger: 8 65% 58%;
-    --danger-subtle: 8 35% 16%;
-    --danger-foreground: 155 12% 7%;
+    /* Backgrounds — warm-slate base */
+    --background:            222 14% 8%;
+    --card:                  222 12% 11%;
+    --card-foreground:       210 10% 93%;
+    --popover:               222 11% 13%;
+    --popover-foreground:    210 10% 93%;
+    --surface:               222 10% 14%;
+    --surface-muted:         222 8% 17%;
+    --surface-raised:        222 10% 16%;
 
-    --shadow-gentle: 0 1px 2px 0 rgba(0, 0, 0, 0.22);
-    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.32), 0 4px 12px -2px rgba(0, 0, 0, 0.22);
+    /* Text */
+    --foreground:            210 10% 93%;
+    --muted:                 222 8% 18%;
+    --muted-foreground:      220 8% 56%;
+
+    /* Borders */
+    --border:                222 8% 18%;
+    --border-strong:         222 8% 26%;
+    --input:                 222 9% 19%;
+    --ring:                  165 38% 52%;
+
+    /* Primary — bright sage for dark */
+    --primary:               165 38% 52%;
+    --primary-hover:         165 42% 58%;
+    --primary-foreground:    222 14% 8%;
+
+    /* Secondary */
+    --secondary:             222 8% 15%;
+    --secondary-hover:       222 8% 19%;
+    --secondary-foreground:  210 10% 93%;
+
+    /* Accent tint */
+    --accent:                165 22% 16%;
+    --accent-foreground:     165 38% 72%;
+
+    /* Semantic */
+    --success:               152 38% 50%;
+    --success-subtle:        152 28% 14%;
+    --success-foreground:    222 14% 8%;
+
+    --warning:               33 62% 55%;
+    --warning-subtle:        33 38% 15%;
+    --warning-foreground:    222 14% 8%;
+
+    --danger:                4 65% 58%;
+    --danger-subtle:         4 32% 16%;
+    --danger-foreground:     222 14% 8%;
+
+    /* Theme-aware shadow values (stronger for dark) */
+    --_shadow-card:    0 1px 3px 0 rgb(0 0 0 / 0.28), 0 2px 8px -2px rgb(0 0 0 / 0.22);
+    --_shadow-popover: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.35);
+  }
+
+  /* Base body styles */
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Selection highlight */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.15);
+    color: hsl(var(--foreground));
+  }
+
+  /* Smooth scrolling */
+  * {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus ring — applied via JS on keyboard nav; prefer focus-visible */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
+/* ================================================================
+   CSS COMPONENT CLASSES — Reusable base styles.
+   These reference CSS vars directly for theme-aware values.
+   Components extend these with additional Tailwind utilities.
+   ================================================================ */
 
-/* Custom Component Utility Classes */
-.sift-card {
-  background-color: hsl(var(--card));
-  color: hsl(var(--card-foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-gentle);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
+@layer components {
+  /* ── Cards ────────────────────────────────────────────────────── */
+  .sift-card {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;
+    box-shadow: var(--_shadow-card);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
 
-.sift-card-interactive {
-  cursor: pointer;
-}
-.sift-card-interactive:hover {
-  border-color: hsl(var(--muted-foreground) / 0.35);
-  box-shadow: var(--shadow-card);
-}
+  .sift-card-interactive {
+    cursor: pointer;
+  }
+  .sift-card-interactive:hover {
+    border-color: hsl(var(--border-strong) / 0.5);
+    box-shadow: var(--_shadow-popover);
+  }
 
-.sift-input {
-  background-color: hsl(var(--card));
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.5rem;
-  padding: 0.55rem 0.85rem;
-  font-size: 0.9375rem;
-  line-height: 1.4;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  width: 100%;
-}
-.sift-input:focus {
-  border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.18);
-}
-.sift-input::placeholder {
-  color: hsl(var(--muted-foreground));
-}
+  /* ── Inputs ───────────────────────────────────────────────────── */
+  .sift-input {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    width: 100%;
+  }
+  .sift-input:focus {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.14);
+  }
+  .sift-input::placeholder {
+    color: hsl(var(--muted-foreground) / 0.7);
+  }
+  .sift-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: hsl(var(--surface-muted));
+  }
 
-.sift-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  border-radius: 0.5rem;
-  padding: 0.55rem 1rem;
-  min-height: 2.5rem;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
-  user-select: none;
-  text-decoration: none;
-  border: 1px solid transparent;
-}
-.sift-btn:active {
-  transform: scale(0.985);
-}
-.sift-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
+  /* ── Buttons ──────────────────────────────────────────────────── */
+  .sift-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    padding: 0.55rem 1rem;
+    min-height: 2.5rem;
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease,
+                color 0.12s ease, transform 0.08s ease;
+    user-select: none;
+    text-decoration: none;
+    border: 1px solid transparent;
+    position: relative;
+  }
+  .sift-btn:active:not(:disabled) {
+    transform: scale(0.982);
+  }
+  .sift-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .sift-btn:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 
-.sift-btn-primary {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border-color: hsl(var(--primary));
-}
-.sift-btn-primary:hover:not(:disabled) {
-  background-color: hsl(var(--primary-hover));
-  border-color: hsl(var(--primary-hover));
-}
+  .sift-btn-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+  }
+  .sift-btn-primary:hover:not(:disabled) {
+    background-color: hsl(var(--primary-hover));
+    border-color: hsl(var(--primary-hover));
+  }
 
-.sift-btn-secondary {
-  background-color: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
-  border-color: hsl(var(--border));
-}
-.sift-btn-secondary:hover:not(:disabled) {
-  background-color: hsl(var(--secondary-hover));
-}
+  .sift-btn-secondary {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border-color: hsl(var(--border));
+  }
+  .sift-btn-secondary:hover:not(:disabled) {
+    background-color: hsl(var(--secondary-hover));
+  }
 
-.sift-btn-ghost {
-  background-color: transparent;
-  color: hsl(var(--muted-foreground));
-  border-color: transparent;
-}
-.sift-btn-ghost:hover:not(:disabled) {
-  background-color: hsl(var(--surface));
-  color: hsl(var(--foreground));
-}
+  .sift-btn-ghost {
+    background-color: transparent;
+    color: hsl(var(--muted-foreground));
+    border-color: transparent;
+  }
+  .sift-btn-ghost:hover:not(:disabled) {
+    background-color: hsl(var(--surface));
+    color: hsl(var(--foreground));
+  }
 
-.sift-btn-danger {
-  background-color: hsl(var(--danger-subtle));
-  color: hsl(var(--danger));
-  border-color: hsl(var(--danger) / 0.2);
-}
-.sift-btn-danger:hover:not(:disabled) {
-  background-color: hsl(var(--danger));
-  color: hsl(var(--danger-foreground));
-}
+  .sift-btn-outline {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+  .sift-btn-outline:hover:not(:disabled) {
+    background-color: hsl(var(--surface));
+    border-color: hsl(var(--border-strong) / 0.5);
+  }
 
-.sift-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 0.2rem 0.55rem;
-  border-radius: 9999px;
-  line-height: 1;
-  white-space: nowrap;
-}
+  .sift-btn-danger {
+    background-color: hsl(var(--danger-subtle));
+    color: hsl(var(--danger));
+    border-color: hsl(var(--danger) / 0.18);
+  }
+  .sift-btn-danger:hover:not(:disabled) {
+    background-color: hsl(var(--danger));
+    color: hsl(var(--danger-foreground));
+    border-color: hsl(var(--danger));
+  }
 
-/* Mobile Touch Targets & Safe Padding */
-@supports (padding: env(safe-area-inset-bottom)) {
-  .safe-bottom-padding {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  /* ── Badges ───────────────────────────────────────────────────── */
+  .sift-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.375rem;
+    line-height: 1;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Mobile Safe Padding ──────────────────────────────────────── */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .safe-bottom-padding {
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
   }
 }

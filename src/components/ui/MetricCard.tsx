@@ -34,35 +34,36 @@ export function MetricCard({
         className
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+      {/* Label row */}
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           {label}
         </span>
         {icon ? (
-          <div className="text-[hsl(var(--muted-foreground))] opacity-75">
-            {icon}
-          </div>
+          <div className="text-muted-foreground opacity-60 shrink-0">{icon}</div>
         ) : null}
       </div>
 
-      <div className="space-y-1">
-        <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-[hsl(var(--foreground))]">
+      {/* Value */}
+      <div className="space-y-0.5">
+        <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums leading-none">
           {value}
         </div>
         {subtitle ? (
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">{subtitle}</p>
+          <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{subtitle}</p>
         ) : null}
       </div>
 
+      {/* Trend */}
       {trend ? (
-        <div className="mt-3 pt-2.5 border-t border-[hsl(var(--border))] flex items-center gap-1.5 text-xs">
+        <div className="mt-3 pt-2.5 border-t border-border flex items-center gap-1.5 text-[11px]">
           <span
             className={cn(
               'font-medium',
-              trend.type === 'accent' && 'text-[hsl(var(--primary))]',
-              trend.type === 'positive' && 'text-[hsl(var(--success))]',
-              trend.type === 'warning' && 'text-[hsl(var(--warning))]',
-              (!trend.type || trend.type === 'neutral') && 'text-[hsl(var(--muted-foreground))]'
+              trend.type === 'accent'   && 'text-primary',
+              trend.type === 'positive' && 'text-success',
+              trend.type === 'warning'  && 'text-warning',
+              (!trend.type || trend.type === 'neutral') && 'text-muted-foreground'
             )}
           >
             {trend.text}

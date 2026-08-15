@@ -9,6 +9,7 @@ import { Badge } from '../ui/Badge';
 import { formatCurrency, formatCycle, convertCurrency } from '@/lib/utils/currency';
 import { getCountdownBadge, formatDate } from '@/lib/utils/dates';
 import { ExternalLink, Pause, Play, Calendar, Edit3 } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
@@ -42,22 +43,25 @@ export function SubscriptionCard({
     : null;
 
   return (
-    <div className="sift-card p-3.5 sm:p-4 transition-all hover:border-[hsl(var(--muted-foreground)/0.3)]">
+    <div
+      className={cn(
+        'sift-card p-3.5 sm:p-4 transition-all',
+        subscription.status === 'paused' && 'opacity-60'
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
-        {/* Left Info */}
+        {/* Left: Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href={`/subscriptions/${subscription.id}/edit`}
-              className="text-sm sm:text-base font-semibold text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors truncate"
+              className="text-sm sm:text-base font-semibold text-foreground hover:text-primary transition-colors truncate"
             >
               {subscription.name}
             </Link>
 
             {subscription.status === 'paused' ? (
-              <Badge variant="muted" size="sm">
-                Paused
-              </Badge>
+              <Badge variant="muted" size="sm">Paused</Badge>
             ) : null}
 
             {subscription.is_trial ? (
@@ -70,21 +74,21 @@ export function SubscriptionCard({
           </div>
 
           {subscription.description ? (
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 line-clamp-1">
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
               {subscription.description}
             </p>
           ) : null}
 
           {/* Metadata chips */}
-          <div className="flex items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-[hsl(var(--muted-foreground))] flex-wrap">
+          <div className="flex items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3 opacity-70" />
+              <Calendar className="w-3 h-3 opacity-60" aria-hidden="true" />
               Renews {formatDate(subscription.next_renewal_date)}
             </span>
 
             {subscription.category ? (
-              <span className="inline-flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--primary)/0.6)]" />
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
                 {subscription.category.name}
               </span>
             ) : null}
@@ -92,43 +96,37 @@ export function SubscriptionCard({
             {subscription.payment_method ? (
               <span>
                 via {subscription.payment_method.name}
-                {subscription.payment_method.last4 ? ` (•••• ${subscription.payment_method.last4})` : ''}
+                {subscription.payment_method.last4 ? ` (···· ${subscription.payment_method.last4})` : ''}
               </span>
             ) : null}
           </div>
         </div>
 
-        {/* Right Financials & Status */}
+        {/* Right: Financials & Status */}
         <div className="flex flex-col items-end gap-1 shrink-0 text-right">
           <div>
-            <div className="text-base sm:text-lg font-semibold tracking-tight text-[hsl(var(--foreground))]">
+            <div className="text-base sm:text-lg font-semibold tracking-tight text-foreground tabular-nums">
               {formatCurrency(subscription.amount, subscription.currency)}
-              <span className="text-xs font-normal text-[hsl(var(--muted-foreground))] ml-0.5">
+              <span className="text-xs font-normal text-muted-foreground ml-0.5">
                 {formatCycle(subscription.billing_cycle, subscription.custom_interval_days)}
               </span>
             </div>
 
-            {/* If different from display currency, show converted estimate */}
             {isDifferentCurrency && convertedMonthly !== null ? (
-              <div className="text-[11px] text-[hsl(var(--primary))] font-medium">
+              <div className="text-[11px] text-primary font-medium tabular-nums">
                 ≈ {formatCurrency(convertedMonthly, displayCurrency)}/mo
               </div>
             ) : subscription.billing_cycle !== 'monthly' ? (
-              <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+              <div className="text-[11px] text-muted-foreground tabular-nums">
                 ~{formatCurrency(subscription.monthly_amount, subscription.currency)}/mo
               </div>
             ) : null}
           </div>
 
-          {/* Renewal timing tag */}
           {subscription.status === 'active' ? (
             <Badge
               variant={
-                countdown.urgent
-                  ? 'danger'
-                  : countdown.warning
-                  ? 'warning'
-                  : 'outline'
+                countdown.urgent ? 'danger' : countdown.warning ? 'warning' : 'outline'
               }
               size="sm"
             >
@@ -138,45 +136,42 @@ export function SubscriptionCard({
         </div>
       </div>
 
-      {/* Card Footer Actions */}
-      <div className="mt-3 pt-2.5 border-t border-[hsl(var(--border))] flex items-center justify-between gap-2 text-xs">
+      {/* Card Footer */}
+      <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {subscription.cancel_url ? (
             <a
               href={subscription.cancel_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
             >
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="w-3 h-3" aria-hidden="true" />
               Cancel page
             </a>
           ) : null}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {onToggleStatus ? (
             <button
+              type="button"
               onClick={() => onToggleStatus(subscription.id, subscription.status)}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
             >
               {subscription.status === 'active' ? (
-                <>
-                  <Pause className="w-3 h-3" /> Pause
-                </>
+                <><Pause className="w-3 h-3" aria-hidden="true" /> Pause</>
               ) : (
-                <>
-                  <Play className="w-3 h-3 text-[hsl(var(--primary))]" /> Resume
-                </>
+                <><Play className="w-3 h-3 text-primary" aria-hidden="true" /> Resume</>
               )}
             </button>
           ) : null}
 
           <Link
             href={`/subscriptions/${subscription.id}/edit`}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
           >
-            <Edit3 className="w-3 h-3" /> Edit
+            <Edit3 className="w-3 h-3" aria-hidden="true" /> Edit
           </Link>
         </div>
       </div>

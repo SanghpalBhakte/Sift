@@ -7,7 +7,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
-import { X, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 interface AddSubscriptionModalProps {
   isOpen: boolean;
@@ -37,16 +37,12 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
-  // Focus trapping and management
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
 
-      // Small delay to allow DOM render before focusing
       const timer = setTimeout(() => {
-        if (firstInputRef.current) {
-          firstInputRef.current.focus();
-        }
+        if (firstInputRef.current) firstInputRef.current.focus();
       }, 50);
 
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -61,20 +57,12 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
           );
           if (focusableElements.length === 0) return;
-
           const firstElement = focusableElements[0];
           const lastElement = focusableElements[focusableElements.length - 1];
-
           if (e.shiftKey) {
-            if (document.activeElement === firstElement) {
-              e.preventDefault();
-              lastElement.focus();
-            }
+            if (document.activeElement === firstElement) { e.preventDefault(); lastElement.focus(); }
           } else {
-            if (document.activeElement === lastElement) {
-              e.preventDefault();
-              firstElement.focus();
-            }
+            if (document.activeElement === lastElement) { e.preventDefault(); firstElement.focus(); }
           }
         }
       };
@@ -93,19 +81,12 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError('Please enter a service name.');
-      return;
-    }
+    if (!name.trim()) { setError('Please enter a service name.'); return; }
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 0) {
-      setError('Please enter a valid price amount.');
-      return;
-    }
+    if (isNaN(parsedAmount) || parsedAmount < 0) { setError('Please enter a valid price amount.'); return; }
 
     setIsSubmitting(true);
     setError(null);
-
     try {
       await addSubscription({
         name: name.trim(),
@@ -121,8 +102,6 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
         reminder_offsets: profile?.default_reminder_days || [7, 3, 1],
         value_rating: valueRating,
       });
-
-      // Reset fields
       setName('');
       setAmount('');
       onClose();
@@ -135,7 +114,7 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/45 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/40 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -143,20 +122,20 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-lg bg-card border border-border rounded-modal shadow-popover overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-[hsl(var(--border))] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[hsl(var(--primary)/0.1)] flex items-center justify-center text-[hsl(var(--primary))]">
-              <Plus className="w-4 h-4" />
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Plus className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="quick-add-sub-title" className="text-base font-bold text-[hsl(var(--foreground))]">
+              <h2 id="quick-add-sub-title" className="text-sm font-semibold text-foreground">
                 Add Subscription
               </h2>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 Quick entry into your recurring payments ledger
               </p>
             </div>
@@ -166,22 +145,21 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1.5 rounded-lg text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface transition-colors shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
           {error ? (
-            <div className="p-3 text-xs bg-[hsl(var(--danger-subtle))] border border-[hsl(var(--danger)/0.3)] text-[hsl(var(--danger))] rounded-lg">
+            <div className="px-3 py-2.5 text-xs bg-danger-subtle border border-danger/25 text-danger rounded-lg leading-relaxed">
               {error}
             </div>
           ) : null}
 
           <div className="space-y-3">
-            {/* Service Name */}
             <Input
               ref={firstInputRef}
               label="Service or Tool Name *"
@@ -191,7 +169,6 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
               required
             />
 
-            {/* Price and Currency */}
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Price Amount *"
@@ -203,21 +180,17 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
                 onChange={(e) => setAmount(e.target.value)}
                 required
               />
-
               <Select
                 label="Billing Currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
               >
                 {SUPPORTED_CURRENCIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} ({c.symbol})
-                  </option>
+                  <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
                 ))}
               </Select>
             </div>
 
-            {/* Cadence & Category */}
             <div className="grid grid-cols-2 gap-3">
               <Select
                 label="Billing Cadence"
@@ -229,7 +202,6 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
                 <option value="quarterly">Quarterly</option>
                 <option value="weekly">Weekly</option>
               </Select>
-
               <Select
                 label="Category"
                 value={categoryId}
@@ -237,14 +209,11 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
               >
                 <option value="">General / Uncategorized</option>
                 {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </Select>
             </div>
 
-            {/* Next Renewal Date */}
             <Input
               label="Next Renewal Date"
               type="date"
@@ -256,12 +225,10 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
             />
 
             {/* Free Trial Toggle */}
-            <div className="pt-1 flex items-center justify-between p-3 rounded-xl bg-[hsl(var(--surface)/0.5)] border border-[hsl(var(--border))]">
+            <label className="flex items-center justify-between p-3 rounded-xl bg-surface/60 border border-border cursor-pointer hover:bg-surface transition-colors">
               <div className="space-y-0.5">
-                <span className="text-xs font-semibold text-[hsl(var(--foreground))]">
-                  This is a Free Trial
-                </span>
-                <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <span className="text-xs font-semibold text-foreground">This is a Free Trial</span>
+                <p className="text-[11px] text-muted-foreground leading-snug">
                   Receive advance warning before automatic billing conversion
                 </p>
               </div>
@@ -269,17 +236,16 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
                 type="checkbox"
                 checked={isTrial}
                 onChange={(e) => setIsTrial(e.target.checked)}
-                className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))] cursor-pointer"
+                className="w-4 h-4 rounded accent-primary cursor-pointer ml-4 shrink-0"
               />
-            </div>
+            </label>
           </div>
 
-          {/* Modal Footer Actions */}
-          <div className="flex items-center justify-between pt-3 border-t border-[hsl(var(--border))]">
+          {/* Modal Footer */}
+          <div className="flex items-center justify-between pt-3 border-t border-border">
             <Button type="button" variant="ghost" size="sm" onClick={onClose}>
               Cancel
             </Button>
-
             <Button
               type="submit"
               variant="primary"
@@ -287,7 +253,8 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
               isLoading={isSubmitting}
               className="gap-1.5 shadow-xs font-semibold"
             >
-              <Plus className="w-4 h-4" /> Save to Ledger
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              Save to Ledger
             </Button>
           </div>
         </form>

@@ -11,8 +11,7 @@ import { CalendarClock, ArrowRight } from 'lucide-react';
 
 export function UpcomingRenewals({ subscriptions }: { subscriptions: Subscription[] }) {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
-  
-  // Sort by next renewal date ascending
+
   const upcoming = [...activeSubs]
     .sort((a, b) => new Date(a.next_renewal_date).getTime() - new Date(b.next_renewal_date).getTime())
     .slice(0, 4);
@@ -22,60 +21,56 @@ export function UpcomingRenewals({ subscriptions }: { subscriptions: Subscriptio
   }
 
   return (
-    <Card className="border-[hsl(var(--border))]">
+    <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <CalendarClock className="w-4 h-4 text-[hsl(var(--primary))]" />
+          <CalendarClock className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
           <CardTitle>Upcoming Renewals</CardTitle>
         </div>
         <Link
           href="/subscriptions"
-          className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] flex items-center gap-1 transition-colors"
+          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors shrink-0"
         >
-          View all <ArrowRight className="w-3 h-3" />
+          View all <ArrowRight className="w-3 h-3" aria-hidden="true" />
         </Link>
       </CardHeader>
 
-      <CardContent className="space-y-2 pt-1">
-        <div className="divide-y divide-[hsl(var(--border))]">
+      <CardContent className="space-y-0 pt-1">
+        <div className="divide-y divide-border">
           {upcoming.map((sub) => {
             const countdown = getCountdownBadge(sub.next_renewal_date);
             return (
               <div
                 key={sub.id}
-                className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
+                className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/subscriptions/${sub.id}/edit`}
-                      className="text-sm font-medium text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors truncate"
+                      className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate"
                     >
                       {sub.name}
                     </Link>
                     <Badge
                       variant={
-                        countdown.urgent
-                          ? 'danger'
-                          : countdown.warning
-                          ? 'warning'
-                          : 'outline'
+                        countdown.urgent ? 'danger' : countdown.warning ? 'warning' : 'outline'
                       }
                       size="sm"
                     >
                       {countdown.label}
                     </Badge>
                   </div>
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     {formatDate(sub.next_renewal_date)} · {sub.category?.name || 'General'}
                   </p>
                 </div>
 
                 <div className="text-right shrink-0">
-                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  <div className="text-sm font-semibold text-foreground tabular-nums">
                     {formatCurrency(sub.amount, sub.currency)}
                   </div>
-                  <div className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                  <div className="text-[10px] text-muted-foreground">
                     {formatCycle(sub.billing_cycle, sub.custom_interval_days)}
                   </div>
                 </div>

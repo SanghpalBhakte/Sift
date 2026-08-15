@@ -45,9 +45,7 @@ export function SubscriptionList({
     setSortBy('next_renewal_date');
   };
 
-  // Filter subscriptions
   const filtered = subscriptions.filter((sub) => {
-    // Search
     if (search.trim() !== '') {
       const q = search.toLowerCase();
       const matchName = sub.name.toLowerCase().includes(q);
@@ -55,58 +53,48 @@ export function SubscriptionList({
       const matchCat = sub.category?.name.toLowerCase().includes(q);
       if (!matchName && !matchDesc && !matchCat) return false;
     }
-
-    // Tabs
     if (activeTab === 'active' && sub.status !== 'active') return false;
     if (activeTab === 'trials' && (!sub.is_trial || sub.status !== 'active')) return false;
     if (activeTab === 'candidates' && (sub.value_rating !== 'cancel_candidate' || sub.status !== 'active')) return false;
     if (activeTab === 'paused' && sub.status !== 'paused') return false;
-
-    // Category
     if (categoryFilter !== 'all' && sub.category_id !== categoryFilter) return false;
-
     return true;
   });
 
-  // Sort
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === 'next_renewal_date') {
       return new Date(a.next_renewal_date).getTime() - new Date(b.next_renewal_date).getTime();
     }
-    if (sortBy === 'amount') {
-      return b.amount - a.amount;
-    }
-    if (sortBy === 'name') {
-      return a.name.localeCompare(b.name);
-    }
+    if (sortBy === 'amount') return b.amount - a.amount;
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
     return 0;
   });
 
-  // 1. Completely empty ledger state
+  // 1. Empty ledger state
   if (subscriptions.length === 0) {
     return (
       <div className="sift-card p-8 sm:p-10 text-center space-y-4 border-dashed">
-        <div className="w-12 h-12 mx-auto rounded-2xl bg-[hsl(var(--surface))] flex items-center justify-center text-[hsl(var(--primary))] shadow-xs">
-          <Layers className="w-6 h-6" />
+        <div className="w-12 h-12 mx-auto rounded-2xl bg-surface flex items-center justify-center text-primary shadow-xs">
+          <Layers className="w-6 h-6" aria-hidden="true" />
         </div>
         <div className="space-y-1">
-          <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">
+          <h3 className="text-base font-semibold text-foreground">
             Your subscriptions ledger is empty
           </h3>
-          <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto leading-relaxed">
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
             Add recurring software tools, streaming services, or import bank statements to track renewal schedules.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <Link href="/subscriptions/new" className="w-full sm:w-auto">
             <Button variant="primary" size="md" className="w-full sm:w-auto gap-1.5 shadow-xs">
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4" aria-hidden="true" />
               Add First Subscription
             </Button>
           </Link>
           <Link href="/subscriptions/import" className="w-full sm:w-auto">
-            <Button variant="outline" size="md" className="w-full sm:w-auto gap-1.5 text-xs">
-              <UploadCloud className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+            <Button variant="outline" size="md" className="w-full sm:w-auto gap-1.5">
+              <UploadCloud className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               Import Statement
             </Button>
           </Link>
@@ -115,9 +103,9 @@ export function SubscriptionList({
             variant="ghost"
             size="md"
             onClick={() => populateStarterTemplates()}
-            className="w-full sm:w-auto gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+            className="w-full sm:w-auto gap-1"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+            <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
             Load Sample Data
           </Button>
         </div>
@@ -127,20 +115,21 @@ export function SubscriptionList({
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters Bar */}
+      {/* Search and Filters */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <input
               id="subscription-search-input"
               type="text"
-              placeholder="Search subscriptions, tools, categories..."
+              placeholder="Search subscriptions, tools, categories…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="sift-input pl-9 pr-8"
+              aria-label="Search subscriptions"
             />
-            <kbd className="hidden sm:inline-flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center justify-center text-[10px] font-mono text-[hsl(var(--muted-foreground))] bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded px-1.5 py-0.5 pointer-events-none">
+            <kbd className="hidden sm:inline-flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center justify-center text-[10px] font-mono text-muted-foreground bg-surface border border-border rounded px-1.5 py-0.5 pointer-events-none">
               /
             </kbd>
           </div>
@@ -150,12 +139,11 @@ export function SubscriptionList({
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="sift-input text-xs py-2 px-3 w-auto min-w-[130px]"
+              aria-label="Filter by category"
             >
               <option value="all">All Categories</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
 
@@ -163,35 +151,38 @@ export function SubscriptionList({
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               className="sift-input text-xs py-2 px-3 w-auto min-w-[130px]"
+              aria-label="Sort order"
             >
               <option value="next_renewal_date">Sort: Next Renewal</option>
-              <option value="amount">Sort: Cost (High to Low)</option>
+              <option value="amount">Sort: Cost (High–Low)</option>
               <option value="name">Sort: Name</option>
             </select>
           </div>
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar" role="tablist" aria-label="Filter by status">
           {[
-            { id: 'all', label: 'All Items', count: subscriptions.length },
+            { id: 'all', label: 'All', count: subscriptions.length },
             { id: 'active', label: 'Active', count: subscriptions.filter((s) => s.status === 'active').length },
-            { id: 'trials', label: 'Free Trials', count: subscriptions.filter((s) => s.is_trial && s.status === 'active').length },
+            { id: 'trials', label: 'Trials', count: subscriptions.filter((s) => s.is_trial && s.status === 'active').length },
             { id: 'candidates', label: 'Cancel Candidates', count: subscriptions.filter((s) => s.value_rating === 'cancel_candidate' && s.status === 'active').length },
             { id: 'paused', label: 'Paused', count: subscriptions.filter((s) => s.status === 'paused').length },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-3 py-1.5 rounded-md font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                 activeTab === tab.id
-                  ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] border border-[hsl(var(--border))] shadow-xs font-semibold'
-                  : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--surface))] hover:text-[hsl(var(--foreground))]'
+                  ? 'bg-card text-foreground border border-border shadow-xs'
+                  : 'text-muted-foreground hover:bg-surface hover:text-foreground'
               }`}
             >
               <span>{tab.label}</span>
-              <span className="text-[10px] px-1 rounded bg-[hsl(var(--surface-muted))] text-[hsl(var(--muted-foreground))]">
+              <span className="text-[10px] px-1 rounded bg-surface-muted text-muted-foreground tabular-nums">
                 {tab.count}
               </span>
             </button>
@@ -199,7 +190,7 @@ export function SubscriptionList({
         </div>
       </div>
 
-      {/* Subscription Cards List */}
+      {/* Subscription Cards */}
       {sorted.length > 0 ? (
         <div className="space-y-3">
           {sorted.map((subscription) => (
@@ -212,16 +203,16 @@ export function SubscriptionList({
           ))}
         </div>
       ) : (
-        /* 2. Filter Zero-State */
+        /* Filter zero-state */
         <div className="sift-card p-8 sm:p-10 text-center space-y-3 border-dashed">
-          <div className="w-10 h-10 mx-auto rounded-full bg-[hsl(var(--surface))] flex items-center justify-center text-[hsl(var(--muted-foreground))]">
-            <Search className="w-5 h-5 opacity-60" />
+          <div className="w-10 h-10 mx-auto rounded-full bg-surface flex items-center justify-center text-muted-foreground">
+            <Search className="w-5 h-5 opacity-60" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
+            <h3 className="text-sm font-semibold text-foreground">
               No subscriptions match your filter
             </h3>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 max-w-xs mx-auto">
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto leading-relaxed">
               {search.trim()
                 ? `No active services found for "${search}".`
                 : 'No services match the current category or status filter.'}
@@ -233,14 +224,14 @@ export function SubscriptionList({
               variant="outline"
               size="sm"
               onClick={handleResetFilters}
-              className="gap-1.5 text-xs"
+              className="gap-1.5"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
               Reset Filters
             </Button>
             <Link href="/subscriptions/new">
-              <Button variant="primary" size="sm" className="gap-1 text-xs">
-                <Plus className="w-3.5 h-3.5" />
+              <Button variant="primary" size="sm" className="gap-1">
+                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                 Add Subscription
               </Button>
             </Link>

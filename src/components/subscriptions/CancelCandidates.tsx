@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { Subscription } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { formatCurrency } from '@/lib/utils/currency';
-import { Badge } from '../ui/Badge';
-import { Scissors, ExternalLink, ArrowRight } from 'lucide-react';
+import { Scissors, ExternalLink } from 'lucide-react';
 
 export function CancelCandidates({ subscriptions }: { subscriptions: Subscription[] }) {
   const candidates = subscriptions.filter(
@@ -20,26 +19,24 @@ export function CancelCandidates({ subscriptions }: { subscriptions: Subscriptio
   const monthlySavings = candidates.reduce((acc, s) => acc + s.monthly_amount, 0);
 
   return (
-    <Card className="border-[hsl(var(--danger)/0.3)] bg-[hsl(var(--danger-subtle)/0.25)]">
+    <Card className="border-danger/25 bg-danger-subtle/20">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Scissors className="w-4 h-4 text-[hsl(var(--danger))]" />
-          <CardTitle className="text-[hsl(var(--foreground))]">
-            Cancel Candidates ({candidates.length})
-          </CardTitle>
+          <Scissors className="w-4 h-4 text-danger shrink-0" aria-hidden="true" />
+          <CardTitle>Cancel Candidates ({candidates.length})</CardTitle>
         </div>
-        <div className="text-right">
-          <span className="text-xs font-semibold text-[hsl(var(--danger))]">
+        <div className="text-right shrink-0">
+          <span className="text-xs font-semibold text-danger tabular-nums">
             Save {formatCurrency(monthlySavings, 'USD')}/mo
           </span>
-          <span className="block text-[10px] text-[hsl(var(--muted-foreground))]">
+          <span className="block text-[10px] text-muted-foreground tabular-nums">
             {formatCurrency(monthlySavings * 12, 'USD')}/yr
           </span>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2 pt-1">
-        <div className="divide-y divide-[hsl(var(--border))]">
+      <CardContent className="space-y-0 pt-1">
+        <div className="divide-y divide-border">
           {candidates.map((sub) => (
             <div
               key={sub.id}
@@ -49,16 +46,16 @@ export function CancelCandidates({ subscriptions }: { subscriptions: Subscriptio
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/subscriptions/${sub.id}/edit`}
-                    className="text-sm font-medium text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors truncate"
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate"
                   >
                     {sub.name}
                   </Link>
-                  <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                  <span className="text-xs font-medium text-muted-foreground tabular-nums">
                     {formatCurrency(sub.amount, sub.currency)}
                   </span>
                 </div>
                 {sub.notes ? (
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5 line-clamp-1">
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
                     {sub.notes}
                   </p>
                 ) : null}
@@ -70,14 +67,14 @@ export function CancelCandidates({ subscriptions }: { subscriptions: Subscriptio
                     href={sub.cancel_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-medium text-[hsl(var(--danger))] hover:underline flex items-center gap-1"
+                    className="text-xs font-medium text-danger hover:underline flex items-center gap-1"
                   >
-                    Cancel Link <ExternalLink className="w-3 h-3" />
+                    Cancel <ExternalLink className="w-3 h-3" aria-hidden="true" />
                   </a>
                 ) : (
                   <Link
                     href={`/subscriptions/${sub.id}/edit`}
-                    className="text-xs font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Review
                   </Link>
