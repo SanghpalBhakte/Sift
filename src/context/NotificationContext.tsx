@@ -13,12 +13,15 @@ import {
   requestBrowserNotificationPermission,
   dispatchLocalNotification,
 } from '../lib/utils/notifications';
+import { pushNotificationService } from '../lib/services/pushNotificationService';
 
 interface NotificationContextType {
   alerts: AppAlert[];
   urgentAlertsCount: number;
   totalAlertsCount: number;
   permissionStatus: BrowserNotificationStatus;
+  isPushSupported: boolean;
+  isPushSubscribed: boolean;
   isAlertPanelOpen: boolean;
   preferences: NotificationPreferences;
   openAlertPanel: () => void;
@@ -26,6 +29,9 @@ interface NotificationContextType {
   toggleAlertPanel: () => void;
   dismissAlert: (id: string) => void;
   requestPermission: () => Promise<BrowserNotificationStatus>;
+  enablePushNotifications: () => Promise<{ success: boolean; error?: string }>;
+  disablePushNotifications: () => Promise<{ success: boolean; error?: string }>;
+  sendTestPushNotification: () => Promise<{ success: boolean; error?: string }>;
   sendTestNotification: () => boolean;
   updatePreferences: (updates: Partial<NotificationPreferences>) => Promise<void>;
 }
@@ -36,12 +42,23 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const { subscriptions, profile, updateProfile } = useSubscriptions();
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const [permissionStatus, setPermissionStatus] = useState<BrowserNotificationStatus>('unsupported');
+  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [isAlertPanelOpen, setIsAlertPanelOpen] = useState(false);
 
-  // Initialize dismissed alerts and permission state on client mount
+  // Initialize dismissed alerts and check browser push capabilities
   useEffect(() => {
     setDismissedIds(getDismissedAlerts());
     setPermissionStatus(getBrowserNotificationPermission());
+
+    const isSupported = pushNotificationService.isSupported();
+    setIsPushSupported(isSupported);
+
+    if (isSupported) {
+      pushNotificationService.getExistingSubscription().then((sub) => {
+        setIsPushSubscribed(Boolean(sub));
+      });
+    }
   }, []);
 
   const preferences: NotificationPreferences = useMemo(() => {
@@ -72,12 +89,28 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const handleRequestPermission = useCallback(async (): Promise<BrowserNotificationStatus> => {
     const res = await requestBrowserNotificationPermission();
     setPermissionStatus(res);
-    if (res === 'granted') {
-      dispatchLocalNotification('Sift Notifications Active', {
-        body: 'You will receive calm reminders before upcoming renewals and trial expirations.',
-      });
+    return res;
+  }, []);
+
+  const enablePushNotifications = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    const res = await pushNotificationService.subscribe();
+    if (res.success) {
+      setIsPushSubscribed(true);
+      setPermissionStatus('granted');
     }
     return res;
+  }, []);
+
+  const disablePushNotifications = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    const res = await pushNotificationService.unsubscribe();
+    if (res.success) {
+      setIsPushSubscribed(false);
+    }
+    return res;
+  }, []);
+
+  const sendTestPushNotification = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    return await pushNotificationService.sendTestPush();
   }, []);
 
   const handleSendTestNotification = useCallback((): boolean => {
@@ -107,6 +140,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         urgentAlertsCount,
         totalAlertsCount,
         permissionStatus,
+        isPushSupported,
+        isPushSubscribed,
         isAlertPanelOpen,
         preferences,
         openAlertPanel: () => setIsAlertPanelOpen(true),
@@ -114,6 +149,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         toggleAlertPanel: () => setIsAlertPanelOpen((prev) => !prev),
         dismissAlert,
         requestPermission: handleRequestPermission,
+        enablePushNotifications,
+        disablePushNotifications,
+        sendTestPushNotification,
         sendTestNotification: handleSendTestNotification,
         updatePreferences: handleUpdatePreferences,
       }}

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { subscriptionService } from '@/lib/services/subscriptionService';
 import { deriveAppAlerts } from '@/lib/utils/reminders';
 import { formatCurrency } from '@/lib/utils/currency';
+import { sendWebPushToUser } from '@/lib/services/serverPushService';
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
       userEmail: user.email,
       totalDueAlerts: alerts.length,
       sent: 0,
+      pushSent: 0,
       skipped: 0,
       failed: 0,
       dispatches: [] as any[],
@@ -56,6 +58,9 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (!existingLog) {
+        let emailSuccess = false;
+
+        // 1. Dispatch Email Alert (if Resend is configured)
         if (resendApiKey) {
           try {
             const subject = alert.isTrial
@@ -88,6 +93,7 @@ export async function POST(req: NextRequest) {
             const resendData = await resendRes.json();
 
             if (resendRes.ok && resendData.id) {
+              emailSuccess = true;
               await (supabase.from('reminder_dispatch_logs') as any).insert({
                 user_id: user.id,
                 subscription_id: alert.subscriptionId,
@@ -103,17 +109,40 @@ export async function POST(req: NextRequest) {
               results.sent++;
               results.dispatches.push({
                 subscription: alert.subscriptionName,
+                channel: 'email',
                 status: 'sent',
                 id: resendData.id,
               });
-            } else {
-              results.failed++;
             }
           } catch (err: any) {
-            results.failed++;
+            console.warn('Email dispatch failed:', err);
           }
-        } else {
-          // Dry-run log
+        }
+
+        // 2. Dispatch Web Push Alert to subscribed browsers
+        try {
+          const pushRes = await sendWebPushToUser(user.id, {
+            title: alert.title,
+            body: `${alert.subscriptionName} · ${formatCurrency(alert.amount, alert.currency)} (${alert.daysUntil === 0 ? 'Today' : `in ${alert.daysUntil} days`})`,
+            url: `/subscriptions/${alert.subscriptionId}/edit`,
+            tag: `sift-${alert.subscriptionId}-${alert.daysUntil}`,
+            subscriptionId: alert.subscriptionId,
+          });
+
+          if (pushRes.sent > 0) {
+            results.pushSent += pushRes.sent;
+            results.dispatches.push({
+              subscription: alert.subscriptionName,
+              channel: 'web_push',
+              status: 'sent',
+              devices: pushRes.sent,
+            });
+          }
+        } catch (err: any) {
+          console.warn('Web push dispatch error:', err);
+        }
+
+        if (!emailSuccess && !resendApiKey) {
           results.sent++;
           results.dispatches.push({
             subscription: alert.subscriptionName,
@@ -127,7 +156,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, results });
   } catch (err: any) {
-    console.error('Error triggering test reminder dispatch:', err);
+    console.error('Error triggering reminder dispatch:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

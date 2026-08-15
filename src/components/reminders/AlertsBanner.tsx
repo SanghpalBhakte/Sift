@@ -1,22 +1,40 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useNotifications } from '@/context/NotificationContext';
-import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { formatCurrency } from '@/lib/utils/currency';
-import { formatDate } from '@/lib/utils/dates';
-import { Bell, AlertTriangle, Clock, X, ExternalLink, ArrowRight } from 'lucide-react';
+import { Bell, AlertTriangle, Clock, X, ExternalLink, ArrowRight, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 export function AlertsBanner() {
-  const { alerts, dismissAlert, openAlertPanel } = useNotifications();
+  const {
+    alerts,
+    isPushSupported,
+    isPushSubscribed,
+    enablePushNotifications,
+    dismissAlert,
+    openAlertPanel,
+  } = useNotifications();
+
+  const [isSoftPromptDismissed, setIsSoftPromptDismissed] = useState(false);
+  const [isEnablingPush, setIsEnablingPush] = useState(false);
 
   if (alerts.length === 0) return null;
 
   // Show top 2 most urgent alerts on dashboard banner
   const displayedAlerts = alerts.slice(0, 2);
+
+  const handleEnablePush = async () => {
+    setIsEnablingPush(true);
+    try {
+      await enablePushNotifications();
+    } finally {
+      setIsEnablingPush(false);
+    }
+  };
 
   return (
     <div className="space-y-2.5">
@@ -35,6 +53,39 @@ export function AlertsBanner() {
           </button>
         ) : null}
       </div>
+
+      {/* Soft Push Opt-in Prompt */}
+      {isPushSupported && !isPushSubscribed && !isSoftPromptDismissed ? (
+        <div className="p-3 rounded-xl border border-[hsl(var(--primary)/0.25)] bg-[hsl(var(--primary)/0.05)] flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <Smartphone className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />
+            <span className="text-[hsl(var(--foreground))] truncate">
+              Get quiet browser push alerts before subscriptions renew
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={handleEnablePush}
+              isLoading={isEnablingPush}
+              className="text-xs h-7 px-2.5 shadow-xs"
+            >
+              Enable Push
+            </Button>
+            <button
+              type="button"
+              onClick={() => setIsSoftPromptDismissed(true)}
+              className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              title="Not now"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="space-y-2">
         {displayedAlerts.map((alert) => {
@@ -78,39 +129,42 @@ export function AlertsBanner() {
                     </Badge>
                   </div>
 
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight">
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] line-clamp-2">
                     {alert.message}
                   </p>
 
-                  <div className="flex items-center gap-3 pt-1 text-[11px]">
+                  <div className="flex items-center gap-3 pt-0.5 text-[11px]">
+                    <span className="font-semibold text-[hsl(var(--foreground))]">
+                      {formatCurrency(alert.amount, alert.currency)}
+                    </span>
                     <Link
                       href={`/subscriptions/${alert.subscriptionId}/edit`}
-                      className="font-medium text-[hsl(var(--primary))] hover:underline"
+                      className="text-[hsl(var(--primary))] hover:underline flex items-center gap-1 font-medium"
                     >
-                      Manage Subscription
+                      Manage subscription <ArrowRight className="w-3 h-3" />
                     </Link>
-
                     {alert.cancelUrl ? (
                       <a
                         href={alert.cancelUrl}
                         target="_blank"
-                        rel="noreferrer noopener"
+                        rel="noopener noreferrer"
                         className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1"
                       >
-                        Cancel page <ExternalLink className="w-2.5 h-2.5" />
+                        Cancel link <ExternalLink className="w-3 h-3" />
                       </a>
                     ) : null}
                   </div>
                 </div>
               </div>
 
+              {/* Dismiss Action */}
               <button
                 type="button"
                 onClick={() => dismissAlert(alert.id)}
-                title="Dismiss alert"
+                title="Dismiss this alert"
                 className="p-1 rounded-md text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors shrink-0"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           );
