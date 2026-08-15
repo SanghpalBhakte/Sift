@@ -1,10 +1,18 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { Analytics } from '@vercel/analytics/next';
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-plus-jakarta',
+});
 
 export const metadata: Metadata = {
   title: 'Sift — Calm Recurring Spend Workspace',
@@ -40,15 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="antialiased min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+      <body className={`${plusJakartaSans.className} antialiased min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]`}>
         <ThemeProvider>
           <AuthProvider>
             <SubscriptionProvider>

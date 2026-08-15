@@ -120,28 +120,13 @@ Vercel is the native runtime platform for Next.js 15 App Router, Server Componen
 
 ```mermaid
 flowchart LR
-    A[Push / PR] --> B[Run Unit Tests]
-    B -->|Tests Pass| C{Target Branch?}
-    B -->|Tests Fail| D[❌ Block Deploy]
-    C -->|pull_request| E[🚀 Deploy Preview URL]
-    C -->|push to main| F[🌟 Deploy to Production]
+    A[Push to main / PR] --> B[GitHub Actions: CI Quality Checks\nTypecheck, Lint, Tests]
+    A --> C[Vercel Git Integration\nAutomatic Build & Deploy]
+    B -->|Verified| D[Production Ready Release]
 ```
 
-1. **Job 1 (`test`)**: Runs `npm ci` and `npm test` using Node.js 20 with npm dependency caching.
-2. **Job 2 (`deploy`)**:
-   - Strictly gated by `needs: [test]` (only runs if unit tests pass 100%).
-   - If triggered on a **Pull Request**, builds and deploys an ephemeral **Preview URL**.
-   - If triggered on a **Push to `main`**, builds with `--prod` and deploys to **Production**.
-
-### Required GitHub Repository Secrets
-
-To enable automated deployments, add these secrets under **Settings > Secrets and variables > Actions** in your GitHub repository:
-
-| Secret Name | Description | Where to find |
-| :--- | :--- | :--- |
-| `VERCEL_TOKEN` | Personal Access Token | [Vercel Account Tokens](https://vercel.com/account/tokens) |
-| `VERCEL_ORG_ID` | Vercel Team / User ID | Found in `.vercel/project.json` after running `vercel link` |
-| `VERCEL_PROJECT_ID` | Vercel Project ID | Found in project settings on the Vercel dashboard |
+1. **GitHub Actions CI (`quality`)**: Runs `npm run typecheck`, `npm run lint`, and `npm test` on Node.js 20 with npm dependency caching.
+2. **Vercel Native Deployment**: Automatic build and deployment directly via Vercel's official GitHub integration, supporting native Deployment Checks for `lint` and `typecheck`.
 
 ### Production Environment Variables (Set in Vercel Dashboard)
 

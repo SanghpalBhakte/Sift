@@ -164,7 +164,7 @@ function LoginForm() {
           )}
 
           <div className="pt-2 border-t border-[hsl(var(--border))] text-center text-xs text-[hsl(var(--muted-foreground))]">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
               href="/signup"
               className="font-medium text-[hsl(var(--primary))] hover:underline"
