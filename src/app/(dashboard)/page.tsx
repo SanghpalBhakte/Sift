@@ -6,11 +6,13 @@ import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useAuth } from '@/context/AuthContext';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { AlertsBanner } from '@/components/reminders/AlertsBanner';
+import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
 import { UpcomingRenewals } from '@/components/subscriptions/UpcomingRenewals';
 import { TrialAlerts } from '@/components/subscriptions/TrialAlerts';
 import { CancelCandidates } from '@/components/subscriptions/CancelCandidates';
 import { CategoryBreakdown } from '@/components/insights/CategoryBreakdown';
 import { SubscriptionCard } from '@/components/subscriptions/SubscriptionCard';
+import { MetricCardSkeleton, SubscriptionCardSkeleton } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/lib/utils/currency';
 import { getCountdownBadge, formatDate } from '@/lib/utils/dates';
 import {
@@ -19,6 +21,7 @@ import {
   Sparkles,
   ArrowRight,
   Inbox,
+  UploadCloud,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -49,33 +52,47 @@ export default function DashboardPage() {
 
   const targetCurrency = stats.displayCurrency || displayCurrency || 'USD';
 
+  // Calm Skeleton Loading State
   if (isLoading) {
     return (
-      <div className="py-16 text-center space-y-3">
-        <div className="inline-block w-6 h-6 border-2 border-[hsl(var(--primary))] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Loading your subscriptions ledger...
-        </p>
+      <div className="space-y-6">
+        <div className="pb-2 border-b border-[hsl(var(--border))] space-y-2">
+          <div className="h-6 w-48 bg-[hsl(var(--surface-muted))] rounded-md animate-pulse" />
+          <div className="h-3 w-72 bg-[hsl(var(--surface-muted))] rounded-md animate-pulse" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <MetricCardSkeleton />
+          <MetricCardSkeleton />
+          <MetricCardSkeleton />
+          <MetricCardSkeleton />
+        </div>
+        <div className="space-y-3 pt-2">
+          <SubscriptionCardSkeleton />
+          <SubscriptionCardSkeleton />
+        </div>
       </div>
     );
   }
 
-  // Real Empty State when user has 0 subscriptions
+  // First-Run Empty State (Warm, guiding, action-oriented)
   if (subscriptions.length === 0) {
     return (
-      <div className="space-y-6 max-w-2xl mx-auto py-6">
+      <div className="space-y-6 max-w-2xl mx-auto py-4 sm:py-6">
         <div className="text-center space-y-2 pb-2">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
-            Welcome to your Ledger{user?.email ? `, ${user.email.split('@')[0]}` : ''}
+            Welcome to Sift{user?.email ? `, ${user.email.split('@')[0]}` : ''}
           </h1>
-          <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-md mx-auto">
-            Sift is your calm, private workspace to track recurring subscriptions, eliminate unused
-            tools, and protect yourself from surprise trial conversions.
+          <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-md mx-auto leading-relaxed">
+            Your calm, personal ledger for recurring subscriptions, free trials, and quiet renewal alerts.
           </p>
         </div>
 
+        {/* First-Run Onboarding Checklist */}
+        <OnboardingChecklist />
+
+        {/* Primary Action Card */}
         <div className="sift-card p-6 sm:p-8 text-center space-y-5 border-dashed">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-[hsl(var(--surface))] flex items-center justify-center text-[hsl(var(--primary))]">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-[hsl(var(--surface))] flex items-center justify-center text-[hsl(var(--primary))] shadow-xs">
             <Inbox className="w-6 h-6" />
           </div>
 
@@ -83,13 +100,12 @@ export default function DashboardPage() {
             <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">
               No subscriptions tracked yet
             </h3>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
-              Start by adding a recurring tool, streaming service, or an active free trial you want to
-              keep an eye on.
+            <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto leading-relaxed">
+              Add one service to see your monthly run-rate, or import a bank statement to find recurring charges automatically.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
             <Link href="/subscriptions/new" className="w-full sm:w-auto">
               <Button variant="primary" size="md" className="w-full sm:w-auto gap-1.5 shadow-xs">
                 <Plus className="w-4 h-4" />
@@ -97,15 +113,22 @@ export default function DashboardPage() {
               </Button>
             </Link>
 
+            <Link href="/subscriptions/import" className="w-full sm:w-auto">
+              <Button variant="outline" size="md" className="w-full sm:w-auto gap-1.5 text-xs">
+                <UploadCloud className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                Import Statement
+              </Button>
+            </Link>
+
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="md"
               onClick={() => populateStarterTemplates()}
-              className="w-full sm:w-auto gap-1.5 text-xs"
+              className="w-full sm:w-auto gap-1.5 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
             >
               <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
-              Load Sample Templates
+              Load Sample Data
             </Button>
           </div>
         </div>
@@ -137,6 +160,9 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Onboarding Checklist for Active Workspaces (Dismissible) */}
+      <OnboardingChecklist />
 
       {/* 0. In-App Urgent Alerts Banner */}
       <AlertsBanner />

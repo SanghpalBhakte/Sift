@@ -2,12 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Subscription, SubscriptionFilters, ValueRating } from '@/lib/types';
+import { Subscription } from '@/lib/types';
 import { SubscriptionCard } from './SubscriptionCard';
-import { Input } from '../ui/Input';
-import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
-import { Search, Plus, SlidersHorizontal, Layers, Sparkles } from 'lucide-react';
+import { Search, Plus, Layers, Sparkles, UploadCloud, RotateCcw } from 'lucide-react';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 
 interface SubscriptionListProps {
@@ -21,11 +19,18 @@ export function SubscriptionList({
   onToggleStatus,
   onDelete,
 }: SubscriptionListProps) {
-  const { categories } = useSubscriptions();
+  const { categories, populateStarterTemplates } = useSubscriptions();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'trials' | 'candidates' | 'paused'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'next_renewal_date' | 'amount' | 'name'>('next_renewal_date');
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setActiveTab('all');
+    setCategoryFilter('all');
+    setSortBy('next_renewal_date');
+  };
 
   // Filter subscriptions
   const filtered = subscriptions.filter((sub) => {
@@ -63,6 +68,49 @@ export function SubscriptionList({
     }
     return 0;
   });
+
+  // 1. Completely empty ledger state
+  if (subscriptions.length === 0) {
+    return (
+      <div className="sift-card p-8 sm:p-10 text-center space-y-4 border-dashed">
+        <div className="w-12 h-12 mx-auto rounded-2xl bg-[hsl(var(--surface))] flex items-center justify-center text-[hsl(var(--primary))] shadow-xs">
+          <Layers className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">
+            Your subscriptions ledger is empty
+          </h3>
+          <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto leading-relaxed">
+            Add recurring software tools, streaming services, or import bank statements to track renewal schedules.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <Link href="/subscriptions/new" className="w-full sm:w-auto">
+            <Button variant="primary" size="md" className="w-full sm:w-auto gap-1.5 shadow-xs">
+              <Plus className="w-4 h-4" />
+              Add First Subscription
+            </Button>
+          </Link>
+          <Link href="/subscriptions/import" className="w-full sm:w-auto">
+            <Button variant="outline" size="md" className="w-full sm:w-auto gap-1.5 text-xs">
+              <UploadCloud className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              Import Statement
+            </Button>
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="md"
+            onClick={() => populateStarterTemplates()}
+            className="w-full sm:w-auto gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+            Load Sample Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -147,24 +195,39 @@ export function SubscriptionList({
           ))}
         </div>
       ) : (
-        <div className="sift-card p-10 text-center space-y-3">
+        /* 2. Filter Zero-State */
+        <div className="sift-card p-8 sm:p-10 text-center space-y-3 border-dashed">
           <div className="w-10 h-10 mx-auto rounded-full bg-[hsl(var(--surface))] flex items-center justify-center text-[hsl(var(--muted-foreground))]">
-            <Layers className="w-5 h-5" />
+            <Search className="w-5 h-5 opacity-60" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
               No subscriptions match your filter
             </h3>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-              Try adjusting your search criteria or add a new recurring item.
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 max-w-xs mx-auto">
+              {search.trim()
+                ? `No active services found for "${search}".`
+                : 'No services match the current category or status filter.'}
             </p>
           </div>
-          <Link href="/subscriptions/new" className="inline-block pt-1">
-            <Button variant="primary" size="sm" className="gap-1.5">
-              <Plus className="w-3.5 h-3.5" />
-              Add Subscription
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResetFilters}
+              className="gap-1.5 text-xs"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset Filters
             </Button>
-          </Link>
+            <Link href="/subscriptions/new">
+              <Button variant="primary" size="sm" className="gap-1 text-xs">
+                <Plus className="w-3.5 h-3.5" />
+                Add Subscription
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </div>

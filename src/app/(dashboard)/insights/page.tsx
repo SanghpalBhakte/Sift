@@ -49,11 +49,21 @@ export default function InsightsPage() {
 
   if (isLoading) {
     return (
-      <div className="py-16 text-center space-y-3">
-        <div className="inline-block w-6 h-6 border-2 border-[hsl(var(--primary))] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Analyzing your recurring finances...
-        </p>
+      <div className="space-y-6">
+        <div className="pb-2 border-b border-[hsl(var(--border))] space-y-2">
+          <div className="h-6 w-44 bg-[hsl(var(--surface-muted))] rounded-md animate-pulse" />
+          <div className="h-3 w-64 bg-[hsl(var(--surface-muted))] rounded-md animate-pulse" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="sift-card p-4 space-y-2"><div className="h-3 w-20 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /><div className="h-6 w-24 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /></div>
+          <div className="sift-card p-4 space-y-2"><div className="h-3 w-20 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /><div className="h-6 w-24 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /></div>
+          <div className="sift-card p-4 space-y-2"><div className="h-3 w-20 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /><div className="h-6 w-24 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /></div>
+          <div className="sift-card p-4 space-y-2"><div className="h-3 w-20 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /><div className="h-6 w-24 bg-[hsl(var(--surface-muted))] rounded animate-pulse" /></div>
+        </div>
+        <div className="sift-card p-6 space-y-4">
+          <div className="h-4 w-40 bg-[hsl(var(--surface-muted))] rounded animate-pulse" />
+          <div className="h-32 w-full bg-[hsl(var(--surface-muted))] rounded animate-pulse" />
+        </div>
       </div>
     );
   }
