@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { SpendTrendPoint } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { formatCurrency } from '@/lib/utils/currency';
-import { TrendingUp, Calendar } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface SpendTrendChartProps {
@@ -20,12 +20,12 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <TrendingUp className="w-4 h-4 text-primary" />
             <CardTitle>6-Month Spend Trend</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="py-8 text-center text-xs text-[hsl(var(--muted-foreground))]">
+          <div className="py-8 text-center text-xs text-muted-foreground">
             Not enough subscription history to display trend.
           </div>
         </CardContent>
@@ -42,25 +42,25 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
     <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-[hsl(var(--primary))]" />
+          <TrendingUp className="w-4 h-4 text-primary" />
           <div>
             <CardTitle>Recurring Spend Trajectory</CardTitle>
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               Monthly run-rate over the past 6 months
             </p>
           </div>
         </div>
 
         <div className="text-right">
-          <div className="text-sm font-bold text-[hsl(var(--foreground))]">
+          <div className="text-sm font-bold text-foreground font-mono">
             {formatCurrency(currentMonth.totalMonthly, currency)}
-            <span className="text-[11px] font-normal text-[hsl(var(--muted-foreground))]">/mo</span>
+            <span className="text-[11px] font-normal text-muted-foreground">/mo</span>
           </div>
           {diff !== 0 ? (
             <span
               className={cn(
-                'text-[10px] font-medium',
-                diff > 0 ? 'text-[hsl(var(--muted-foreground))]' : 'text-[hsl(var(--primary))]'
+                'text-[10px] font-medium font-mono',
+                diff > 0 ? 'text-muted-foreground' : 'text-primary'
               )}
             >
               {diff > 0 ? `+${formatCurrency(diff, currency)}` : `-${formatCurrency(Math.abs(diff), currency)}`} vs {firstMonth.monthLabel}
@@ -71,11 +71,11 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
 
       <CardContent className="pt-2 space-y-3">
         {/* Hover info pill */}
-        <div className="h-6 flex items-center justify-between text-xs px-2 rounded-md bg-[hsl(var(--surface)/0.6)] border border-[hsl(var(--border))] transition-all">
-          <span className="text-[11px] text-[hsl(var(--muted-foreground))]">
+        <div className="h-7 flex items-center justify-between text-xs px-2.5 rounded-md bg-surface/60 border border-border transition-all">
+          <span className="text-[11px] text-muted-foreground">
             {hoveredPoint ? `${hoveredPoint.monthLabel} Snapshot` : 'Latest Month'}
           </span>
-          <span className="font-semibold text-[hsl(var(--foreground))] text-xs">
+          <span className="font-semibold text-foreground text-xs font-mono">
             {hoveredPoint
               ? `${formatCurrency(hoveredPoint.totalMonthly, currency)}/mo (${hoveredPoint.activeCount} services)`
               : `${formatCurrency(currentMonth.totalMonthly, currency)}/mo (${currentMonth.activeCount} active)`}
@@ -84,7 +84,7 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
 
         {/* Calm Bar / Area Chart Container */}
         <div className="pt-4 pb-2">
-          <div className="grid grid-cols-6 items-end gap-2 sm:gap-3 h-36 border-b border-[hsl(var(--border))] pb-2 px-1">
+          <div className="grid grid-cols-6 items-end gap-2 sm:gap-3 h-36 border-b border-border pb-2 px-1">
             {data.map((point) => {
               const heightPercent = Math.max(
                 Math.round((point.totalMonthly / maxSpend) * 100),
@@ -103,22 +103,22 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
                 >
                   {/* Tooltip on bar */}
                   {isHovered ? (
-                    <div className="absolute -top-7 z-10 px-2 py-0.5 rounded bg-[hsl(var(--foreground))] text-[hsl(var(--background))] text-[10px] font-semibold whitespace-nowrap shadow-xs pointer-events-none">
+                    <div className="absolute -top-7 z-10 px-2 py-0.5 rounded bg-foreground text-background text-[10px] font-semibold whitespace-nowrap shadow-xs pointer-events-none font-mono">
                       {formatCurrency(point.totalMonthly, currency)}
                     </div>
                   ) : null}
 
                   {/* Bar */}
-                  <div className="w-full max-w-[32px] sm:max-w-[40px] flex items-end justify-center rounded-t-md overflow-hidden bg-[hsl(var(--surface))] transition-all">
+                  <div className="w-full max-w-[32px] sm:max-w-[40px] flex items-end justify-center rounded-t-md overflow-hidden bg-surface transition-all">
                     <div
                       style={{ height: `${heightPercent}%` }}
                       className={cn(
                         'w-full rounded-t-md transition-all duration-300',
                         isLatest
-                          ? 'bg-[hsl(var(--primary))]'
+                          ? 'bg-chart-1'
                           : isHovered
-                          ? 'bg-[hsl(var(--primary)/0.75)]'
-                          : 'bg-[hsl(var(--primary)/0.35)]'
+                          ? 'bg-chart-2'
+                          : 'bg-chart-1/35'
                       )}
                     />
                   </div>
@@ -128,8 +128,8 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
                     className={cn(
                       'text-[11px] mt-2 font-medium transition-colors',
                       isLatest || isHovered
-                        ? 'text-[hsl(var(--foreground))] font-semibold'
-                        : 'text-[hsl(var(--muted-foreground))]'
+                        ? 'text-foreground font-semibold'
+                        : 'text-muted-foreground'
                     )}
                   >
                     {point.monthLabel}
@@ -141,9 +141,9 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
         </div>
 
         {/* Legend note */}
-        <div className="flex items-center justify-between text-[11px] text-[hsl(var(--muted-foreground))] pt-1">
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[hsl(var(--primary))]" /> Active normalized baseline
+            <span className="w-2 h-2 rounded-full bg-chart-1" /> Active normalized baseline
           </span>
           <span>6-month scope</span>
         </div>

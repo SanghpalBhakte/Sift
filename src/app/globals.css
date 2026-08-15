@@ -26,6 +26,7 @@
      shadow-card       box-shadow: var(--_shadow-card) — theme-aware
      ease-snappy       cubic-bezier(0.2, 0, 0, 1)
      tracking-widest
+     bg-chart-1        background: hsl(var(--chart-1))
    ================================================================ */
 
 /* ── Token API: declared once. Values reference runtime CSS vars. ── */
@@ -83,6 +84,14 @@
   --color-danger-subtle:        hsl(var(--danger-subtle));
   --color-danger-foreground:    hsl(var(--danger-foreground));
 
+  /* Chart palette tokens (semantic, accessible, theme-aware) */
+  --color-chart-1:              hsl(var(--chart-1));
+  --color-chart-2:              hsl(var(--chart-2));
+  --color-chart-3:              hsl(var(--chart-3));
+  --color-chart-4:              hsl(var(--chart-4));
+  --color-chart-5:              hsl(var(--chart-5));
+  --color-chart-6:              hsl(var(--chart-6));
+
   /* ── Border Radius: --radius-* namespace ───────────────────────── */
   --radius-none:   0px;
   --radius-xs:     0.2rem;
@@ -100,16 +109,15 @@
   --radius-input:  0.5rem;
   --radius-modal:  1rem;
 
-  /* ── Shadows: --shadow-* namespace ─────────────────────────────── */
-  /* Static scale (light-mode appropriate): */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.09), 0 8px 10px -6px rgb(0 0 0 / 0.06);
-  /* Theme-aware aliases (reference CSS vars overridden per theme): */
+  /* ── Shadows: --shadow-* namespace (theme-aware via CSS vars) ──── */
+  --shadow-xs:      var(--_shadow-xs);
+  --shadow-sm:      var(--_shadow-sm);
+  --shadow-md:      var(--_shadow-md);
+  --shadow-lg:      var(--_shadow-lg);
+  --shadow-xl:      var(--_shadow-xl);
   --shadow-card:    var(--_shadow-card);
   --shadow-popover: var(--_shadow-popover);
+  --shadow-modal:   var(--_shadow-modal);
 
   /* ── Easing: --ease-* namespace ────────────────────────────────── */
   --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
@@ -188,9 +196,23 @@
     --danger-subtle:         4 60% 95%;
     --danger-foreground:     0 0% 100%;
 
+    /* Chart palette — calm, balanced, distinct in light */
+    --chart-1:               168 35% 26%;  /* Primary teal-sage */
+    --chart-2:               190 35% 36%;  /* Slate blue-teal */
+    --chart-3:               215 30% 42%;  /* Calm steel */
+    --chart-4:               35 60% 42%;   /* Warm amber */
+    --chart-5:               152 35% 38%;  /* Soft emerald */
+    --chart-6:               280 20% 45%;  /* Muted heather */
+
     /* Theme-aware shadow values */
+    --_shadow-xs:      0 1px 2px 0 rgb(26 32 30 / 0.04);
+    --_shadow-sm:      0 1px 3px 0 rgb(26 32 30 / 0.05), 0 1px 2px -1px rgb(26 32 30 / 0.03);
+    --_shadow-md:      0 4px 6px -1px rgb(26 32 30 / 0.06), 0 2px 4px -2px rgb(26 32 30 / 0.04);
+    --_shadow-lg:      0 10px 15px -3px rgb(26 32 30 / 0.07), 0 4px 6px -4px rgb(26 32 30 / 0.04);
+    --_shadow-xl:      0 20px 25px -5px rgb(26 32 30 / 0.08), 0 8px 10px -6px rgb(26 32 30 / 0.05);
     --_shadow-card:    0 1px 2px 0 rgb(26 32 30 / 0.04), 0 2px 8px -2px rgb(26 32 30 / 0.03);
     --_shadow-popover: 0 8px 24px -4px rgb(26 32 30 / 0.10), 0 2px 8px -2px rgb(26 32 30 / 0.07);
+    --_shadow-modal:   0 20px 25px -5px rgb(26 32 30 / 0.12), 0 10px 10px -5px rgb(26 32 30 / 0.04);
   }
 
   /* ─── Dark Mode: "Night Shelf" — warm-slate, not green-tinted ─── */
@@ -244,9 +266,23 @@
     --danger-subtle:         4 32% 16%;
     --danger-foreground:     222 14% 8%;
 
+    /* Chart palette — luminous, clear contrast in dark */
+    --chart-1:               165 38% 52%;  /* Primary bright sage */
+    --chart-2:               190 45% 58%;  /* Bright slate cyan */
+    --chart-3:               215 42% 64%;  /* Light steel blue */
+    --chart-4:               35 70% 60%;   /* Warm golden amber */
+    --chart-5:               152 45% 58%;  /* Mint green */
+    --chart-6:               280 32% 68%;  /* Soft lavender */
+
     /* Theme-aware shadow values (stronger for dark) */
+    --_shadow-xs:      0 1px 2px 0 rgb(0 0 0 / 0.35);
+    --_shadow-sm:      0 1px 3px 0 rgb(0 0 0 / 0.40), 0 1px 2px -1px rgb(0 0 0 / 0.30);
+    --_shadow-md:      0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.35);
+    --_shadow-lg:      0 10px 15px -3px rgb(0 0 0 / 0.50), 0 4px 6px -4px rgb(0 0 0 / 0.40);
+    --_shadow-xl:      0 20px 25px -5px rgb(0 0 0 / 0.55), 0 8px 10px -6px rgb(0 0 0 / 0.45);
     --_shadow-card:    0 1px 3px 0 rgb(0 0 0 / 0.28), 0 2px 8px -2px rgb(0 0 0 / 0.22);
     --_shadow-popover: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.35);
+    --_shadow-modal:   0 25px 50px -12px rgb(0 0 0 / 0.70);
   }
 
   /* Base body styles */

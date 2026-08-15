@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { formatCurrency } from '@/lib/utils/currency';
+import { cn } from '@/lib/utils/cn';
 
 interface AnimatedCurrencyProps {
   value: number;
@@ -75,9 +76,11 @@ export function AnimatedCurrency({
 
   return (
     <span
-      className={`inline-block font-mono transition-opacity duration-150 ${
-        isTransitioning ? 'opacity-85' : 'opacity-100'
-      } ${className || ''}`}
+      className={cn(
+        'inline-block font-mono tabular-nums transition-opacity duration-150',
+        isTransitioning ? 'opacity-85' : 'opacity-100',
+        className
+      )}
     >
       {formatCurrency(displayValue, currency, { showCents })}
     </span>

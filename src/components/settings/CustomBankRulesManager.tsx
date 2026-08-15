@@ -28,8 +28,8 @@ import {
   Download,
   Upload,
   AlertCircle,
-  Layers,
 } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 export function CustomBankRulesManager() {
   const [rules, setRules] = useState<CustomBankRule[]>([]);
@@ -195,11 +195,11 @@ export function CustomBankRulesManager() {
 
   return (
     <>
-      <Card className="border-[hsl(var(--border))]">
+      <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
             <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[hsl(var(--primary))]" />
+              <Sliders className="w-4 h-4 text-primary" />
               <CardTitle>Custom Bank Recognition Rules</CardTitle>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -241,7 +241,7 @@ export function CustomBankRulesManager() {
         </CardHeader>
 
         <CardContent className="space-y-4 text-xs">
-          <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">
+          <p className="text-muted-foreground leading-relaxed">
             Define custom pattern matchers for regional credit unions and international banks. Custom
             rules execute with high priority before built-in bank templates.
           </p>
@@ -250,10 +250,10 @@ export function CustomBankRulesManager() {
           {isEditing ? (
             <form
               onSubmit={handleSave}
-              className="p-4 rounded-xl border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--surface)/0.5)] space-y-3.5 animate-in fade-in duration-150"
+              className="p-4 rounded-xl border border-primary/30 bg-surface/50 space-y-3.5"
             >
-              <div className="font-semibold text-sm text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
+              <div className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-primary" />
                 {editingId ? 'Edit Bank Recognition Rule' : 'New Bank Recognition Rule'}
               </div>
 
@@ -294,13 +294,13 @@ export function CustomBankRulesManager() {
               </div>
 
               {/* In-Line Rule Sandbox Tester */}
-              <div className="p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] space-y-2">
-                <div className="text-[11px] font-semibold text-[hsl(var(--foreground))] flex items-center justify-between">
+              <div className="p-3 rounded-lg border border-border bg-card space-y-2">
+                <div className="text-[11px] font-semibold text-foreground flex items-center justify-between">
                   <span>Rule Verification Sandbox</span>
                   <button
                     type="button"
                     onClick={handleRunTest}
-                    className="text-[11px] font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Play className="w-3 h-3" /> Test Matcher
                   </button>
@@ -325,11 +325,12 @@ export function CustomBankRulesManager() {
 
                 {testResult ? (
                   <div
-                    className={`p-2 rounded text-[11px] flex items-center gap-1.5 ${
+                    className={cn(
+                      'p-2 rounded text-[11px] flex items-center gap-1.5',
                       testResult.matches
-                        ? 'bg-[hsl(var(--success-subtle))] text-[hsl(var(--success))] font-medium'
-                        : 'bg-[hsl(var(--danger-subtle))] text-[hsl(var(--danger))]'
-                    }`}
+                        ? 'bg-success-subtle text-success font-medium'
+                        : 'bg-danger-subtle text-danger'
+                    )}
                   >
                     {testResult.matches ? (
                       <>
@@ -359,12 +360,12 @@ export function CustomBankRulesManager() {
 
           {/* Existing Rules List */}
           {rules.length === 0 ? (
-            <div className="p-4 rounded-xl border border-dashed border-[hsl(var(--border))] text-center text-[hsl(var(--muted-foreground))]">
+            <div className="p-4 rounded-xl border border-dashed border-border text-center text-muted-foreground">
               No custom bank rules defined. Sift uses built-in fingerprints for major banks
               automatically.
             </div>
           ) : (
-            <div className="divide-y divide-[hsl(var(--border))]">
+            <div className="divide-y divide-border">
               {rules.map((rule) => (
                 <div
                   key={rule.id}
@@ -372,7 +373,7 @@ export function CustomBankRulesManager() {
                 >
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[hsl(var(--foreground))] text-sm">
+                      <span className="font-bold text-foreground text-sm">
                         {rule.bankName}
                       </span>
                       <Badge variant={rule.isEnabled ? 'success' : 'muted'} size="sm">
@@ -380,7 +381,7 @@ export function CustomBankRulesManager() {
                       </Badge>
                     </div>
 
-                    <div className="text-[11px] text-[hsl(var(--muted-foreground))] flex items-center gap-2 flex-wrap font-mono">
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap font-mono">
                       {rule.filePattern ? <span>File: {rule.filePattern}</span> : null}
                       {rule.headerKeywords.length > 0 ? (
                         <span>Keywords: [{rule.headerKeywords.join(', ')}]</span>
@@ -407,7 +408,7 @@ export function CustomBankRulesManager() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleStartEdit(rule)}
-                      className="text-xs text-[hsl(var(--primary))]"
+                      className="text-xs text-primary"
                     >
                       Edit
                     </Button>
@@ -416,7 +417,7 @@ export function CustomBankRulesManager() {
                       type="button"
                       onClick={() => handleDelete(rule.id)}
                       title="Delete rule"
-                      className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--danger))] transition-colors cursor-pointer"
+                      className="p-1.5 text-muted-foreground hover:text-danger transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -436,25 +437,25 @@ export function CustomBankRulesManager() {
           aria-labelledby="import-bank-rules-title"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
         >
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl shadow-xl w-full max-w-lg p-5 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-2 border-b border-[hsl(var(--border))]">
+          <div className="bg-card border border-border rounded-modal shadow-modal w-full max-w-lg p-5 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
               <div className="flex items-center gap-2">
-                <Upload className="w-4 h-4 text-[hsl(var(--primary))]" />
-                <h3 id="import-bank-rules-title" className="text-sm font-bold text-[hsl(var(--foreground))]">
+                <Upload className="w-4 h-4 text-primary" />
+                <h3 id="import-bank-rules-title" className="text-sm font-bold text-foreground">
                   Import Custom Bank Rules JSON
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] rounded-md"
+                className="p-1 text-muted-foreground hover:text-foreground rounded-md cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
-              Upload a previously exported <code className="font-mono">sift-custom-bank-rules-*.json</code>{' '}
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Upload a previously exported <code className="font-mono bg-surface-muted px-1 py-0.5 rounded">sift-custom-bank-rules-*.json</code>{' '}
               backup or paste JSON payload below.
             </p>
 
@@ -488,11 +489,12 @@ export function CustomBankRulesManager() {
             {/* Validation Feedback */}
             {importValidation ? (
               <div
-                className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                className={cn(
+                  'p-3 rounded-xl border text-xs space-y-1.5',
                   importValidation.valid
-                    ? 'bg-[hsl(var(--success-subtle))] border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))]'
-                    : 'bg-[hsl(var(--danger-subtle))] border-[hsl(var(--danger)/0.3)] text-[hsl(var(--danger))]'
-                }`}
+                    ? 'bg-success-subtle border-success/30 text-success'
+                    : 'bg-danger-subtle border-danger/30 text-danger'
+                )}
               >
                 <div className="font-semibold flex items-center gap-1.5">
                   {importValidation.valid ? (
@@ -509,7 +511,7 @@ export function CustomBankRulesManager() {
                 </div>
 
                 {importValidation.valid ? (
-                  <div className="text-[11px] space-y-1 pt-1 text-[hsl(var(--foreground))]">
+                  <div className="text-[11px] space-y-1 pt-1 text-foreground">
                     <div className="flex items-center gap-2">
                       <Badge variant="success" size="sm">
                         {importValidation.newCount} New
@@ -521,7 +523,7 @@ export function CustomBankRulesManager() {
                         {importValidation.identicalCount} Unchanged
                       </Badge>
                     </div>
-                    <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                    <div className="text-[11px] text-muted-foreground">
                       Total rules in payload: {importValidation.payload?.rules.length}
                     </div>
                   </div>
@@ -533,17 +535,18 @@ export function CustomBankRulesManager() {
 
             {/* Conflict Mode Selection */}
             {importValidation?.valid ? (
-              <div className="space-y-2 pt-1 border-t border-[hsl(var(--border))]">
-                <label className="text-xs font-semibold text-[hsl(var(--foreground))]">
+              <div className="space-y-2 pt-1 border-t border-border">
+                <label className="text-xs font-semibold text-foreground">
                   Import Conflict Strategy
                 </label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <label
-                    className={`p-2.5 rounded-lg border cursor-pointer flex items-center gap-2 ${
+                    className={cn(
+                      'p-2.5 rounded-lg border cursor-pointer flex items-center gap-2',
                       importMode === 'merge'
-                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.05)]'
-                        : 'border-[hsl(var(--border))]'
-                    }`}
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border'
+                    )}
                   >
                     <input
                       type="radio"
@@ -551,22 +554,23 @@ export function CustomBankRulesManager() {
                       value="merge"
                       checked={importMode === 'merge'}
                       onChange={() => setImportMode('merge')}
-                      className="text-[hsl(var(--primary))]"
+                      className="text-primary accent-primary"
                     />
                     <div>
-                      <div className="font-bold text-[hsl(var(--foreground))]">Merge (Safe)</div>
-                      <div className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                      <div className="font-bold text-foreground">Merge (Safe)</div>
+                      <div className="text-[10px] text-muted-foreground">
                         Keep existing rules and update matches
                       </div>
                     </div>
                   </label>
 
                   <label
-                    className={`p-2.5 rounded-lg border cursor-pointer flex items-center gap-2 ${
+                    className={cn(
+                      'p-2.5 rounded-lg border cursor-pointer flex items-center gap-2',
                       importMode === 'replace'
-                        ? 'border-[hsl(var(--danger))] bg-[hsl(var(--danger)/0.05)]'
-                        : 'border-[hsl(var(--border))]'
-                    }`}
+                        ? 'border-danger bg-danger/5'
+                        : 'border-border'
+                    )}
                   >
                     <input
                       type="radio"
@@ -574,11 +578,11 @@ export function CustomBankRulesManager() {
                       value="replace"
                       checked={importMode === 'replace'}
                       onChange={() => setImportMode('replace')}
-                      className="text-[hsl(var(--danger))]"
+                      className="text-danger accent-danger"
                     />
                     <div>
-                      <div className="font-bold text-[hsl(var(--foreground))]">Replace All</div>
-                      <div className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                      <div className="font-bold text-foreground">Replace All</div>
+                      <div className="text-[10px] text-muted-foreground">
                         Overwrite all current custom rules
                       </div>
                     </div>
@@ -587,7 +591,7 @@ export function CustomBankRulesManager() {
               </div>
             ) : null}
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[hsl(var(--border))]">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
               <Button
                 type="button"
                 variant="ghost"
@@ -603,7 +607,7 @@ export function CustomBankRulesManager() {
                 size="sm"
                 disabled={!importValidation?.valid}
                 onClick={handleApplyImport}
-                className="gap-1"
+                className="gap-1 font-semibold"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Apply {importMode === 'replace' ? 'Replace' : 'Merge'}

@@ -18,7 +18,6 @@ import {
   Check,
   Edit2,
   ExternalLink,
-  ArrowRight,
   Sparkles,
 } from 'lucide-react';
 
@@ -30,7 +29,6 @@ interface AnnualOptimizationReviewProps {
 
 export function AnnualOptimizationReview({
   items,
-  currency = 'USD',
 }: AnnualOptimizationReviewProps) {
   const { updateSubscription } = useSubscriptions();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -64,13 +62,13 @@ export function AnnualOptimizationReview({
   };
 
   return (
-    <Card className="border-[hsl(var(--primary)/0.3)] shadow-xs">
+    <Card className="border-primary/30 shadow-xs">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <CalendarClock className="w-4 h-4 text-[hsl(var(--primary))]" />
+          <CalendarClock className="w-4 h-4 text-primary" />
           <div>
             <CardTitle>Annual Renewal & Plan Optimization</CardTitle>
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               Review upcoming annual commitments before they auto-renew
             </p>
           </div>
@@ -81,9 +79,16 @@ export function AnnualOptimizationReview({
       </CardHeader>
 
       <CardContent className="space-y-3 pt-1">
-        <div className="divide-y divide-[hsl(var(--border))]">
+        <div className="divide-y divide-border">
           {items.map((item) => {
-            const { subscription, daysUntilRenewal, insightType } = item;
+            const {
+              subscription,
+              daysUntilRenewal,
+              insightType,
+              annualSavingsAmount,
+              monthlyAlternativePrice,
+              savingsPercent,
+            } = item;
             const isEditingThis = editingId === subscription.id;
 
             return (
@@ -97,168 +102,172 @@ export function AnnualOptimizationReview({
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link
                         href={`/subscriptions/${subscription.id}/edit`}
-                        className="text-sm font-bold text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors truncate"
+                        className="text-sm font-bold text-foreground hover:text-primary transition-colors truncate"
                       >
                         {subscription.name}
                       </Link>
-
                       <Badge
-                        variant={
-                          daysUntilRenewal <= 7
-                            ? 'danger'
-                            : daysUntilRenewal <= 14
-                            ? 'warning'
-                            : 'outline'
-                        }
+                        variant={daysUntilRenewal <= 14 ? 'warning' : 'outline'}
                         size="sm"
                       >
-                        {daysUntilRenewal === 0
-                          ? 'Renews Today'
-                          : daysUntilRenewal === 1
-                          ? 'Renews Tomorrow'
-                          : `Renews in ${daysUntilRenewal} days`}
+                        Renews in {daysUntilRenewal} days ({formatDate(subscription.next_renewal_date)})
                       </Badge>
                     </div>
 
-                    <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-                      Annual charge on {formatDate(subscription.next_renewal_date)} ·{' '}
-                      {subscription.category?.name || 'General'}
+                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                      <span>Annual Commitment:</span>
+                      <strong className="text-foreground font-mono">
+                        {formatCurrency(subscription.amount, subscription.currency)}/year
+                      </strong>
+                      <span>·</span>
+                      <span>Effective monthly pace:</span>
+                      <strong className="text-foreground font-mono">
+                        {formatCurrency(subscription.monthly_amount, subscription.currency)}/mo
+                      </strong>
                     </div>
                   </div>
 
-                  {/* Financials */}
-                  <div className="text-right shrink-0">
-                    <div className="text-base font-bold text-[hsl(var(--foreground))] font-mono">
-                      {formatCurrency(subscription.amount, subscription.currency)}
-                      <span className="text-xs font-normal text-[hsl(var(--muted-foreground))] ml-0.5">
-                        /yr
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-[hsl(var(--muted-foreground))] font-mono">
-                      ~{formatCurrency(item.effectiveMonthlyRate, subscription.currency)}/mo
-                    </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {subscription.cancel_url ? (
+                      <a
+                        href={subscription.cancel_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+                      >
+                        Plan Portal <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <Link
+                        href={`/subscriptions/${subscription.id}/edit`}
+                        className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        Edit Plan
+                      </Link>
+                    )}
                   </div>
                 </div>
 
-                {/* Insight & Comparison Box */}
-                <div className="p-3 rounded-xl bg-[hsl(var(--surface)/0.6)] border border-[hsl(var(--border))] space-y-2 text-xs">
-                  {insightType === 'annual_cheaper' &&
-                  item.annualSavingsAmount !== null &&
-                  item.monthlyAlternativePrice !== null ? (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1.5 font-semibold text-[hsl(var(--success))]">
-                          <TrendingDown className="w-3.5 h-3.5" />
-                          <span>
-                            Annual plan saves {formatCurrency(item.annualSavingsAmount, subscription.currency)}/yr ({item.savingsPercent}% discount)
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                          Monthly rate: {formatCurrency(item.monthlyAlternativePrice, subscription.currency)}/mo ({formatCurrency(item.yearlyAtMonthlyRate || 0, subscription.currency)}/yr equivalent)
-                        </p>
+                {/* Insight Callout Block */}
+                {insightType === 'annual_cheaper' && annualSavingsAmount !== null ? (
+                  <div className="p-3 rounded-lg bg-success-subtle/30 border border-success/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-success flex items-center gap-1.5">
+                        <TrendingDown className="w-3.5 h-3.5" />
+                        Annual Plan Discount Secured
                       </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleStartEdit(subscription.id, item.monthlyAlternativePrice)}
-                          className="text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1"
-                        >
-                          <Edit2 className="w-3 h-3" /> Edit rate
-                        </button>
-                      </div>
+                      <p className="text-muted-foreground text-[11px]">
+                        Compared to monthly billing at{' '}
+                        {formatCurrency(monthlyAlternativePrice || 0, subscription.currency)}/mo, you
+                        save{' '}
+                        <strong className="text-success font-mono">
+                          {formatCurrency(annualSavingsAmount, subscription.currency)}/year
+                        </strong>{' '}
+                        ({savingsPercent}% discount).
+                      </p>
                     </div>
-                  ) : insightType === 'monthly_cheaper' &&
-                    item.annualSavingsAmount !== null &&
-                    item.monthlyAlternativePrice !== null ? (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1.5 font-semibold text-[hsl(var(--warning))]">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          <span>
-                            Annual plan costs {formatCurrency(Math.abs(item.annualSavingsAmount), subscription.currency)} more per year than monthly
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                          Monthly price: {formatCurrency(item.monthlyAlternativePrice, subscription.currency)}/mo
-                        </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStartEdit(subscription.id, monthlyAlternativePrice || null)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground self-start sm:self-auto shrink-0"
+                    >
+                      <Edit2 className="w-3 h-3 mr-1" /> Edit Monthly Rate
+                    </Button>
+                  </div>
+                ) : insightType === 'monthly_cheaper' && annualSavingsAmount !== null ? (
+                  <div className="p-3 rounded-lg bg-danger-subtle/30 border border-danger/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-danger flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Annual Rate Exceeds Monthly Rate
                       </div>
-
-                      <button
+                      <p className="text-muted-foreground text-[11px]">
+                        Billed at {formatCurrency(subscription.amount, subscription.currency)}/yr vs{' '}
+                        {formatCurrency(monthlyAlternativePrice || 0, subscription.currency)}/mo. You
+                        are paying{' '}
+                        <strong className="text-danger font-mono">
+                          {formatCurrency(Math.abs(annualSavingsAmount), subscription.currency)}/yr
+                        </strong>{' '}
+                        more on this annual plan.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStartEdit(subscription.id, monthlyAlternativePrice || null)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground self-start sm:self-auto shrink-0"
+                    >
+                      <Edit2 className="w-3 h-3 mr-1" /> Edit Monthly Rate
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-lg bg-surface/50 border border-border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-foreground flex items-center gap-1.5">
+                        <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
+                        Verify Annual Plan Savings
+                      </div>
+                      <p className="text-muted-foreground text-[11px]">
+                        Add the monthly plan equivalent price to calculate your exact annual contract
+                        discount.
+                      </p>
+                    </div>
+                    {!isEditingThis ? (
+                      <Button
                         type="button"
-                        onClick={() => handleStartEdit(subscription.id, item.monthlyAlternativePrice)}
-                        className="text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStartEdit(subscription.id, null)}
+                        className="text-xs shrink-0 self-start sm:self-auto"
                       >
-                        <Edit2 className="w-3 h-3" /> Edit rate
-                      </button>
-                    </div>
-                  ) : (
-                    /* Missing Monthly Alternative Price State */
-                    <div className="space-y-2">
-                      {!isEditingThis ? (
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 text-[hsl(var(--muted-foreground))]">
-                            <HelpCircle className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
-                            <span>
-                              Monthly alternative price not set. Add it to evaluate annual savings vs monthly flexibility.
-                            </span>
-                          </div>
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        Set Monthly Rate
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
 
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStartEdit(subscription.id, null)}
-                            className="text-[11px] h-7 px-2.5 shrink-0 gap-1"
-                          >
-                            <Sparkles className="w-3 h-3 text-[hsl(var(--primary))]" />
-                            Add Monthly Price
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-
-                  {/* Inline monthly price editor */}
-                  {isEditingThis ? (
-                    <div className="pt-2 border-t border-[hsl(var(--border))] flex items-center gap-2">
-                      <div className="relative flex-1 max-w-[180px]">
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="e.g. 10.00"
-                          value={inputPrice}
-                          onChange={(e) => setInputPrice(e.target.value)}
-                          className="sift-input text-xs py-1 px-2.5 h-7 w-full font-mono"
-                          autoFocus
-                        />
-                      </div>
-                      <span className="text-xs text-[hsl(var(--muted-foreground))] font-mono">
-                        {subscription.currency} / month
-                      </span>
-
+                {/* Inline Rate Editor */}
+                {isEditingThis ? (
+                  <div className="p-3 rounded-lg border border-primary/40 bg-card space-y-2 text-xs">
+                    <label className="font-medium text-foreground block">
+                      What is the standard monthly price for {subscription.name} if billed monthly?
+                    </label>
+                    <div className="flex items-center gap-2 max-w-sm">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="e.g. 15.00"
+                        value={inputPrice}
+                        onChange={(e) => setInputPrice(e.target.value)}
+                        className="py-1 text-xs"
+                      />
                       <Button
                         type="button"
                         variant="primary"
                         size="sm"
                         onClick={() => handleSavePrice(subscription)}
                         isLoading={isSaving}
-                        className="text-xs h-7 px-3"
+                        className="shrink-0"
                       >
-                        Save
+                        <Check className="w-3.5 h-3.5" /> Save
                       </Button>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setEditingId(null)}
-                        className="text-xs h-7 px-2"
+                        className="shrink-0"
                       >
                         Cancel
                       </Button>
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
             );
           })}

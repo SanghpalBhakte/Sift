@@ -17,7 +17,7 @@ export function CurrencySwitcher({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'inline-flex items-center p-0.5 rounded-lg bg-[hsl(var(--surface))] border border-[hsl(var(--border))] text-xs shadow-xs',
+        'inline-flex items-center p-0.5 rounded-lg bg-surface border border-border text-xs shadow-xs',
         className
       )}
       role="group"
@@ -33,8 +33,8 @@ export function CurrencySwitcher({ className }: { className?: string }) {
             className={cn(
               'px-2 py-1 rounded-md font-mono text-[11px] font-medium transition-all cursor-pointer',
               isSelected
-                ? 'bg-[hsl(var(--card))] text-[hsl(var(--primary))] font-bold shadow-xs border border-[hsl(var(--border))]'
-                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--card)/0.5)]'
+                ? 'bg-card text-primary font-bold shadow-xs border border-border'
+                : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
             )}
           >
             {curr}

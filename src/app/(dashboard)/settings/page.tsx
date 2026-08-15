@@ -37,13 +37,12 @@ import {
   Zap,
   RefreshCw,
   Archive,
-  Coins,
   Globe,
   Smartphone,
   CheckCircle2,
-  AlertCircle,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/dates';
+import { cn } from '@/lib/utils/cn';
 
 const REMINDER_OFFSET_OPTIONS = [
   { days: 7, label: '7 days before' },
@@ -265,30 +264,30 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       {/* Header */}
-      <div className="pb-2 border-b border-[hsl(var(--border))]">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+      <div className="pb-2 border-b border-border">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Settings & Preferences
         </h1>
-        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+        <p className="text-xs text-muted-foreground mt-0.5">
           Workspace personalization, multi-currency display, browser push & email reminders, and open data
           backup
         </p>
       </div>
 
       {savedSuccess ? (
-        <div className="p-3 text-xs bg-[hsl(var(--success-subtle))] border border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] rounded-lg flex items-center gap-2">
+        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2">
           <Check className="w-4 h-4" /> Preferences saved successfully.
         </div>
       ) : null}
 
       {restoreSuccess ? (
-        <div className="p-3 text-xs bg-[hsl(var(--success-subtle))] border border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] rounded-lg flex items-center gap-2">
+        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2">
           <Check className="w-4 h-4" /> Workspace backup restored successfully.
         </div>
       ) : null}
 
       {ratesSyncSuccess ? (
-        <div className="p-3 text-xs bg-[hsl(var(--success-subtle))] border border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] rounded-lg flex items-center gap-2">
+        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2">
           <Check className="w-4 h-4" /> Latest exchange rates synchronized successfully.
         </div>
       ) : null}
@@ -297,7 +296,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Palette className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <Palette className="w-4 h-4 text-primary" />
             <CardTitle>Appearance & Theme</CardTitle>
           </div>
           <Badge variant="primary" size="sm">
@@ -305,9 +304,8 @@ export default function SettingsPage() {
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Sift is crafted around two calm identities: <strong>Paper Ledger</strong> (warm Japanese
-            stationery light mode) and <strong>Night Shelf</strong> (low-glare oiled slate dark mode).
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Sift is crafted around two calm identities: <strong className="text-foreground">Paper Ledger</strong> (warm stationery light mode) and <strong className="text-foreground">Night Shelf</strong> (low-glare oiled slate dark mode).
           </p>
 
           <div className="pt-1">
@@ -320,7 +318,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <Bell className="w-4 h-4 text-primary" />
             <CardTitle>Renewal Alerts & Dispatch Channels</CardTitle>
           </div>
           <Badge variant="success" size="sm">
@@ -328,30 +326,30 @@ export default function SettingsPage() {
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
+          <p className="text-xs text-muted-foreground leading-relaxed">
             Quiet, transactional notifications sent before scheduled renewal debits or
             when free trials convert.
           </p>
 
           {/* Web Push Notification Section */}
-          <div className="p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.5)] space-y-3">
+          <div className="p-3.5 rounded-xl border border-border bg-surface/50 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <div className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-primary" />
                   Browser Web Push Alerts
                 </div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className="text-[11px] text-muted-foreground">
                   {isPushSupported ? (
                     isPushSubscribed ? (
-                      <span className="text-[hsl(var(--success))] font-medium flex items-center gap-1">
+                      <span className="text-success font-medium flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Active on this browser
                       </span>
                     ) : (
                       'Opt in to receive native browser push reminders'
                     )
                   ) : (
-                    <span className="text-[hsl(var(--muted-foreground))]">
+                    <span className="text-muted-foreground">
                       Web Push is not supported on this browser (requires HTTPS/PWA)
                     </span>
                   )}
@@ -367,7 +365,7 @@ export default function SettingsPage() {
                       size="sm"
                       onClick={handleTestPush}
                       isLoading={isPushLoading}
-                      className="text-xs text-[hsl(var(--primary))]"
+                      className="text-xs text-primary"
                     >
                       Test Push
                     </Button>
@@ -388,22 +386,22 @@ export default function SettingsPage() {
             </div>
 
             {pushActionStatus ? (
-              <div className="p-2.5 rounded-lg bg-[hsl(var(--card))] border border-[hsl(var(--border))] text-[11px] text-[hsl(var(--foreground))]">
+              <div className="p-2.5 rounded-lg bg-card border border-border text-[11px] text-foreground">
                 {pushActionStatus}
               </div>
             ) : null}
           </div>
 
           {/* Email Dispatch & Test Trigger */}
-          <div className="p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.5)] space-y-3">
+          <div className="p-3.5 rounded-xl border border-border bg-surface/50 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <div className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-primary" />
                   Resend Transactional Email
                 </div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                  Scheduled dispatch to <span className="font-mono font-semibold">{user?.email || profile?.email || 'your email'}</span>
+                <div className="text-[11px] text-muted-foreground">
+                  Scheduled dispatch to <span className="font-mono font-semibold text-foreground">{user?.email || profile?.email || 'your email'}</span>
                 </div>
               </div>
 
@@ -415,13 +413,13 @@ export default function SettingsPage() {
                 isLoading={isDispatching}
                 className="gap-1.5 text-xs shrink-0"
               >
-                <Zap className="w-3 h-3 text-[hsl(var(--primary))]" />
+                <Zap className="w-3 h-3 text-primary" />
                 Test Dispatch Now
               </Button>
             </div>
 
             {emailDispatchStatus ? (
-              <div className="p-2.5 rounded-lg bg-[hsl(var(--card))] border border-[hsl(var(--border))] text-[11px] text-[hsl(var(--foreground))]">
+              <div className="p-2.5 rounded-lg bg-card border border-border text-[11px] text-foreground">
                 {emailDispatchStatus}
               </div>
             ) : null}
@@ -429,12 +427,12 @@ export default function SettingsPage() {
 
           {/* Alert Type Toggles */}
           <div className="space-y-3 pt-1">
-            <label className="flex items-center justify-between p-2.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] cursor-pointer">
+            <label className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card cursor-pointer hover:bg-surface/50 transition-colors">
               <div className="space-y-0.5 pr-2">
-                <div className="text-xs font-medium text-[hsl(var(--foreground))]">
+                <div className="text-xs font-medium text-foreground">
                   Master In-App & Remote Alerts
                 </div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className="text-[11px] text-muted-foreground">
                   Enable or silence all automated reminder emails, push alerts, and dashboard banners
                 </div>
               </div>
@@ -442,16 +440,16 @@ export default function SettingsPage() {
                 type="checkbox"
                 checked={notificationsEnabled}
                 onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))]"
+                className="w-4 h-4 rounded text-primary border-border accent-primary cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between p-2.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] cursor-pointer">
+            <label className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card cursor-pointer hover:bg-surface/50 transition-colors">
               <div className="space-y-0.5 pr-2">
-                <div className="text-xs font-medium text-[hsl(var(--foreground))]">
+                <div className="text-xs font-medium text-foreground">
                   Upcoming Renewal Alerts
                 </div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className="text-[11px] text-muted-foreground">
                   Warn before regular monthly, quarterly, and annual subscription charges
                 </div>
               </div>
@@ -460,16 +458,16 @@ export default function SettingsPage() {
                 checked={notifyRenewals}
                 onChange={(e) => setNotifyRenewals(e.target.checked)}
                 disabled={!notificationsEnabled}
-                className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))]"
+                className="w-4 h-4 rounded text-primary border-border accent-primary cursor-pointer disabled:opacity-50"
               />
             </label>
 
-            <label className="flex items-center justify-between p-2.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] cursor-pointer">
+            <label className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card cursor-pointer hover:bg-surface/50 transition-colors">
               <div className="space-y-0.5 pr-2">
-                <div className="text-xs font-medium text-[hsl(var(--foreground))]">
+                <div className="text-xs font-medium text-foreground">
                   Free Trial Expiration Alerts
                 </div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className="text-[11px] text-muted-foreground">
                   Urgent alerts before trial services convert to paid subscriptions
                 </div>
               </div>
@@ -478,17 +476,17 @@ export default function SettingsPage() {
                 checked={notifyTrials}
                 onChange={(e) => setNotifyTrials(e.target.checked)}
                 disabled={!notificationsEnabled}
-                className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))]"
+                className="w-4 h-4 rounded text-primary border-border accent-primary cursor-pointer disabled:opacity-50"
               />
             </label>
           </div>
 
           {/* Reminder Offset Chips */}
           <div className="space-y-2 pt-2">
-            <label className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
               Default Renewal Alert Offsets
             </label>
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+            <p className="text-[11px] text-muted-foreground">
               Alert triggers will generate at these intervals before charge dates:
             </p>
 
@@ -500,11 +498,12 @@ export default function SettingsPage() {
                     key={days}
                     type="button"
                     onClick={() => toggleOffset(days)}
-                    className={`p-2.5 rounded-lg border text-xs font-medium text-center transition-all ${
+                    className={cn(
+                      'p-2.5 rounded-lg border text-xs font-medium text-center transition-all cursor-pointer',
                       isSelected
-                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)] text-[hsl(var(--primary))] font-semibold'
-                        : 'border-[hsl(var(--border))] bg-[hsl(var(--surface))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-                    }`}
+                        ? 'border-primary bg-primary/10 text-primary font-semibold'
+                        : 'border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface/80'
+                    )}
                   >
                     {label}
                   </button>
@@ -520,7 +519,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-[hsl(var(--primary))]" />
+              <User className="w-4 h-4 text-primary" />
               <CardTitle>Workspace & Display Currency</CardTitle>
             </div>
           </CardHeader>
@@ -557,11 +556,11 @@ export default function SettingsPage() {
             </Select>
 
             {/* Exchange Rates Status & Sync Card */}
-            <div className="p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.5)] space-y-2.5">
+            <div className="p-3.5 rounded-xl border border-border bg-surface/50 space-y-2.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-primary" />
                     Exchange Rate Engine
                     {ratesSyncSuccess ? (
                       <Badge variant="success" size="sm">
@@ -577,7 +576,7 @@ export default function SettingsPage() {
                       </Badge>
                     )}
                   </div>
-                  <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                  <div className="text-[11px] text-muted-foreground">
                     {exchangeRates.source} · Last sync {formatDate(exchangeRates.updatedAt)} (auto-refreshes on reconnect)
                   </div>
                 </div>
@@ -590,19 +589,19 @@ export default function SettingsPage() {
                   isLoading={isSyncingRates}
                   className="gap-1 text-xs shrink-0"
                 >
-                  <RefreshCw className="w-3 h-3 text-[hsl(var(--primary))]" />
+                  <RefreshCw className="w-3 h-3 text-primary" />
                   Sync Rates
                 </Button>
               </div>
 
-              <div className="text-[11px] text-[hsl(var(--muted-foreground))] flex items-center gap-3 pt-1 border-t border-[hsl(var(--border))]">
+              <div className="text-[11px] text-muted-foreground flex items-center gap-3 pt-1 border-t border-border">
                 <span>
-                  Base: <strong className="text-[hsl(var(--foreground))]">USD</strong>
+                  Base: <strong className="text-foreground">USD</strong>
                 </span>
                 <span>·</span>
                 <span>
                   Current Rate: 1 USD ≈{' '}
-                  <strong className="text-[hsl(var(--foreground))] font-mono">
+                  <strong className="text-foreground font-mono">
                     {exchangeRates.rates[currency] || 1.0} {currency}
                   </strong>
                 </span>
@@ -622,7 +621,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Download className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <Download className="w-4 h-4 text-primary" />
             <CardTitle>Data Ownership & Backup</CardTitle>
           </div>
           <Badge variant="outline" size="sm">
@@ -630,7 +629,7 @@ export default function SettingsPage() {
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4 text-xs">
-          <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">
+          <p className="text-muted-foreground leading-relaxed">
             Your data belongs to you. You can export complete account backups in open JSON and CSV
             formats, or restore a previous backup to another device at any time.
           </p>
@@ -644,7 +643,7 @@ export default function SettingsPage() {
               onClick={handleExportCSV}
               className="gap-1.5 text-xs justify-start"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
               Spreadsheet (CSV)
             </Button>
 
@@ -655,7 +654,7 @@ export default function SettingsPage() {
               onClick={handleExportJSON}
               className="gap-1.5 text-xs justify-start"
             >
-              <Download className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              <Download className="w-3.5 h-3.5 text-primary" />
               Full Backup (JSON)
             </Button>
 
@@ -666,24 +665,24 @@ export default function SettingsPage() {
               onClick={handleExportPackage}
               className="gap-1.5 text-xs justify-start"
             >
-              <Archive className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              <Archive className="w-3.5 h-3.5 text-primary" />
               Backup Package
             </Button>
           </div>
 
           {/* Restore & Sample Data Actions */}
-          <div className="pt-4 border-t border-[hsl(var(--border))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="pt-4 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              <div className="font-semibold text-foreground flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-primary" />
                 Restore From Backup
               </div>
-              <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                Import a <code className="font-mono">sift-backup-*.json</code> file to restore records
+              <div className="text-[11px] text-muted-foreground">
+                Import a <code className="font-mono bg-surface-muted px-1 py-0.5 rounded">sift-backup-*.json</code> file to restore records
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <Button
                 type="button"
                 variant="primary"
@@ -705,10 +704,10 @@ export default function SettingsPage() {
                     window.location.href = '/';
                   }
                 }}
-                className="gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                Reset Onboarding Guide
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                Reset Guide
               </Button>
 
               <Button
@@ -719,10 +718,10 @@ export default function SettingsPage() {
                   clearSavedStatementMappings();
                   alert('Remembered bank statement column mappings have been reset.');
                 }}
-                className="gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                Clear Import Formats
+                Clear Formats
               </Button>
 
               <Button
@@ -730,9 +729,9 @@ export default function SettingsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => populateStarterTemplates()}
-                className="gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
                 Load Samples
               </Button>
             </div>
@@ -748,7 +747,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[hsl(var(--primary))]" />
+              <ShieldCheck className="w-4 h-4 text-primary" />
               <CardTitle>Account & Session</CardTitle>
             </div>
             <Badge variant="success" size="sm">
@@ -757,14 +756,14 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[hsl(var(--muted-foreground))]">Authenticated Email</span>
-              <span className="font-semibold text-[hsl(var(--foreground))] font-mono">
+              <span className="text-muted-foreground">Authenticated Email</span>
+              <span className="font-semibold text-foreground font-mono">
                 {user.email}
               </span>
             </div>
 
-            <div className="pt-2 border-t border-[hsl(var(--border))] flex items-center justify-between">
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">
+            <div className="pt-2 border-t border-border flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
                 End current active session
               </span>
               <Button
@@ -772,7 +771,7 @@ export default function SettingsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => signOut()}
-                className="text-xs text-[hsl(var(--danger))] hover:bg-[hsl(var(--danger-subtle))] gap-1.5"
+                className="text-xs text-danger hover:bg-danger-subtle gap-1.5"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Sign Out
@@ -782,18 +781,18 @@ export default function SettingsPage() {
         </Card>
       ) : null}
 
-      {/* 6. Cloud Sync & System Status */}
+      {/* 7. Cloud Sync & System Status */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <Database className="w-4 h-4 text-primary" />
             <CardTitle>Database & Cloud Sync</CardTitle>
           </div>
           <Badge variant={isConfigured ? 'success' : 'default'} size="sm">
             {isConfigured ? 'Supabase Connected' : 'Local Mode'}
           </Badge>
         </CardHeader>
-        <CardContent className="space-y-2 text-xs text-[hsl(var(--muted-foreground))]">
+        <CardContent className="space-y-2 text-xs text-muted-foreground">
           {isConfigured ? (
             <p>
               Sift is securely connected to PostgreSQL with Row Level Security (RLS) isolating all
@@ -801,28 +800,28 @@ export default function SettingsPage() {
             </p>
           ) : (
             <p>
-              Sift is operating in <strong>Local Storage Mode</strong>. Supabase credentials can be
-              set in <code className="px-1.5 py-0.5 rounded bg-[hsl(var(--surface))] font-mono text-[11px]">.env.local</code>.
+              Sift is operating in <strong className="text-foreground">Local Storage Mode</strong>. Supabase credentials can be
+              set in <code className="px-1.5 py-0.5 rounded bg-surface font-mono text-[11px]">.env.local</code>.
             </p>
           )}
         </CardContent>
       </Card>
 
-      {/* 7. About Sift */}
-      <Card className="bg-[hsl(var(--surface)/0.5)]">
+      {/* 8. About Sift */}
+      <Card className="bg-surface/40">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <Info className="w-4 h-4 text-primary" />
             <CardTitle>About Sift</CardTitle>
           </div>
-          <span className="text-[11px] font-mono text-[hsl(var(--muted-foreground))]">v0.1.0</span>
+          <span className="text-[11px] font-mono text-muted-foreground">v0.1.0</span>
         </CardHeader>
-        <CardContent className="space-y-2 text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
+        <CardContent className="space-y-2 text-xs text-muted-foreground leading-relaxed">
           <p>
             Sift is a calm, minimal, mobile-first recurring payments workspace built for clarity,
             financial peace of mind, and zero surprise billings.
           </p>
-          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+          <p className="text-[11px] text-muted-foreground">
             Supports Progressive Web App (PWA) installation directly from your browser menu.
           </p>
         </CardContent>

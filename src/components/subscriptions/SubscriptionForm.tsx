@@ -16,8 +16,9 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
-import { Trash2, ArrowLeft, Sparkles } from 'lucide-react';
+import { Trash2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils/cn';
 
 interface SubscriptionFormProps {
   initialData?: Subscription;
@@ -164,19 +165,19 @@ export function SubscriptionForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 pb-2 border-b border-[hsl(var(--border))]">
+      <div className="flex items-center justify-between gap-4 pb-2 border-b border-border">
         <div className="flex items-center gap-3">
           <Link
             href="/subscriptions"
-            className="p-1.5 rounded-lg text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
               {isEditing ? `Edit ${initialData?.name}` : 'New Subscription'}
             </h1>
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            <p className="text-xs text-muted-foreground">
               {isEditing
                 ? 'Update commitment details, reminder offsets, and rating.'
                 : 'Add a new recurring expense or trial to your ledger.'}
@@ -191,7 +192,7 @@ export function SubscriptionForm({
             size="sm"
             onClick={handleDelete}
             isLoading={isDeleting}
-            className="text-xs text-[hsl(var(--danger))] hover:bg-[hsl(var(--danger-subtle))] gap-1.5"
+            className="text-xs text-danger hover:bg-danger-subtle gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Delete</span>
@@ -200,7 +201,7 @@ export function SubscriptionForm({
       </div>
 
       {error ? (
-        <div className="p-3 text-xs bg-[hsl(var(--danger-subtle))] border border-[hsl(var(--danger)/0.3)] text-[hsl(var(--danger))] rounded-lg">
+        <div className="p-3 text-xs bg-danger-subtle border border-danger/25 text-danger rounded-lg">
           {error}
         </div>
       ) : null}
@@ -326,7 +327,7 @@ export function SubscriptionForm({
 
           {/* Annual Plan Arbitrage Support */}
           {billingCycle === 'yearly' ? (
-            <div className="p-3.5 rounded-xl bg-[hsl(var(--surface)/0.5)] border border-[hsl(var(--border))] space-y-1.5">
+            <div className="p-3.5 rounded-xl bg-surface/50 border border-border space-y-1.5">
               <Input
                 label="Monthly Plan Alternative Price (Optional)"
                 type="number"
@@ -358,13 +359,13 @@ export function SubscriptionForm({
           </div>
 
           {/* Free Trial Toggle */}
-          <div className="pt-2 border-t border-[hsl(var(--border))] space-y-3">
-            <label className="flex items-center gap-2 text-xs font-medium text-[hsl(var(--foreground))] cursor-pointer">
+          <div className="pt-2 border-t border-border space-y-3">
+            <label className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer">
               <input
                 type="checkbox"
                 checked={isTrial}
                 onChange={(e) => setIsTrial(e.target.checked)}
-                className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))]"
+                className="w-4 h-4 rounded text-primary border-border accent-primary"
               />
               <span>This subscription is currently in a free trial period</span>
             </label>
@@ -413,7 +414,7 @@ export function SubscriptionForm({
           />
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-[hsl(var(--foreground))] block">
+            <label className="text-xs font-medium text-foreground block">
               Renewal Alert Offsets (Days before charge)
             </label>
             <div className="flex items-center gap-2 flex-wrap">
@@ -424,11 +425,12 @@ export function SubscriptionForm({
                     key={day}
                     type="button"
                     onClick={() => toggleReminderDay(day)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                    className={cn(
+                      'px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer',
                       isSelected
-                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] font-semibold'
-                        : 'border-[hsl(var(--border))] bg-[hsl(var(--surface))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-                    }`}
+                        ? 'border-primary bg-primary/10 text-primary font-semibold'
+                        : 'border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface/80'
+                    )}
                   >
                     {day === 0 ? 'On renewal date' : `${day} day${day === 1 ? '' : 's'} prior`}
                   </button>
@@ -438,7 +440,7 @@ export function SubscriptionForm({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-[hsl(var(--foreground))] block">
+            <label className="text-xs font-medium text-foreground block">
               Private Notes (Optional)
             </label>
             <textarea
@@ -460,7 +462,7 @@ export function SubscriptionForm({
           </Button>
         </Link>
 
-        <Button type="submit" variant="primary" size="md" isLoading={isSubmitting} className="shadow-xs">
+        <Button type="submit" variant="primary" size="md" isLoading={isSubmitting} className="shadow-xs font-semibold">
           {isEditing ? 'Update Subscription' : 'Create Subscription'}
         </Button>
       </div>
