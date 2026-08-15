@@ -8,9 +8,9 @@ import {
   SubscriptionFormData,
 } from '../types';
 import {
+  defaultProfile,
   mockCategories,
   mockPaymentMethods,
-  mockProfile,
   mockSubscriptions,
 } from '../mock/sampleData';
 import { createClient } from '../supabase/client';
@@ -86,8 +86,8 @@ class SubscriptionService {
         items = [];
       }
     } else {
-      // Local demo / unconfigured mode
-      items = this.getLocalData(STORAGE_KEYS.SUBSCRIPTIONS, mockSubscriptions);
+      // Local demo / unconfigured mode: start with clean empty ledger for authentic first-run experience
+      items = this.getLocalData(STORAGE_KEYS.SUBSCRIPTIONS, []);
     }
 
     // Attach categories & payment methods if needed
@@ -184,7 +184,7 @@ class SubscriptionService {
       form.custom_interval_days
     );
 
-    let userId = mockProfile.id;
+    let userId = defaultProfile.id;
 
     if (supabase) {
       const {
@@ -405,11 +405,11 @@ class SubscriptionService {
         // Fallback
       }
     }
-    return this.getLocalData(STORAGE_KEYS.PROFILE, mockProfile);
+    return this.getLocalData(STORAGE_KEYS.PROFILE, defaultProfile);
   }
 
   async updateProfile(updates: Partial<Profile>): Promise<Profile> {
-    const current = (await this.getProfile()) || mockProfile;
+    const current = (await this.getProfile()) || defaultProfile;
     const updated: Profile = {
       ...current,
       ...updates,
