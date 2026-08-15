@@ -83,6 +83,10 @@ flowchart TD
    - *Fix applied*: Added `CRON_SECRET` Bearer header authorization to allow automated serverless cron triggers while maintaining strict 401 unauthorized protection against public crawling.
 3. **Verified Zero Public Prefix Leaks**:
    - Verified that no sensitive service keys (`RESEND_API_KEY`, `VAPID_PRIVATE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`) use the `NEXT_PUBLIC_` prefix.
+4. **Centralized Schema-Validation & Route Preflight**:
+   - `src/lib/env.ts` provides typed, validated getters (`getServerEnv()`, `getPublicEnv()`) and service integration checks (`serviceStatus`).
+   - `next.config.mjs` executes automated build-time environment audits on startup.
+   - `/api/reminders/dispatch` returns a `503 Service Unavailable` machine-readable JSON error if `RESEND_API_KEY` is not configured, avoiding silent runtime errors.
 
 ---
 

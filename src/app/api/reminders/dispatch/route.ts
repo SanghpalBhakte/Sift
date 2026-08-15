@@ -4,20 +4,35 @@ import { subscriptionService } from '@/lib/services/subscriptionService';
 import { deriveAppAlerts } from '@/lib/utils/reminders';
 import { formatCurrency } from '@/lib/utils/currency';
 import { sendWebPushToUser } from '@/lib/services/serverPushService';
+import { getServerEnv } from '@/lib/env';
 
 export async function POST(req: NextRequest) {
   try {
+    const serverEnv = getServerEnv();
+
+    // 1. Route Preflight: Verify email dispatch configuration
+    if (!serverEnv.RESEND_API_KEY) {
+      return NextResponse.json(
+        {
+          error: 'Email dispatch service unavailable: RESEND_API_KEY is not configured in server environment.',
+          code: 'MISSING_EMAIL_CONFIGURATION',
+          service: 'resend',
+        },
+        { status: 503 }
+      );
+    }
+
     const supabase = await createClient();
 
     if (!supabase) {
       return NextResponse.json({ error: 'Supabase client unavailable' }, { status: 500 });
     }
 
-    // 1. Check authorization (Bearer CRON_SECRET or authenticated user session)
+    // 2. Check authorization (Bearer CRON_SECRET or authenticated user session)
     const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
+    const cronSecret = serverEnv.CRON_SECRET;
     const isCronAuthorized =
-      cronSecret && authHeader && authHeader === `Bearer ${cronSecret}`;
+      Boolean(cronSecret) && Boolean(authHeader) && authHeader === `Bearer ${cronSecret}`;
 
     let targetUser: { id: string; email: string } | null = null;
 
@@ -55,9 +70,8 @@ export async function POST(req: NextRequest) {
       offsets: profile?.default_reminder_days || [7, 3, 1],
     });
 
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const resendFromEmail =
-      process.env.RESEND_FROM_EMAIL || 'Sift Reminders <onboarding@resend.dev>';
+    const resendApiKey = serverEnv.RESEND_API_KEY;
+    const resendFromEmail = serverEnv.RESEND_FROM_EMAIL;
 
     const results = {
       userEmail: targetUser.email,
@@ -85,7 +99,7 @@ export async function POST(req: NextRequest) {
         let pushDispatched = false;
         let dispatchError: string | null = null;
 
-        // 1. Send Transactional Email via Resend if configured
+        // 1. Send Transactional Email via Resend
         if (resendApiKey) {
           try {
             const subject =

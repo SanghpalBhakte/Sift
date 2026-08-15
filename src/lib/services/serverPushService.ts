@@ -5,13 +5,17 @@
 
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
+import { getServerEnv, getPublicEnv } from '@/lib/env';
 
 // Note on VAPID Security:
-// NEXT_PUBLIC_VAPID_PUBLIC_KEY is intentionally public for browser PushManager.subscribe().
+// NEXT_PUBLIC_VAPID_PUBLIC_KEY is public for browser PushManager.subscribe().
 // VAPID_PRIVATE_KEY is strictly server-only for signing outgoing push notification payloads.
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:support@sift.app';
+const serverEnv = getServerEnv();
+const publicEnv = getPublicEnv();
+
+const VAPID_PUBLIC_KEY = publicEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = serverEnv.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = serverEnv.VAPID_SUBJECT;
 
 // Configure Web Push with VAPID credentials if present
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
@@ -39,10 +43,10 @@ export async function sendWebPushToUser(
     return { sent: 0, failed: 0, cleaned: 0 };
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = publicEnv.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    serverEnv.SUPABASE_SERVICE_ROLE_KEY ||
+    publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !serviceKey) {
     return { sent: 0, failed: 0, cleaned: 0 };
