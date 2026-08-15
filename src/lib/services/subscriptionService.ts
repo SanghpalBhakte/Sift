@@ -215,6 +215,7 @@ class SubscriptionService {
             cancel_url: form.cancel_url || null,
             notes: form.notes || null,
             monthly_amount: monthlyAmount,
+            monthly_alternative_price: form.monthly_alternative_price || null,
           })
           .select('*, category:categories(*), payment_method:payment_methods(*)')
           .single();
@@ -238,6 +239,7 @@ class SubscriptionService {
           : `sub-${Date.now()}`,
       user_id: userId,
       monthly_amount: monthlyAmount,
+      monthly_alternative_price: form.monthly_alternative_price || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -292,6 +294,7 @@ class SubscriptionService {
           cancel_url: updatedSub.cancel_url || null,
           notes: updatedSub.notes || null,
           monthly_amount: updatedSub.monthly_amount,
+          monthly_alternative_price: updatedSub.monthly_alternative_price || null,
           updated_at: updatedSub.updated_at,
         })
         .eq('id', id);

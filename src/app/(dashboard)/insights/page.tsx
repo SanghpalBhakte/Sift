@@ -9,12 +9,17 @@ import { CategoryBreakdown } from '@/components/insights/CategoryBreakdown';
 import { TopSubscriptions } from '@/components/insights/TopSubscriptions';
 import { UpcomingCashflowPressure } from '@/components/insights/UpcomingCashflowPressure';
 import { ValueRatingAnalysis } from '@/components/insights/ValueRatingAnalysis';
+import { AnnualOptimizationReview } from '@/components/insights/AnnualOptimizationReview';
 import { formatCurrency } from '@/lib/utils/currency';
 import {
   calculateSpendTrend,
   calculateTopSubscriptions,
   calculateUpcoming30DayCharges,
 } from '@/lib/utils/analytics';
+import {
+  getUpcomingAnnualRenewals,
+  getAllAnnualSubscriptions,
+} from '@/lib/utils/annualOptimization';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
@@ -46,6 +51,11 @@ export default function InsightsPage() {
     currency,
     exchangeRates.rates
   );
+
+  // Annual renewals review window (nearing renewal or all active annual plans)
+  const annualRenewals = getUpcomingAnnualRenewals(subscriptions, 60);
+  const allAnnualPlans = getAllAnnualSubscriptions(subscriptions);
+  const annualsToReview = annualRenewals.length > 0 ? annualRenewals : allAnnualPlans;
 
   if (isLoading) {
     return (
@@ -128,7 +138,7 @@ export default function InsightsPage() {
           Recurring Spend Insights
         </h1>
         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-          Clear visibility on recurring burn, cost drivers, and optimization candidates
+          Clear visibility on recurring burn, cost drivers, and annual plan arbitrage
         </p>
       </div>
 
@@ -180,10 +190,22 @@ export default function InsightsPage() {
         <SpendTrendChart data={trendData} currency={currency} />
       </section>
 
-      {/* 3. Category Breakdown & Top Cost Drivers (Two-Column Desktop, Stacked Mobile) */}
+      {/* 3. Annual Contract Optimization & Arbitrage Section */}
+      {annualsToReview.length > 0 ? (
+        <section>
+          <AnnualOptimizationReview items={annualsToReview} currency={currency} />
+        </section>
+      ) : null}
+
+      {/* 4. Category Breakdown & Top Cost Drivers (Two-Column Desktop, Stacked Mobile) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section>
-          <CategoryBreakdown subscriptions={subscriptions} categories={categories} />
+          <CategoryBreakdown
+            subscriptions={subscriptions}
+            categories={categories}
+            currency={currency}
+            rates={exchangeRates.rates}
+          />
         </section>
 
         <section>
@@ -191,7 +213,7 @@ export default function InsightsPage() {
         </section>
       </div>
 
-      {/* 4. Upcoming Payment Pressure & Utility Alignment */}
+      {/* 5. Upcoming Payment Pressure & Utility Alignment */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section>
           <UpcomingCashflowPressure
@@ -206,7 +228,7 @@ export default function InsightsPage() {
         </section>
       </div>
 
-      {/* 5. Sift Financial Hygiene Recommendations */}
+      {/* 6. Sift Financial Hygiene Recommendations */}
       <section>
         <Card className="border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.04)]">
           <CardHeader>
@@ -246,8 +268,7 @@ export default function InsightsPage() {
             <div className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--primary))] mt-1.5 shrink-0" />
               <p>
-                <strong className="text-[hsl(var(--foreground))]">Annual billing discount:</strong> Tools you mark as{' '}
-                <em>Essential</em> frequently offer 15–25% savings if paid annually instead of monthly.
+                <strong className="text-[hsl(var(--foreground))]">Annual contract arbitrage:</strong> Comparing annual rates against monthly plans helps ensure high-commitment subscriptions continue to earn their discount before renewal.
               </p>
             </div>
           </CardContent>

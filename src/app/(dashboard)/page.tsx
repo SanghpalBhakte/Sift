@@ -11,10 +11,12 @@ import { UpcomingRenewals } from '@/components/subscriptions/UpcomingRenewals';
 import { TrialAlerts } from '@/components/subscriptions/TrialAlerts';
 import { CancelCandidates } from '@/components/subscriptions/CancelCandidates';
 import { CategoryBreakdown } from '@/components/insights/CategoryBreakdown';
+import { AnnualOptimizationReview } from '@/components/insights/AnnualOptimizationReview';
 import { SubscriptionCard } from '@/components/subscriptions/SubscriptionCard';
 import { MetricCardSkeleton, SubscriptionCardSkeleton } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/lib/utils/currency';
 import { getCountdownBadge, formatDate } from '@/lib/utils/dates';
+import { getUpcomingAnnualRenewals } from '@/lib/utils/annualOptimization';
 import {
   Plus,
   CreditCard,
@@ -51,6 +53,7 @@ export default function DashboardPage() {
     : null;
 
   const targetCurrency = stats.displayCurrency || displayCurrency || 'USD';
+  const upcomingAnnuals = getUpcomingAnnualRenewals(subscriptions, 30);
 
   // Calm Skeleton Loading State
   if (isLoading) {
@@ -245,7 +248,14 @@ export default function DashboardPage() {
         </section>
       ) : null}
 
-      {/* 3. Upcoming Renewals & Cancel Candidates */}
+      {/* 3. Annual Renewal Review (When annual contracts near renewal) */}
+      {upcomingAnnuals.length > 0 ? (
+        <section>
+          <AnnualOptimizationReview items={upcomingAnnuals} currency={targetCurrency} />
+        </section>
+      ) : null}
+
+      {/* 4. Upcoming Renewals & Cancel Candidates */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section>
           <UpcomingRenewals subscriptions={subscriptions} />
@@ -256,7 +266,7 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      {/* 4. Category Spend Distribution */}
+      {/* 5. Category Spend Distribution */}
       <section>
         <CategoryBreakdown
           subscriptions={subscriptions}
@@ -266,7 +276,7 @@ export default function DashboardPage() {
         />
       </section>
 
-      {/* 5. Active Subscriptions List */}
+      {/* 6. Active Subscriptions List */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

@@ -70,6 +70,7 @@ export interface Subscription {
   cancel_url?: string;
   notes?: string;
   monthly_amount: number; // normalized monthly amount
+  monthly_alternative_price?: number | null; // optional monthly plan price for annual arbitrage comparison
   created_at: string;
   updated_at: string;
   
@@ -188,6 +189,30 @@ export type SubscriptionFormData = Omit<
   Subscription,
   'id' | 'user_id' | 'created_at' | 'updated_at' | 'monthly_amount' | 'category' | 'payment_method'
 >;
+
+// -----------------------------------------------------------------------------
+// Annual Contract Optimization Models
+// -----------------------------------------------------------------------------
+
+export type AnnualInsightType =
+  | 'annual_cheaper'
+  | 'monthly_cheaper'
+  | 'equal_price'
+  | 'missing_monthly_price';
+
+export interface AnnualComparisonResult {
+  subscription: Subscription;
+  annualAmount: number;
+  effectiveMonthlyRate: number;
+  monthlyAlternativePrice: number | null;
+  yearlyAtMonthlyRate: number | null;
+  annualSavingsAmount: number | null;
+  savingsPercent: number | null;
+  monthsFreeEquivalent: number | null;
+  insightType: AnnualInsightType;
+  daysUntilRenewal: number;
+  isWithinReviewWindow: boolean;
+}
 
 // -----------------------------------------------------------------------------
 // CSV & PDF Import Models

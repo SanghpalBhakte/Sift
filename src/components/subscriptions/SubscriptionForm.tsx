@@ -16,7 +16,7 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
-import { Trash2, ArrowLeft } from 'lucide-react';
+import { Trash2, ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 interface SubscriptionFormProps {
@@ -51,6 +51,9 @@ export function SubscriptionForm({
   );
   const [customDays, setCustomDays] = useState<string>(
     initialData?.custom_interval_days ? String(initialData.custom_interval_days) : '30'
+  );
+  const [monthlyAlternativePrice, setMonthlyAlternativePrice] = useState<string>(
+    initialData?.monthly_alternative_price ? String(initialData.monthly_alternative_price) : ''
   );
   const [status, setStatus] = useState<SubscriptionStatus>(initialData?.status || 'active');
   const [categoryId, setCategoryId] = useState<string>(initialData?.category_id || '');
@@ -90,6 +93,11 @@ export function SubscriptionForm({
       return;
     }
 
+    const parsedMonthlyAlt =
+      billingCycle === 'yearly' && monthlyAlternativePrice
+        ? parseFloat(monthlyAlternativePrice)
+        : undefined;
+
     setError(null);
     setIsSubmitting(true);
 
@@ -102,6 +110,8 @@ export function SubscriptionForm({
         billing_cycle: billingCycle,
         custom_interval_days:
           billingCycle === 'custom' ? parseInt(customDays, 10) || 30 : undefined,
+        monthly_alternative_price:
+          parsedMonthlyAlt && parsedMonthlyAlt > 0 ? parsedMonthlyAlt : undefined,
         status,
         category_id: categoryId || undefined,
         payment_method_id: paymentMethodId || undefined,
@@ -118,7 +128,9 @@ export function SubscriptionForm({
       await onSubmit(payload);
       router.push('/subscriptions');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred saving subscription.');
+      const errorMsg =
+        err instanceof Error ? err.message : 'An error occurred while saving the subscription.';
+      setError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -126,37 +138,48 @@ export function SubscriptionForm({
 
   const handleDelete = async () => {
     if (!initialData || !onDelete) return;
-    if (!window.confirm(`Are you sure you want to remove "${initialData.name}"?`)) return;
+    if (confirm(`Are you sure you want to delete ${initialData.name}?`)) {
+      setIsDeleting(true);
+      try {
+        await onDelete(initialData.id);
+        router.push('/subscriptions');
+      } catch (err: unknown) {
+        const errorMsg =
+          err instanceof Error ? err.message : 'Failed to delete the subscription.';
+        setError(errorMsg);
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
 
-    setIsDeleting(true);
-    try {
-      await onDelete(initialData.id);
-      router.push('/subscriptions');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to delete subscription.');
-      setIsDeleting(false);
+  const toggleReminderDay = (day: number) => {
+    if (reminderDays.includes(day)) {
+      setReminderDays(reminderDays.filter((d) => d !== day));
+    } else {
+      setReminderDays([...reminderDays, day].sort((a, b) => b - a));
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      {/* Top Header */}
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-12">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 pb-2 border-b border-[hsl(var(--border))]">
         <div className="flex items-center gap-3">
           <Link
             href="/subscriptions"
-            className="p-1.5 rounded-lg border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors"
+            className="p-1.5 rounded-lg text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-semibold text-[hsl(var(--foreground))]">
-              {isEditing ? 'Edit Subscription' : 'Add Subscription'}
+            <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+              {isEditing ? `Edit ${initialData?.name}` : 'New Subscription'}
             </h1>
             <p className="text-xs text-[hsl(var(--muted-foreground))]">
               {isEditing
-                ? 'Update billing terms, value ratings, or notes'
-                : 'Track a new recurring service, tool, or trial'}
+                ? 'Update commitment details, reminder offsets, and rating.'
+                : 'Add a new recurring expense or trial to your ledger.'}
             </p>
           </div>
         </div>
@@ -164,14 +187,14 @@ export function SubscriptionForm({
         {isEditing && onDelete ? (
           <Button
             type="button"
-            variant="danger"
+            variant="ghost"
             size="sm"
             onClick={handleDelete}
             isLoading={isDeleting}
-            className="gap-1.5"
+            className="text-xs text-[hsl(var(--danger))] hover:bg-[hsl(var(--danger-subtle))] gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Delete
+            <span className="hidden sm:inline">Delete</span>
           </Button>
         ) : null}
       </div>
@@ -233,10 +256,10 @@ export function SubscriptionForm({
         </CardContent>
       </Card>
 
-      {/* Billing & Schedule Card */}
+      {/* Billing & Cycle Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Billing & Renewal</CardTitle>
+          <CardTitle>Billing & Renewal Schedule</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -301,6 +324,22 @@ export function SubscriptionForm({
             )}
           </div>
 
+          {/* Annual Plan Arbitrage Support */}
+          {billingCycle === 'yearly' ? (
+            <div className="p-3.5 rounded-xl bg-[hsl(var(--surface)/0.5)] border border-[hsl(var(--border))] space-y-1.5">
+              <Input
+                label="Monthly Plan Alternative Price (Optional)"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 10.00"
+                value={monthlyAlternativePrice}
+                onChange={(e) => setMonthlyAlternativePrice(e.target.value)}
+                helperText="Enter the price if billed monthly to compute annual plan savings and renewal arbitrage."
+              />
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Start Date"
@@ -318,28 +357,27 @@ export function SubscriptionForm({
             />
           </div>
 
-          {/* Trial Toggle */}
+          {/* Free Trial Toggle */}
           <div className="pt-2 border-t border-[hsl(var(--border))] space-y-3">
-            <label className="flex items-center gap-2.5 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs font-medium text-[hsl(var(--foreground))] cursor-pointer">
               <input
                 type="checkbox"
                 checked={isTrial}
                 onChange={(e) => setIsTrial(e.target.checked)}
-                className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] focus:ring-[hsl(var(--primary))]"
+                className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))]"
               />
-              <span className="text-xs font-medium text-[hsl(var(--foreground))]">
-                Currently on a Free Trial
-              </span>
+              <span>This subscription is currently in a free trial period</span>
             </label>
 
             {isTrial ? (
-              <div className="pl-6 pt-1">
+              <div className="pl-6">
                 <Input
-                  label="Trial Expiration Date"
+                  label="Trial Expiration Date *"
                   type="date"
                   value={trialEndDate}
                   onChange={(e) => setTrialEndDate(e.target.value)}
-                  helperText="Sift will alert you prior to this date so you can decide before conversion."
+                  required={isTrial}
+                  helperText="You will receive urgent advance alerts before this date to prevent surprise card charges."
                 />
               </div>
             ) : null}
@@ -347,55 +385,83 @@ export function SubscriptionForm({
         </CardContent>
       </Card>
 
-      {/* Decision & Value Rating Card */}
+      {/* Value Rating & Audit Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Value Rating & Decision</CardTitle>
+          <CardTitle>Value Audit & Optimization</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Select
-            label="Value Rating (How essential is this subscription?)"
+            label="Value Tier"
             value={valueRating}
             onChange={(e) => setValueRating(e.target.value as ValueRating)}
+            helperText="Categorize utility to track potential savings on rarely used tools."
           >
-            <option value="essential">Essential — High daily/weekly utility</option>
-            <option value="useful">Useful — Worth keeping for now</option>
-            <option value="rarely_used">Rarely Used — Candidate for review</option>
-            <option value="cancel_candidate">Cancel Candidate — Plan to cancel before next cycle</option>
+            <option value="essential">Essential — Core everyday tool, would replace immediately</option>
+            <option value="useful">Useful — Regular utility, provides clear value</option>
+            <option value="rarely_used">Rarely Used — Infrequent usage, consider pausing</option>
+            <option value="cancel_candidate">Cancel Candidate — Slated for cancellation before renewal</option>
           </Select>
 
           <Input
-            label="Direct Cancellation URL"
+            label="Direct Cancellation Link (Optional)"
             type="url"
-            placeholder="https://service.com/account/billing"
+            placeholder="https://app.service.com/account/billing"
             value={cancelUrl}
             onChange={(e) => setCancelUrl(e.target.value)}
-            helperText="Direct link to cancel or downgrade when you want to act quickly."
+            helperText="Link directly to the provider's billing management page for 1-click cancellation."
           />
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-[hsl(var(--foreground))]">
-              Personal Notes
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-[hsl(var(--foreground))] block">
+              Renewal Alert Offsets (Days before charge)
+            </label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[7, 3, 1, 0].map((day) => {
+                const isSelected = reminderDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleReminderDay(day)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] font-semibold'
+                        : 'border-[hsl(var(--border))] bg-[hsl(var(--surface))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                    }`}
+                  >
+                    {day === 0 ? 'On renewal date' : `${day} day${day === 1 ? '' : 's'} prior`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-[hsl(var(--foreground))] block">
+              Private Notes (Optional)
             </label>
             <textarea
-              className="sift-input min-h-[80px] resize-y"
-              placeholder="e.g. Shared with team member; reconsider next quarter."
+              rows={2}
+              placeholder="e.g., Annual discount code applied, shared with design team..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              className="sift-input w-full resize-none text-xs"
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Submit Buttons */}
+      {/* Form Action Buttons */}
       <div className="flex items-center justify-end gap-3 pt-2">
         <Link href="/subscriptions">
-          <Button type="button" variant="ghost">
+          <Button type="button" variant="outline" size="md">
             Cancel
           </Button>
         </Link>
-        <Button type="submit" variant="primary" isLoading={isSubmitting}>
-          {isEditing ? 'Save Changes' : 'Create Subscription'}
+
+        <Button type="submit" variant="primary" size="md" isLoading={isSubmitting} className="shadow-xs">
+          {isEditing ? 'Update Subscription' : 'Create Subscription'}
         </Button>
       </div>
     </form>
