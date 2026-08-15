@@ -115,11 +115,8 @@ jobs:
           fi
           echo "All required deployment credentials verified."
 
-      - name: Link Vercel Project
-        run: |
-          mkdir -p .vercel
-          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
-          echo "✓ Created .vercel/project.json linking configuration"
+      - name: Link Project to Vercel
+        run: vercel link --yes --scope $VERCEL_ORG_ID --project $VERCEL_PROJECT_ID --token $VERCEL_TOKEN
 
       # ------------------------------------------------------------------------
       # Preview Deployment (Pull Requests)
