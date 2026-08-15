@@ -26,6 +26,8 @@ import {
   Info,
   ShieldCheck,
   Send,
+  Mail,
+  Zap,
 } from 'lucide-react';
 
 const REMINDER_OFFSET_OPTIONS = [
@@ -57,6 +59,9 @@ export default function SettingsPage() {
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [testSentSuccess, setTestSentSuccess] = useState(false);
+  const [emailDispatchStatus, setEmailDispatchStatus] = useState<string | null>(null);
+  const [isDispatching, setIsDispatching] = useState(false);
+
   const [currency, setCurrency] = useState(profile?.currency_preference || 'USD');
   const [name, setName] = useState(profile?.full_name || '');
   const [selectedOffsets, setSelectedOffsets] = useState<number[]>(
@@ -115,6 +120,26 @@ export default function SettingsPage() {
       setTimeout(() => setTestSentSuccess(false), 3000);
     } else {
       alert('Could not dispatch browser notification. Please check browser permission.');
+    }
+  };
+
+  const handleTriggerEmailDispatch = async () => {
+    setIsDispatching(true);
+    setEmailDispatchStatus(null);
+    try {
+      const res = await fetch('/api/reminders/dispatch', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailDispatchStatus(
+          `Evaluated ${data.results.totalDueAlerts} due alert(s): ${data.results.sent} sent, ${data.results.skipped} already sent/deduplicated.`
+        );
+      } else {
+        setEmailDispatchStatus(`Dispatch status: ${data.error || 'Check server configuration.'}`);
+      }
+    } catch (err: any) {
+      setEmailDispatchStatus(`Dispatch failed: ${err.message}`);
+    } finally {
+      setIsDispatching(false);
     }
   };
 
@@ -195,7 +220,7 @@ export default function SettingsPage() {
           Settings & Preferences
         </h1>
         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-          Workspace personalization, theme customization, renewal alerts, and data export
+          Workspace personalization, theme customization, automated email reminders, and data export
         </p>
       </div>
 
@@ -228,78 +253,53 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* 2. Notifications & Renewal Alerts */}
+      {/* 2. Notifications & Automated Reminder Dispatch */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Bell className="w-4 h-4 text-[hsl(var(--primary))]" />
-            <CardTitle>Renewal Alerts & Notifications</CardTitle>
+            <CardTitle>Renewal Alerts & Email Dispatch</CardTitle>
           </div>
-          <Badge
-            variant={
-              permissionStatus === 'granted'
-                ? 'success'
-                : permissionStatus === 'denied'
-                ? 'danger'
-                : 'outline'
-            }
-            size="sm"
-          >
-            {permissionStatus === 'granted'
-              ? 'Device Push Active'
-              : permissionStatus === 'denied'
-              ? 'Permission Blocked'
-              : 'In-App Alerts Only'}
+          <Badge variant="success" size="sm">
+            Edge Function Active
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
-            Quiet, proactive alerts before renewal debits occur or when free trials are about to
-            convert into paid subscriptions.
+            Quiet, transactional email alerts sent via Resend before scheduled renewal debits or
+            when free trials convert.
           </p>
 
-          {/* Browser Notification Opt-In Foundation */}
+          {/* Email Dispatch & Test Trigger */}
           <div className="p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.5)] space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                  <BellRing className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
-                  Browser & PWA Device Notifications
+                  <Mail className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                  Resend Email Reminders
                 </div>
                 <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                  Receive system alerts even when Sift is running in the background
+                  Scheduled daily dispatch to <span className="font-mono font-semibold">{user?.email || profile?.email || 'your email'}</span>
                 </div>
               </div>
 
-              {permissionStatus === 'granted' ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSendTest}
-                  className="gap-1 text-xs shrink-0"
-                >
-                  <Send className="w-3 h-3 text-[hsl(var(--primary))]" />
-                  {testSentSuccess ? 'Sent!' : 'Test Alert'}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={() => requestPermission()}
-                  className="text-xs shrink-0"
-                >
-                  Enable Device Push
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleTriggerEmailDispatch}
+                isLoading={isDispatching}
+                className="gap-1.5 text-xs shrink-0"
+              >
+                <Zap className="w-3 h-3 text-[hsl(var(--primary))]" />
+                Test Dispatch Now
+              </Button>
             </div>
 
-            {permissionStatus === 'denied' ? (
-              <p className="text-[11px] text-[hsl(var(--danger))]">
-                Browser notifications are blocked in your browser settings. To enable, update site
-                permissions in your address bar.
-              </p>
+            {emailDispatchStatus ? (
+              <div className="p-2.5 rounded-lg bg-[hsl(var(--card))] border border-[hsl(var(--border))] text-[11px] text-[hsl(var(--foreground))]">
+                {emailDispatchStatus}
+              </div>
             ) : null}
           </div>
 
@@ -308,10 +308,10 @@ export default function SettingsPage() {
             <label className="flex items-center justify-between p-2.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] cursor-pointer">
               <div className="space-y-0.5 pr-2">
                 <div className="text-xs font-medium text-[hsl(var(--foreground))]">
-                  Master In-App Alerts
+                  Master In-App & Email Alerts
                 </div>
                 <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                  Show upcoming charge warnings in dashboard banner and notification drawer
+                  Enable or silence all automated reminder emails and dashboard banners
                 </div>
               </div>
               <input
