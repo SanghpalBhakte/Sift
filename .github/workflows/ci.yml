@@ -78,11 +78,44 @@ jobs:
           npm install --global vercel@latest
           npm ci
 
-      - name: Pre-Flight Deployment Diagnostics
+      - name: Pre-Flight Credentials & Environment Validation
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "Target ref: ${{ github.ref }}"
-          echo "Event trigger: ${{ github.event_name }}"
-          echo "Vercel CLI: $(vercel --version)"
+          echo "=== Vercel Deployment Pre-Flight Check ==="
+          echo "Target Git Ref: ${{ github.ref }}"
+          echo "Event Trigger: ${{ github.event_name }}"
+          echo "Vercel CLI Version: $(vercel --version)"
+          
+          FAIL=0
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN secret is missing or empty."
+            FAIL=1
+          else
+            echo "✓ VERCEL_TOKEN is populated (${#VERCEL_TOKEN} chars)"
+          fi
+
+          if [ -z "$VERCEL_ORG_ID" ]; then
+            echo "::error::VERCEL_ORG_ID secret is missing or empty."
+            FAIL=1
+          else
+            echo "✓ VERCEL_ORG_ID is populated (${#VERCEL_ORG_ID} chars)"
+          fi
+
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::VERCEL_PROJECT_ID secret is missing or empty."
+            FAIL=1
+          else
+            echo "✓ VERCEL_PROJECT_ID is populated (${#VERCEL_PROJECT_ID} chars)"
+          fi
+
+          if [ "$FAIL" -eq 1 ]; then
+            echo "Pre-flight validation failed. Please verify repository secrets in GitHub settings."
+            exit 1
+          fi
+          echo "All required deployment credentials verified."
 
       # ------------------------------------------------------------------------
       # Preview Deployment (Pull Requests)
@@ -93,7 +126,7 @@ jobs:
 
       - name: Build Project Artifacts (Preview)
         if: github.event_name == 'pull_request'
-        run: vercel build --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Preview to Vercel
         if: github.event_name == 'pull_request'
@@ -108,7 +141,7 @@ jobs:
 
       - name: Build Project Artifacts (Production)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: vercel build --yes --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Production to Vercel
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
