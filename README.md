@@ -164,6 +164,12 @@ For complete pre-launch verification, environment audits, and the 9-step launch-
 
 ---
 
+## 🚀 Continuous Deployment
+
+Sift features continuous integration and automated deployment with GitHub Actions and Vercel. Every commit to `main` executes the unit test suite and automatically deploys a verified prebuilt release.
+
+---
+
 ## 📄 License
 
 MIT © Sift
