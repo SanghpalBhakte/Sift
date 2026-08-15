@@ -13,6 +13,13 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
 import {
+  generateFullBackupJson,
+  generateSubscriptionsCsv,
+  generateBackupReadme,
+  downloadFile,
+} from '@/lib/utils/backup';
+import { RestoreModal } from '@/components/backup/RestoreModal';
+import {
   Palette,
   Database,
   User,
@@ -22,12 +29,13 @@ import {
   Download,
   FileSpreadsheet,
   Bell,
-  BellRing,
   Info,
   ShieldCheck,
-  Send,
   Mail,
   Zap,
+  RefreshCw,
+  Archive,
+  FileText,
 } from 'lucide-react';
 
 const REMINDER_OFFSET_OPTIONS = [
@@ -45,20 +53,18 @@ export default function SettingsPage() {
     categories,
     profile,
     updateProfile,
-    resetToSampleData,
     populateStarterTemplates,
+    refresh,
   } = useSubscriptions();
 
   const {
-    permissionStatus,
-    requestPermission,
     sendTestNotification,
-    preferences,
     updatePreferences,
   } = useNotifications();
 
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [testSentSuccess, setTestSentSuccess] = useState(false);
+  const [restoreSuccess, setRestoreSuccess] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [emailDispatchStatus, setEmailDispatchStatus] = useState<string | null>(null);
   const [isDispatching, setIsDispatching] = useState(false);
 
@@ -113,16 +119,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSendTest = () => {
-    const success = sendTestNotification();
-    if (success) {
-      setTestSentSuccess(true);
-      setTimeout(() => setTestSentSuccess(false), 3000);
-    } else {
-      alert('Could not dispatch browser notification. Please check browser permission.');
-    }
-  };
-
   const handleTriggerEmailDispatch = async () => {
     setIsDispatching(true);
     setEmailDispatchStatus(null);
@@ -143,73 +139,57 @@ export default function SettingsPage() {
     }
   };
 
-  // Export Subscriptions as JSON
+  // Export Subscriptions as Full JSON Backup
   const handleExportJSON = () => {
-    const exportData = {
-      version: '1.0',
-      exported_at: new Date().toISOString(),
-      profile: {
-        email: user?.email || profile?.email,
-        currency_preference: currency,
-      },
+    const backup = generateFullBackupJson({
+      userEmail: user?.email,
+      profile,
       subscriptions,
       categories,
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sift-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadFile(
+      JSON.stringify(backup, null, 2),
+      `sift-backup-${dateStr}.json`,
+      'application/json'
+    );
   };
 
   // Export Subscriptions as CSV
   const handleExportCSV = () => {
-    const headers = [
-      'Name',
-      'Amount',
-      'Currency',
-      'Billing Cycle',
-      'Status',
-      'Category',
-      'Value Rating',
-      'Next Renewal Date',
-      'Is Trial',
-      'Monthly Amount',
-      'Notes',
-    ];
+    const csvContent = generateSubscriptionsCsv(subscriptions);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadFile(csvContent, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
+  };
 
-    const rows = subscriptions.map((s) => [
-      `"${s.name.replace(/"/g, '""')}"`,
-      s.amount,
-      s.currency,
-      s.billing_cycle,
-      s.status,
-      `"${(s.category?.name || 'General').replace(/"/g, '""')}"`,
-      s.value_rating,
-      s.next_renewal_date,
-      s.is_trial ? 'Yes' : 'No',
-      s.monthly_amount,
-      `"${(s.notes || '').replace(/"/g, '""')}"`,
-    ]);
+  // Export Complete Backup Package (JSON + CSV + README)
+  const handleExportPackage = () => {
+    const backup = generateFullBackupJson({
+      userEmail: user?.email,
+      profile,
+      subscriptions,
+      categories,
+    });
+    const dateStr = new Date().toISOString().split('T')[0];
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    // Download JSON
+    downloadFile(
+      JSON.stringify(backup, null, 2),
+      `sift-backup-${dateStr}.json`,
+      'application/json'
+    );
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sift-subscriptions-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Download CSV
+    const csvContent = generateSubscriptionsCsv(subscriptions);
+    setTimeout(() => {
+      downloadFile(csvContent, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
+    }, 200);
+
+    // Download README Manifest
+    const readme = generateBackupReadme(backup);
+    setTimeout(() => {
+      downloadFile(readme, `sift-manifest-${dateStr}.txt`, 'text/plain');
+    }, 400);
   };
 
   return (
@@ -220,13 +200,20 @@ export default function SettingsPage() {
           Settings & Preferences
         </h1>
         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-          Workspace personalization, theme customization, automated email reminders, and data export
+          Workspace personalization, theme customization, automated email reminders, and open data
+          backup
         </p>
       </div>
 
       {savedSuccess ? (
         <div className="p-3 text-xs bg-[hsl(var(--success-subtle))] border border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] rounded-lg flex items-center gap-2">
           <Check className="w-4 h-4" /> Preferences saved successfully.
+        </div>
+      ) : null}
+
+      {restoreSuccess ? (
+        <div className="p-3 text-xs bg-[hsl(var(--success-subtle))] border border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] rounded-lg flex items-center gap-2">
+          <Check className="w-4 h-4" /> Workspace backup restored successfully.
         </div>
       ) : null}
 
@@ -441,7 +428,99 @@ export default function SettingsPage() {
         </Card>
       </form>
 
-      {/* 4. Account & Security Session */}
+      {/* 4. Data Ownership, Export & Restore */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Download className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <CardTitle>Data Ownership & Backup</CardTitle>
+          </div>
+          <Badge variant="outline" size="sm">
+            {subscriptions.length} tracked records
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-4 text-xs">
+          <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">
+            Your data belongs to you. You can export complete account backups in open JSON and CSV
+            formats, or restore a previous backup to another device at any time.
+          </p>
+
+          {/* Export Action Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              className="gap-1.5 text-xs justify-start"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              Spreadsheet (CSV)
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportJSON}
+              className="gap-1.5 text-xs justify-start"
+            >
+              <Download className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              Full Backup (JSON)
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportPackage}
+              className="gap-1.5 text-xs justify-start"
+            >
+              <Archive className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              Backup Package
+            </Button>
+          </div>
+
+          {/* Restore & Sample Data Actions */}
+          <div className="pt-4 border-t border-[hsl(var(--border))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                Restore From Backup
+              </div>
+              <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                Import a <code className="font-mono">sift-backup-*.json</code> file to restore records
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => setIsRestoreModalOpen(true)}
+                className="gap-1.5 text-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Restore Backup
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => populateStarterTemplates()}
+                className="gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Load Samples
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 5. Account & Security Session */}
       {user ? (
         <Card>
           <CardHeader>
@@ -479,68 +558,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       ) : null}
-
-      {/* 5. Data Management & Export */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Download className="w-4 h-4 text-[hsl(var(--primary))]" />
-            <CardTitle>Data Management & Export</CardTitle>
-          </div>
-          <Badge variant="outline" size="sm">
-            {subscriptions.length} records
-          </Badge>
-        </CardHeader>
-        <CardContent className="space-y-4 text-xs">
-          <p className="text-[hsl(var(--muted-foreground))]">
-            Your data belongs to you. You can export your subscriptions at any time for backup or
-            spreadsheet analysis.
-          </p>
-
-          <div className="flex flex-wrap gap-2.5 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportCSV}
-              className="gap-1.5"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
-              Export to CSV (Excel / Sheets)
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportJSON}
-              className="gap-1.5"
-            >
-              <Download className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
-              Export to JSON (Full Backup)
-            </Button>
-          </div>
-
-          <div className="pt-3 border-t border-[hsl(var(--border))] flex items-center justify-between">
-            <div>
-              <div className="font-semibold text-[hsl(var(--foreground))]">Sample Starter Catalog</div>
-              <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                Populate realistic test subscriptions for trial
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => populateStarterTemplates()}
-              className="gap-1 text-xs text-[hsl(var(--primary))]"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Load Samples
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 6. Cloud Sync & System Status */}
       <Card>
@@ -587,6 +604,17 @@ export default function SettingsPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Restore Modal */}
+      <RestoreModal
+        isOpen={isRestoreModalOpen}
+        onClose={() => setIsRestoreModalOpen(false)}
+        onSuccess={() => {
+          setRestoreSuccess(true);
+          refresh();
+          setTimeout(() => setRestoreSuccess(false), 4000);
+        }}
+      />
     </div>
   );
 }

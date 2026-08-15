@@ -223,3 +223,29 @@ export interface CsvColumnMapping {
   debitColumn?: string;
   creditColumn?: string;
 }
+
+// -----------------------------------------------------------------------------
+// Data Export & Backup Models
+// -----------------------------------------------------------------------------
+
+export interface SiftBackupData {
+  version: '1.0';
+  app: 'Sift';
+  exported_at: string;
+  user_email: string;
+  profile: Partial<Profile>;
+  subscriptions: Omit<Subscription, 'id' | 'user_id' | 'created_at' | 'updated_at'>[];
+  categories: Category[];
+  payment_methods: PaymentMethod[];
+}
+
+export interface BackupValidationResult {
+  valid: boolean;
+  error?: string;
+  data?: SiftBackupData;
+  counts?: {
+    subscriptions: number;
+    categories: number;
+    paymentMethods: number;
+  };
+}
