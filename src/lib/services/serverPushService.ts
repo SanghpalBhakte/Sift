@@ -6,17 +6,18 @@
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 
-const VAPID_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-  'BAsj-iwSBbkgA_BRK6C3hboIlYqRMOPnpZwzlNSBhIqkmEstnxLJW5_zwEtpay_ve-XYKLnwduVpWNRCNfBBYcQ';
-
-const VAPID_PRIVATE_KEY =
-  process.env.VAPID_PRIVATE_KEY || '8rTyG0h_YAUaWXX17EeTZKvrUQ3OXD34D5b0kU3bvMk';
-
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:support@sift.app';
 
-// Configure Web Push with VAPID credentials
-webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+// Configure Web Push with VAPID credentials if present
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  } catch (err) {
+    console.error('Failed to initialize Web Push VAPID details:', err);
+  }
+}
 
 interface PushPayload {
   title: string;
@@ -30,6 +31,11 @@ export async function sendWebPushToUser(
   userId: string,
   payload: PushPayload
 ): Promise<{ sent: number; failed: number; cleaned: number }> {
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    console.warn('Web Push skipped: VAPID keys not configured on server.');
+    return { sent: 0, failed: 0, cleaned: 0 };
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -44,7 +50,7 @@ export async function sendWebPushToUser(
   // Fetch active push subscriptions for this user
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
-    .select('id, endpoint, p256dh, auth')
+    .select('*')
     .eq('user_id', userId);
 
   if (error || !subscriptions || subscriptions.length === 0) {
@@ -55,7 +61,14 @@ export async function sendWebPushToUser(
   let failed = 0;
   let cleaned = 0;
 
-  const notificationString = JSON.stringify(payload);
+  const notificationPayload = JSON.stringify({
+    title: payload.title,
+    body: payload.body,
+    icon: '/icons/icon-192.svg',
+    badge: '/icons/icon-192.svg',
+    url: payload.url || '/',
+    tag: payload.tag || 'sift-reminder',
+  });
 
   for (const sub of subscriptions) {
     const pushSubscription = {
@@ -67,21 +80,14 @@ export async function sendWebPushToUser(
     };
 
     try {
-      await webpush.sendNotification(pushSubscription, notificationString);
+      await webpush.sendNotification(pushSubscription, notificationPayload);
       sent++;
     } catch (err: any) {
-      console.warn(`Web push delivery failed for endpoint (${err.statusCode}):`, err.message);
       failed++;
-
-      // If subscription is 404 (Not Found) or 410 (Gone / Expired), delete it permanently
+      // Auto-cleanup: If subscription has expired or unsubscribed (404 / 410 Gone)
       if (err.statusCode === 404 || err.statusCode === 410) {
-        try {
-          await supabase.from('push_subscriptions').delete().eq('id', sub.id);
-          cleaned++;
-          console.info(`Cleaned up dead push subscription id: ${sub.id}`);
-        } catch {
-          // ignore cleanup error
-        }
+        await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+        cleaned++;
       }
     }
   }

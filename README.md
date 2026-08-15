@@ -36,7 +36,8 @@ Sift/
 │   └── workflows/
 │       └── ci.yml                   # GitHub Actions CI/CD workflow (tests, cache, Vercel deploy)
 ├── docs/
-│   └── PRODUCTION_READINESS.md      # Launch readiness checklist & environment audit
+│   ├── PRODUCTION_READINESS.md      # Launch readiness checklist & smoke tests
+│   └── ENVIRONMENT_SECURITY.md      # Vercel & environment variable security matrix
 ├── .env.example                     # Documented environment variables template
 ├── .gitignore                       # Clean Git exclusion rules
 ├── README.md                        # Documentation & setup guide

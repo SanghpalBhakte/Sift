@@ -13,12 +13,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Supabase client unavailable' }, { status: 500 });
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // 1. Check authorization (Bearer CRON_SECRET or authenticated user session)
+    const authHeader = req.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+    const isCronAuthorized =
+      cronSecret && authHeader && authHeader === `Bearer ${cronSecret}`;
 
-    if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized session' }, { status: 401 });
+    let targetUser: { id: string; email: string } | null = null;
+
+    if (isCronAuthorized) {
+      // Cron dispatch mode: fetch active user profile
+      const { data: profile } = await (supabase.from('profiles') as any)
+        .select('id, email')
+        .limit(1)
+        .maybeSingle();
+      if (profile) {
+        targetUser = { id: profile.id, email: profile.email };
+      }
+    } else {
+      // Interactive user session mode
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && user.email) {
+        targetUser = { id: user.id, email: user.email };
+      }
+    }
+
+    if (!targetUser || !targetUser.email) {
+      return NextResponse.json({ error: 'Unauthorized request or session' }, { status: 401 });
     }
 
     // Fetch user profile and preferences
@@ -37,7 +60,7 @@ export async function POST(req: NextRequest) {
       process.env.RESEND_FROM_EMAIL || 'Sift Reminders <onboarding@resend.dev>';
 
     const results = {
-      userEmail: user.email,
+      userEmail: targetUser.email,
       totalDueAlerts: alerts.length,
       sent: 0,
       pushSent: 0,
@@ -58,16 +81,57 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (!existingLog) {
-        let emailSuccess = false;
+        let emailDispatched = false;
+        let pushDispatched = false;
+        let dispatchError: string | null = null;
 
-        // 1. Dispatch Email Alert (if Resend is configured)
+        // 1. Send Transactional Email via Resend if configured
         if (resendApiKey) {
           try {
-            const subject = alert.isTrial
-              ? `Action Needed: ${alert.subscriptionName} free trial ends in ${alert.daysUntil} days`
-              : `Reminder: ${alert.subscriptionName} renews for ${formatCurrency(alert.amount, alert.currency)}`;
+            const subject =
+              alert.daysUntil === 0
+                ? `[Sift] ${alert.subscriptionName} Renews Today (${formatCurrency(alert.amount, alert.currency)})`
+                : alert.isTrial
+                ? `[Sift] Action Needed: ${alert.subscriptionName} Trial Ends in ${alert.daysUntil} Days`
+                : `[Sift] Upcoming Renewal: ${alert.subscriptionName} in ${alert.daysUntil} Days`;
 
-            const resendRes = await fetch('https://api.resend.com/emails', {
+            const html = `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; color: #1c1c1a; background: #faf9f5; border-radius: 12px; border: 1px solid #e5e4de;">
+                <div style="margin-bottom: 20px; font-size: 14px; font-weight: 700; color: #2d5a43; letter-spacing: -0.01em;">
+                  SIFT · SUBSCRIPTION LEDGER
+                </div>
+                <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #1c1c1a;">${alert.title}</h2>
+                <p style="font-size: 14px; line-height: 1.6; color: #55544d; margin: 0 0 20px 0;">${alert.message}</p>
+                <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e5e4de; margin-bottom: 24px;">
+                  <table style="width: 100%; font-size: 13px;">
+                    <tr>
+                      <td style="color: #78776f; padding-bottom: 6px;">Service:</td>
+                      <td style="font-weight: 600; text-align: right; padding-bottom: 6px;">${alert.subscriptionName}</td>
+                    </tr>
+                    <tr>
+                      <td style="color: #78776f; padding-bottom: 6px;">Charge Amount:</td>
+                      <td style="font-weight: 600; text-align: right; padding-bottom: 6px; font-family: monospace;">${formatCurrency(alert.amount, alert.currency)}</td>
+                    </tr>
+                    <tr>
+                      <td style="color: #78776f;">Charge Date:</td>
+                      <td style="font-weight: 600; text-align: right;">${alert.targetDate}</td>
+                    </tr>
+                  </table>
+                </div>
+                ${
+                  alert.cancelUrl
+                    ? `<div style="text-align: center; margin-bottom: 20px;">
+                        <a href="${alert.cancelUrl}" style="display: inline-block; background: #2d5a43; color: #ffffff; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">Manage or Cancel Service</a>
+                       </div>`
+                    : ''
+                }
+                <div style="font-size: 11px; color: #a1a098; text-align: center; border-top: 1px solid #e5e4de; padding-top: 16px;">
+                  Sent quietly by Sift · Personal Recurring Spend Workspace
+                </div>
+              </div>
+            `;
+
+            const res = await fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
                 Authorization: `Bearer ${resendApiKey}`,
@@ -75,80 +139,62 @@ export async function POST(req: NextRequest) {
               },
               body: JSON.stringify({
                 from: resendFromEmail,
-                to: [user.email],
+                to: targetUser.email,
                 subject,
-                html: `
-                  <div style="font-family: sans-serif; max-width: 500px; padding: 24px; border: 1px solid #e6e4dd; border-radius: 8px; background-color: #ffffff;">
-                    <h2 style="color: #1e2322; margin-top: 0;">${alert.title}</h2>
-                    <p style="color: #4a5553; line-height: 1.5;">${alert.message}</p>
-                    <p style="font-size: 16px; font-weight: bold; color: #265f56;">Amount: ${formatCurrency(alert.amount, alert.currency)}</p>
-                    <p style="font-size: 12px; color: #768280; margin-top: 24px; border-top: 1px solid #e6e4dd; padding-top: 12px;">
-                      Sent by Sift recurring spend workspace.
-                    </p>
-                  </div>
-                `,
+                html,
               }),
             });
 
-            const resendData = await resendRes.json();
-
-            if (resendRes.ok && resendData.id) {
-              emailSuccess = true;
-              await (supabase.from('reminder_dispatch_logs') as any).insert({
-                user_id: user.id,
-                subscription_id: alert.subscriptionId,
-                reminder_type: alert.isTrial ? 'trial_expiry' : 'renewal',
-                target_date: alert.targetDate,
-                offset_days: alert.daysUntil,
-                delivery_channel: 'email',
-                recipient_email: user.email,
-                status: 'sent',
-                external_id: resendData.id,
-              });
-
-              results.sent++;
-              results.dispatches.push({
-                subscription: alert.subscriptionName,
-                channel: 'email',
-                status: 'sent',
-                id: resendData.id,
-              });
+            if (res.ok) {
+              emailDispatched = true;
+            } else {
+              const errBody = await res.json();
+              dispatchError = `Resend error: ${errBody.message || res.statusText}`;
             }
           } catch (err: any) {
-            console.warn('Email dispatch failed:', err);
+            dispatchError = `Email network error: ${err.message}`;
           }
         }
 
-        // 2. Dispatch Web Push Alert to subscribed browsers
+        // 2. Dispatch Native Web Push Alert
         try {
-          const pushRes = await sendWebPushToUser(user.id, {
+          const pushRes = await sendWebPushToUser(targetUser.id, {
             title: alert.title,
-            body: `${alert.subscriptionName} · ${formatCurrency(alert.amount, alert.currency)} (${alert.daysUntil === 0 ? 'Today' : `in ${alert.daysUntil} days`})`,
+            body: `${alert.subscriptionName}: ${formatCurrency(alert.amount, alert.currency)} due on ${alert.targetDate}`,
             url: `/subscriptions/${alert.subscriptionId}/edit`,
-            tag: `sift-${alert.subscriptionId}-${alert.daysUntil}`,
+            tag: `renewal-${alert.subscriptionId}`,
             subscriptionId: alert.subscriptionId,
           });
-
           if (pushRes.sent > 0) {
-            results.pushSent += pushRes.sent;
-            results.dispatches.push({
-              subscription: alert.subscriptionName,
-              channel: 'web_push',
-              status: 'sent',
-              devices: pushRes.sent,
-            });
+            pushDispatched = true;
           }
         } catch (err: any) {
           console.warn('Web push dispatch error:', err);
         }
 
-        if (!emailSuccess && !resendApiKey) {
-          results.sent++;
-          results.dispatches.push({
-            subscription: alert.subscriptionName,
-            status: 'dry_run_simulated',
-          });
-        }
+        // 3. Record dispatch log
+        const status = emailDispatched || pushDispatched ? 'sent' : 'failed';
+        await (supabase.from('reminder_dispatch_logs') as any).insert({
+          user_id: targetUser.id,
+          subscription_id: alert.subscriptionId,
+          reminder_type: alert.isTrial ? 'trial_expiry' : 'renewal',
+          target_date: alert.targetDate,
+          offset_days: alert.daysUntil,
+          recipient_email: targetUser.email,
+          status,
+          error_message: dispatchError,
+        });
+
+        if (emailDispatched) results.sent++;
+        if (pushDispatched) results.pushSent++;
+        if (!emailDispatched && !pushDispatched) results.failed++;
+
+        results.dispatches.push({
+          subscriptionName: alert.subscriptionName,
+          emailDispatched,
+          pushDispatched,
+          error: dispatchError,
+        });
       } else {
         results.skipped++;
       }
@@ -156,7 +202,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, results });
   } catch (err: any) {
-    console.error('Error triggering reminder dispatch:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Reminder dispatch error:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }

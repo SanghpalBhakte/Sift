@@ -81,10 +81,10 @@ export class PushNotificationService {
       return { success: false, error: 'Web Push notifications are not supported by this browser.' };
     }
 
-    const key =
-      vapidPublicKey ||
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-      'BAsj-iwSBbkgA_BRK6C3hboIlYqRMOPnpZwzlNSBhIqkmEstnxLJW5_zwEtpay_ve-XYKLnwduVpWNRCNfBBYcQ';
+    const key = vapidPublicKey || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!key) {
+      return { success: false, error: 'Web Push VAPID public key is not configured.' };
+    }
 
     try {
       // 1. Request native permission from explicit user interaction
