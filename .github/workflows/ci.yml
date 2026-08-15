@@ -58,7 +58,7 @@ jobs:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
     needs: [test, check-deploy-secrets]
-    if: needs.test.result == 'success' && needs.check-deploy-secrets.outputs.can_deploy == 'true'
+    if: ${{ needs.test.result == 'success' && needs.check-deploy-secrets.outputs.can_deploy == 'true' }}
 
     steps:
       - name: Checkout Code
