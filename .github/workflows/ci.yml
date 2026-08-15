@@ -80,7 +80,7 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Pre-Flight Credentials & Environment Validation
+      - name: Pre-Flight Credentials & Diagnostics
         run: |
           echo "=== Vercel Deployment Pre-Flight Check ==="
           echo "Target Git Ref: ${{ github.ref }}"
@@ -113,10 +113,9 @@ jobs:
             echo "Pre-flight validation failed. Please verify repository secrets in GitHub settings."
             exit 1
           fi
-          echo "All required deployment credentials verified."
 
-      - name: Link Project to Vercel
-        run: vercel link --yes --scope $VERCEL_ORG_ID --project $VERCEL_PROJECT_ID --token $VERCEL_TOKEN
+          echo "Authenticated Identity: $(vercel whoami --token=$VERCEL_TOKEN)"
+          echo "Pre-flight validation complete."
 
       # ------------------------------------------------------------------------
       # Preview Deployment (Pull Requests)
