@@ -19,6 +19,7 @@ import {
   downloadFile,
 } from '@/lib/utils/backup';
 import { RestoreModal } from '@/components/backup/RestoreModal';
+import { clearSavedStatementMappings } from '@/lib/utils/statementMappingMemory';
 import {
   Palette,
   Database,
@@ -694,6 +695,20 @@ export default function SettingsPage() {
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Reset Onboarding Guide
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  clearSavedStatementMappings();
+                  alert('Remembered bank statement column mappings have been reset.');
+                }}
+                className="gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Clear Import Formats
               </Button>
 
               <Button

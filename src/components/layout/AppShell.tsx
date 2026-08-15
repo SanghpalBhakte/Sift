@@ -1,11 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Header } from './Header';
 import { MobileNav } from './MobileNav';
 import { DesktopSidebar } from './DesktopSidebar';
+import { AddSubscriptionModal } from '../subscriptions/AddSubscriptionModal';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  useKeyboardShortcuts({
+    onOpenAddModal: () => setIsAddModalOpen(true),
+    isModalOpen: isAddModalOpen,
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))] selection:bg-[hsl(var(--primary)/0.2)]">
       <Header />
@@ -16,6 +25,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <MobileNav />
+
+      {/* Global Quick Add Subscription Modal triggered by "N" shortcut */}
+      <AddSubscriptionModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
     </div>
   );
 }

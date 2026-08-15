@@ -10,6 +10,10 @@ import {
   autoDetectColumnMapping,
   normalizeTransactions,
 } from '@/lib/utils/csvParser';
+import {
+  findSavedMapping,
+  saveConfirmedMapping,
+} from '@/lib/utils/statementMappingMemory';
 import { parsePdfStatement } from '@/lib/utils/pdfParser';
 import { detectRecurringCandidates } from '@/lib/utils/recurringDetector';
 import { StatementDropzone } from '@/components/import/CsvDropzone';
@@ -58,6 +62,7 @@ export default function StatementImportPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('all');
+  const [isRememberedFormat, setIsRememberedFormat] = useState(false);
 
   const currency = profile?.currency_preference || 'USD';
 
@@ -76,8 +81,15 @@ export default function StatementImportPage() {
     setCsvHeaders(headers);
     setCsvRows(rows);
 
-    const detectedMapping = autoDetectColumnMapping(headers);
-    setColumnMapping(detectedMapping);
+    const saved = findSavedMapping(headers);
+    if (saved) {
+      setColumnMapping(saved.mapping);
+      setIsRememberedFormat(true);
+    } else {
+      const detectedMapping = autoDetectColumnMapping(headers);
+      setColumnMapping(detectedMapping);
+      setIsRememberedFormat(false);
+    }
     setStep('map');
   };
 
@@ -115,6 +127,7 @@ export default function StatementImportPage() {
   // Step 2: Columns Confirmed (for CSV)
   const handleConfirmMapping = (confirmedMapping: CsvColumnMapping) => {
     setColumnMapping(confirmedMapping);
+    saveConfirmedMapping(csvHeaders, confirmedMapping);
     const normalized = normalizeTransactions(csvRows, confirmedMapping);
     setNormalizedTransactions(normalized);
 
@@ -266,6 +279,7 @@ export default function StatementImportPage() {
           headers={csvHeaders}
           previewRows={csvRows}
           initialMapping={columnMapping}
+          isRememberedFormat={isRememberedFormat}
           onConfirmMapping={handleConfirmMapping}
           onBack={() => setStep('upload')}
         />

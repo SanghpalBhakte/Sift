@@ -25,6 +25,19 @@ export function SubscriptionList({
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'next_renewal_date' | 'amount' | 'name'>('next_renewal_date');
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('focusSearch') === 'true') {
+        const input = document.getElementById('subscription-search-input') as HTMLInputElement | null;
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }
+    }
+  }, []);
+
   const handleResetFilters = () => {
     setSearch('');
     setActiveTab('all');
@@ -120,12 +133,16 @@ export function SubscriptionList({
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
             <input
+              id="subscription-search-input"
               type="text"
               placeholder="Search subscriptions, tools, categories..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="sift-input pl-9"
+              className="sift-input pl-9 pr-8"
             />
+            <kbd className="hidden sm:inline-flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center justify-center text-[10px] font-mono text-[hsl(var(--muted-foreground))] bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded px-1.5 py-0.5 pointer-events-none">
+              /
+            </kbd>
           </div>
 
           <div className="flex items-center gap-2">

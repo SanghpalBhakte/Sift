@@ -5,12 +5,14 @@ import { CsvColumnMapping } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
-import { Table, ArrowRight, Check, AlertCircle } from 'lucide-react';
+import { Table, ArrowRight, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { autoDetectColumnMapping } from '@/lib/utils/csvParser';
 
 interface ColumnMapperProps {
   headers: string[];
   previewRows: Record<string, string>[];
   initialMapping: CsvColumnMapping;
+  isRememberedFormat?: boolean;
   onConfirmMapping: (mapping: CsvColumnMapping) => void;
   onBack: () => void;
 }
@@ -19,11 +21,19 @@ export function ColumnMapper({
   headers,
   previewRows,
   initialMapping,
+  isRememberedFormat = false,
   onConfirmMapping,
   onBack,
 }: ColumnMapperProps) {
   const [mapping, setMapping] = useState<CsvColumnMapping>(initialMapping);
+  const [isRemembered, setIsRemembered] = useState(isRememberedFormat);
   const [error, setError] = useState<string | null>(null);
+
+  const handleResetToAuto = () => {
+    const auto = autoDetectColumnMapping(headers);
+    setMapping(auto);
+    setIsRemembered(false);
+  };
 
   const handleContinue = () => {
     if (!mapping.dateColumn) {
@@ -50,10 +60,28 @@ export function ColumnMapper({
           Confirm Statement Column Mapping
         </h2>
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          We auto-detected your CSV columns. Verify or adjust the mappings below to ensure accurate
-          recurring detection.
+          Verify or adjust the column mappings below to ensure accurate recurring charge detection.
         </p>
       </div>
+
+      {/* Remembered Format Banner */}
+      {isRemembered ? (
+        <div className="p-3.5 rounded-xl bg-[hsl(var(--primary)/0.06)] border border-[hsl(var(--primary)/0.25)] flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-[hsl(var(--primary))]">
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span>
+              <strong>Recognized Statement Layout:</strong> Applied your saved column mapping for this bank format.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleResetToAuto}
+            className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1 hover:underline shrink-0"
+          >
+            <RefreshCw className="w-3 h-3" /> Reset
+          </button>
+        </div>
+      ) : null}
 
       {error ? (
         <div className="p-3 text-xs bg-[hsl(var(--danger-subtle))] border border-[hsl(var(--danger)/0.3)] text-[hsl(var(--danger))] rounded-lg flex items-center gap-2">
@@ -75,7 +103,10 @@ export function ColumnMapper({
             <Select
               label="Transaction Date *"
               value={mapping.dateColumn}
-              onChange={(e) => setMapping({ ...mapping, dateColumn: e.target.value })}
+              onChange={(e) => {
+                setMapping({ ...mapping, dateColumn: e.target.value });
+                setIsRemembered(false);
+              }}
               helperText="e.g. Posted Date or Date"
             >
               <option value="">-- Select Date Column --</option>
@@ -89,7 +120,10 @@ export function ColumnMapper({
             <Select
               label="Description / Merchant *"
               value={mapping.descriptionColumn}
-              onChange={(e) => setMapping({ ...mapping, descriptionColumn: e.target.value })}
+              onChange={(e) => {
+                setMapping({ ...mapping, descriptionColumn: e.target.value });
+                setIsRemembered(false);
+              }}
               helperText="e.g. Description, Payee, Name"
             >
               <option value="">-- Select Merchant Column --</option>
@@ -103,7 +137,10 @@ export function ColumnMapper({
             <Select
               label="Amount / Charge *"
               value={mapping.amountColumn}
-              onChange={(e) => setMapping({ ...mapping, amountColumn: e.target.value })}
+              onChange={(e) => {
+                setMapping({ ...mapping, amountColumn: e.target.value });
+                setIsRemembered(false);
+              }}
               helperText="e.g. Amount, Debit, Spent"
             >
               <option value="">-- Select Amount Column --</option>

@@ -68,6 +68,9 @@ export function Header() {
                 <Plus className="w-3.5 h-3.5" />
                 <span className="hidden xs:inline">Add Subscription</span>
                 <span className="xs:hidden">Add</span>
+                <kbd className="hidden sm:inline-flex text-[10px] bg-white/20 border border-white/25 rounded px-1 font-mono font-normal">
+                  N
+                </kbd>
               </Button>
             </Link>
 
