@@ -1,4 +1,5 @@
 import { CsvColumnMapping, NormalizedTransaction } from '../types';
+import { normalizeMerchantDescriptor } from './merchantMatcher';
 
 /**
  * Robust, client-side CSV parser supporting quoted cells, commas, tabs, and semicolons.
@@ -270,104 +271,10 @@ function parseDateString(dateStr: string): string | null {
 }
 
 /**
- * Cleans noisy bank statement merchant strings
- * Examples:
- * "PAYPAL *SPOTIFY USA 800-555" -> "Spotify"
- * "POS DEBIT NETFLIX.COM LOS GATOS CA" -> "Netflix"
- * "GITHUB, INC. 877-448-4820 CA" -> "GitHub"
+ * Cleans noisy bank statement merchant strings via centralized merchantMatcher
  */
 export function cleanMerchantDescription(rawDesc: string): string {
   if (!rawDesc) return '';
-
-  let cleaned = rawDesc.trim();
-
-  // Strip common bank prefixes
-  const prefixes = [
-    /^POS\s+(DEBIT|PURCHASE)\s+/i,
-    /^CARD\s+PURCHASE\s+/i,
-    /^RECURRING\s+(PAYMENT|DEBIT|CHARGE)?\s+/i,
-    /^ACH\s+(DEBIT|PAYMENT|WITHDRAWAL)?\s+/i,
-    /^DEBIT\s+CARD\s+PURCHASE\s+/i,
-    /^DIRECT\s+DEBIT\s+/i,
-    /^CHECKCARD\s+\d*\s*/i,
-    /^PAYPAL\s*[*_]\s*/i,
-    /^SQ\s*[*_]\s*/i,
-    /^TST\s*[*_]\s*/i,
-    /^APPLE\.COM\/BILL\s*/i,
-    /^GOOGLE\s*[*_]\s*/i,
-  ];
-
-  prefixes.forEach((p) => {
-    cleaned = cleaned.replace(p, '');
-  });
-
-  // Strip phone numbers, URLs, and country/state codes
-  cleaned = cleaned.replace(/\b\d{3}[-.\s]??\d{3}[-.\s]??\d{4}\b/g, '');
-  cleaned = cleaned.replace(/\b(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+\.(com|io|net|org|co|app)\b/gi, '');
-  cleaned = cleaned.replace(/\b(CA|NY|TX|WA|DE|US|USA|GB|UK|IRL|NLD|DEU)\b/g, '');
-  cleaned = cleaned.replace(/[#*_-]+\d+/g, '');
-  cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
-
-  // Known brand normalization dictionary
-  const brandKeywords: Record<string, string> = {
-    spotify: 'Spotify',
-    netflix: 'Netflix',
-    github: 'GitHub',
-    notion: 'Notion',
-    linear: 'Linear',
-    figma: 'Figma',
-    openai: 'OpenAI (ChatGPT)',
-    chatgpt: 'ChatGPT Plus',
-    anthropic: 'Claude Pro',
-    claude: 'Claude Pro',
-    cursor: 'Cursor AI',
-    vercel: 'Vercel',
-    supabase: 'Supabase',
-    aws: 'AWS Cloud',
-    amazon: 'Amazon Prime',
-    prime: 'Amazon Prime',
-    youtube: 'YouTube Premium',
-    google: 'Google One',
-    apple: 'Apple Services',
-    icloud: 'iCloud+',
-    disney: 'Disney+',
-    hulu: 'Hulu',
-    hbo: 'Max (HBO)',
-    adobe: 'Adobe Creative Cloud',
-    slack: 'Slack',
-    zoom: 'Zoom',
-    loom: 'Loom',
-    dropbox: 'Dropbox',
-    nytimes: 'NYTimes',
-    medium: 'Medium',
-    substack: 'Substack',
-    strava: 'Strava',
-    gym: 'Gym Membership',
-    planetfitness: 'Planet Fitness',
-    equinox: 'Equinox',
-    whoop: 'Whoop',
-    oura: 'Oura Ring',
-    audible: 'Audible',
-    playstation: 'PlayStation Plus',
-    xbox: 'Xbox Game Pass',
-    nintendo: 'Nintendo Switch Online',
-    '1password': '1Password',
-    bitwarden: 'Bitwarden',
-    proton: 'Proton Mail',
-  };
-
-  const lower = cleaned.toLowerCase();
-  for (const [key, brandName] of Object.entries(brandKeywords)) {
-    if (lower.includes(key)) {
-      return brandName;
-    }
-  }
-
-  // Capitalize nicely if not in brand dictionary
-  return cleaned
-    .split(' ')
-    .filter((w) => w.length > 0)
-    .slice(0, 3) // take first 3 words
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ');
+  const result = normalizeMerchantDescriptor(rawDesc);
+  return result.canonical || result.normalized || rawDesc.trim();
 }

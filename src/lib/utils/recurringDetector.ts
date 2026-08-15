@@ -6,6 +6,7 @@ import {
   ValueRating,
 } from '../types';
 import { addDays, addMonths, addYears, differenceInDays, isBefore, parseISO, format } from 'date-fns';
+import { clusterTransactionsBySimilarity } from './merchantMatcher';
 
 const KNOWN_SUBSCRIPTION_BRANDS = [
   'spotify',
@@ -21,9 +22,9 @@ const KNOWN_SUBSCRIPTION_BRANDS = [
   'vercel',
   'supabase',
   'aws',
-  'amazon prime',
+  'amazon',
   'youtube',
-  'google one',
+  'google',
   'apple',
   'icloud',
   'disney',
@@ -51,7 +52,7 @@ const KNOWN_SUBSCRIPTION_BRANDS = [
 ];
 
 /**
- * Detects recurring subscription candidates from normalized transactions
+ * Detects recurring subscription candidates using fuzzy descriptor clustering and interval analysis
  */
 export function detectRecurringCandidates(
   transactions: NormalizedTransaction[],
@@ -60,15 +61,8 @@ export function detectRecurringCandidates(
 ): RecurringCandidate[] {
   if (transactions.length === 0) return [];
 
-  // Group transactions by cleaned merchant name
-  const merchantGroups = new Map<string, NormalizedTransaction[]>();
-
-  transactions.forEach((tx) => {
-    const key = tx.cleanMerchant.toLowerCase();
-    const existing = merchantGroups.get(key) || [];
-    existing.push(tx);
-    merchantGroups.set(key, existing);
-  });
+  // Group transactions using intelligent fuzzy descriptor clustering
+  const merchantGroups = clusterTransactionsBySimilarity(transactions);
 
   const candidates: RecurringCandidate[] = [];
 

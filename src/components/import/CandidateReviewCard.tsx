@@ -2,13 +2,11 @@
 
 import React, { useState } from 'react';
 import { Category, RecurringCandidate, ValueRating } from '@/lib/types';
-import { formatCurrency, formatCycle } from '@/lib/utils/currency';
+import { formatCurrency } from '@/lib/utils/currency';
 import { formatDate } from '@/lib/utils/dates';
 import { Badge } from '../ui/Badge';
-import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
-import { ValueRatingTag } from '../ui/ValueRatingTag';
-import { Check, ChevronDown, ChevronUp, Calendar, CreditCard, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, Sparkles, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface CandidateReviewCardProps {
@@ -26,6 +24,12 @@ export function CandidateReviewCard({
 }: CandidateReviewCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Count unique raw descriptor variations
+  const uniqueDescriptors = new Set(
+    candidate.matchedTransactions.map((t) => t.rawDescription.trim())
+  );
+  const hasDescriptorDrift = uniqueDescriptors.size > 1;
 
   const getConfidenceBadge = () => {
     if (candidate.confidence === 'high') {
@@ -98,6 +102,13 @@ export function CandidateReviewCard({
                     {candidate.merchantName}
                   </h3>
                   {getConfidenceBadge()}
+
+                  {hasDescriptorDrift ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[hsl(var(--surface))] border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
+                      <Layers className="w-2.5 h-2.5 text-[hsl(var(--primary))]" />
+                      Grouped {uniqueDescriptors.size} variants
+                    </span>
+                  ) : null}
                 </div>
               )}
 
@@ -205,7 +216,7 @@ export function CandidateReviewCard({
               </>
             ) : (
               <>
-                <ChevronDown className="w-3.5 h-3.5" /> View {candidate.matchedTransactions.length} source transactions
+                <ChevronDown className="w-3.5 h-3.5" /> View {candidate.matchedTransactions.length} source transaction{candidate.matchedTransactions.length === 1 ? '' : 's'}
               </>
             )}
           </button>
@@ -222,7 +233,7 @@ export function CandidateReviewCard({
                     className="flex items-center justify-between text-[11px] text-[hsl(var(--muted-foreground))]"
                   >
                     <span className="font-mono">{formatDate(tx.date)}</span>
-                    <span className="truncate max-w-[200px] text-[hsl(var(--foreground))]">
+                    <span className="truncate max-w-[200px] text-[hsl(var(--foreground))] font-mono text-[10px]">
                       {tx.rawDescription}
                     </span>
                     <span className="font-mono font-semibold text-[hsl(var(--foreground))]">
