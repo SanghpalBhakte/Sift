@@ -38,3 +38,5 @@ next-env.d.ts
 
 # Added by ggshield
 .cache_ggshield
+.vercel
+.env*
