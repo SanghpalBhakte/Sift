@@ -26,7 +26,7 @@ export function TopSubscriptions({ items, currency = 'USD' }: TopSubscriptionsPr
           <div>
             <CardTitle>Top Cost Drivers</CardTitle>
             <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-              Subscriptions accounting for the largest share of spend
+              Subscriptions accounting for the largest share of monthly spend
             </p>
           </div>
         </div>
@@ -41,51 +41,65 @@ export function TopSubscriptions({ items, currency = 'USD' }: TopSubscriptionsPr
 
       <CardContent className="space-y-3 pt-1">
         <div className="divide-y divide-[hsl(var(--border))]">
-          {items.map(({ subscription, monthlyAmount, percentageOfTotal }, index) => (
-            <div
-              key={subscription.id}
-              className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-5 text-center text-xs font-mono text-[hsl(var(--muted-foreground))] font-semibold">
-                  #{index + 1}
-                </span>
+          {items.map(
+            (
+              { subscription, monthlyAmount, convertedMonthlyAmount, percentageOfTotal },
+              index
+            ) => {
+              const displayAmount = convertedMonthlyAmount || monthlyAmount;
+              const isDifferentCurrency =
+                subscription.currency.toUpperCase() !== currency.toUpperCase();
 
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link
-                      href={`/subscriptions/${subscription.id}/edit`}
-                      className="text-sm font-semibold text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors truncate"
-                    >
-                      {subscription.name}
-                    </Link>
-                    <ValueRatingTag rating={subscription.value_rating} size="sm" />
-                  </div>
-
-                  <div className="flex items-center gap-2 text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-                    <span>{subscription.category?.name || 'General'}</span>
-                    <span>·</span>
-                    <span>
-                      {formatCurrency(subscription.amount, subscription.currency)}
-                      {formatCycle(subscription.billing_cycle, subscription.custom_interval_days)}
+              return (
+                <div
+                  key={subscription.id}
+                  className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-5 text-center text-xs font-mono text-[hsl(var(--muted-foreground))] font-semibold">
+                      #{index + 1}
                     </span>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          href={`/subscriptions/${subscription.id}/edit`}
+                          className="text-sm font-semibold text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors truncate"
+                        >
+                          {subscription.name}
+                        </Link>
+                        <ValueRatingTag rating={subscription.value_rating} size="sm" />
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
+                        <span>{subscription.category?.name || 'General'}</span>
+                        <span>·</span>
+                        <span>
+                          {formatCurrency(subscription.amount, subscription.currency)}
+                          {formatCycle(
+                            subscription.billing_cycle,
+                            subscription.custom_interval_days
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-bold text-[hsl(var(--foreground))] font-mono">
+                      {formatCurrency(displayAmount, currency)}
+                      <span className="text-[10px] font-normal text-[hsl(var(--muted-foreground))] ml-0.5">
+                        /mo
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-mono">
+                      {percentageOfTotal}% of total
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="text-right shrink-0">
-                <div className="text-sm font-bold text-[hsl(var(--foreground))]">
-                  {formatCurrency(monthlyAmount, currency)}
-                  <span className="text-[10px] font-normal text-[hsl(var(--muted-foreground))] ml-0.5">
-                    /mo
-                  </span>
-                </div>
-                <div className="text-[10px] text-[hsl(var(--muted-foreground))] font-mono">
-                  {percentageOfTotal}% of total
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            }
+          )}
         </div>
       </CardContent>
     </Card>

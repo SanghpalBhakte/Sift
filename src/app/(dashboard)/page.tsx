@@ -11,7 +11,7 @@ import { TrialAlerts } from '@/components/subscriptions/TrialAlerts';
 import { CancelCandidates } from '@/components/subscriptions/CancelCandidates';
 import { CategoryBreakdown } from '@/components/insights/CategoryBreakdown';
 import { SubscriptionCard } from '@/components/subscriptions/SubscriptionCard';
-import { formatCurrency, formatCycle } from '@/lib/utils/currency';
+import { formatCurrency } from '@/lib/utils/currency';
 import { getCountdownBadge, formatDate } from '@/lib/utils/dates';
 import {
   Plus,
@@ -29,6 +29,8 @@ export default function DashboardPage() {
     categories,
     stats,
     profile,
+    exchangeRates,
+    displayCurrency,
     isLoading,
     toggleStatus,
     deleteSubscription,
@@ -44,6 +46,8 @@ export default function DashboardPage() {
   const nextRenewalCountdown = nextRenewal
     ? getCountdownBadge(nextRenewal.next_renewal_date)
     : null;
+
+  const targetCurrency = stats.displayCurrency || displayCurrency || 'USD';
 
   if (isLoading) {
     return (
@@ -157,8 +161,8 @@ export default function DashboardPage() {
         {/* Monthly Recurring Total */}
         <MetricCard
           label="Monthly Recurring"
-          value={formatCurrency(stats.monthlyTotal, profile?.currency_preference || 'USD')}
-          subtitle="Normalized run-rate"
+          value={formatCurrency(stats.monthlyTotal, targetCurrency)}
+          subtitle={`Converted to ${targetCurrency}`}
           trend={{
             text: `Across ${stats.activeCount} active items`,
             type: 'accent',
@@ -168,8 +172,8 @@ export default function DashboardPage() {
         {/* Yearly Recurring Total */}
         <MetricCard
           label="Yearly Projected"
-          value={formatCurrency(stats.yearlyProjected, profile?.currency_preference || 'USD')}
-          subtitle={`~${formatCurrency(stats.monthlyTotal, profile?.currency_preference || 'USD')}/month`}
+          value={formatCurrency(stats.yearlyProjected, targetCurrency)}
+          subtitle={`~${formatCurrency(stats.monthlyTotal, targetCurrency)}/month`}
           trend={{
             text: 'Annual commitment',
             type: 'neutral',
@@ -228,7 +232,12 @@ export default function DashboardPage() {
 
       {/* 4. Category Spend Distribution */}
       <section>
-        <CategoryBreakdown subscriptions={subscriptions} categories={categories} />
+        <CategoryBreakdown
+          subscriptions={subscriptions}
+          categories={categories}
+          currency={targetCurrency}
+          rates={exchangeRates.rates}
+        />
       </section>
 
       {/* 5. Active Subscriptions List */}

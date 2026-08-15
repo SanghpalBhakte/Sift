@@ -148,6 +148,7 @@ export interface DashboardStats {
   upcomingRenewalsCount: number;
   upcoming30DaysTotal: number;
   nextUpcomingRenewal: Subscription | null;
+  displayCurrency: string;
 }
 
 export interface SpendTrendPoint {
@@ -160,6 +161,7 @@ export interface SpendTrendPoint {
 export interface TopSubscriptionItem {
   subscription: Subscription;
   monthlyAmount: number;
+  convertedMonthlyAmount: number;
   percentageOfTotal: number;
 }
 
@@ -167,6 +169,7 @@ export interface UpcomingPaymentItem {
   subscription: Subscription;
   renewalDate: string;
   amount: number;
+  convertedAmount: number;
   daysUntil: number;
   isUrgent: boolean;
 }
@@ -187,7 +190,7 @@ export type SubscriptionFormData = Omit<
 >;
 
 // -----------------------------------------------------------------------------
-// CSV Import & Recurring Detection Models
+// CSV & PDF Import Models
 // -----------------------------------------------------------------------------
 
 export interface NormalizedTransaction {
@@ -248,4 +251,16 @@ export interface BackupValidationResult {
     categories: number;
     paymentMethods: number;
   };
+}
+
+// -----------------------------------------------------------------------------
+// Multi-Currency & Exchange Rate Models
+// -----------------------------------------------------------------------------
+
+export interface ExchangeRatesData {
+  base: string; // e.g. 'USD'
+  rates: Record<string, number>;
+  updatedAt: string;
+  source: string;
+  isStale?: boolean;
 }

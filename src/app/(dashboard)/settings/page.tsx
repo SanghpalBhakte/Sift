@@ -35,8 +35,10 @@ import {
   Zap,
   RefreshCw,
   Archive,
-  FileText,
+  Coins,
+  Globe,
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils/dates';
 
 const REMINDER_OFFSET_OPTIONS = [
   { days: 7, label: '7 days before' },
@@ -52,18 +54,19 @@ export default function SettingsPage() {
     subscriptions,
     categories,
     profile,
+    exchangeRates,
     updateProfile,
     populateStarterTemplates,
+    refreshExchangeRates,
     refresh,
   } = useSubscriptions();
 
-  const {
-    sendTestNotification,
-    updatePreferences,
-  } = useNotifications();
+  const { updatePreferences } = useNotifications();
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [restoreSuccess, setRestoreSuccess] = useState(false);
+  const [ratesSyncSuccess, setRatesSyncSuccess] = useState(false);
+  const [isSyncingRates, setIsSyncingRates] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [emailDispatchStatus, setEmailDispatchStatus] = useState<string | null>(null);
   const [isDispatching, setIsDispatching] = useState(false);
@@ -116,6 +119,19 @@ export default function SettingsPage() {
       console.error('Failed to save settings:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSyncRates = async () => {
+    setIsSyncingRates(true);
+    try {
+      await refreshExchangeRates(true);
+      setRatesSyncSuccess(true);
+      setTimeout(() => setRatesSyncSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to sync rates:', err);
+    } finally {
+      setIsSyncingRates(false);
     }
   };
 
@@ -200,7 +216,7 @@ export default function SettingsPage() {
           Settings & Preferences
         </h1>
         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-          Workspace personalization, theme customization, automated email reminders, and open data
+          Workspace personalization, multi-currency display, automated email reminders, and open data
           backup
         </p>
       </div>
@@ -214,6 +230,12 @@ export default function SettingsPage() {
       {restoreSuccess ? (
         <div className="p-3 text-xs bg-[hsl(var(--success-subtle))] border border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] rounded-lg flex items-center gap-2">
           <Check className="w-4 h-4" /> Workspace backup restored successfully.
+        </div>
+      ) : null}
+
+      {ratesSyncSuccess ? (
+        <div className="p-3 text-xs bg-[hsl(var(--success-subtle))] border border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] rounded-lg flex items-center gap-2">
+          <Check className="w-4 h-4" /> Latest exchange rates synchronized successfully.
         </div>
       ) : null}
 
@@ -378,13 +400,13 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* 3. Workspace & Identity Form */}
+      {/* 3. Workspace & Multi-Currency Preferences */}
       <form onSubmit={handleSaveProfile}>
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-[hsl(var(--primary))]" />
-              <CardTitle>Workspace & Currency Preferences</CardTitle>
+              <CardTitle>Workspace & Display Currency</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -410,7 +432,7 @@ export default function SettingsPage() {
               label="Primary Display Currency"
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              helperText="All recurring subscription run-rates and totals will be formatted in this currency."
+              helperText="All recurring subscription run-rates and dashboard totals will be converted and shown in this currency."
             >
               {SUPPORTED_CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -418,6 +440,46 @@ export default function SettingsPage() {
                 </option>
               ))}
             </Select>
+
+            {/* Exchange Rates Status & Sync Card */}
+            <div className="p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.5)] space-y-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                    Exchange Rate Engine
+                  </div>
+                  <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                    {exchangeRates.source} · Updated {formatDate(exchangeRates.updatedAt)}
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncRates}
+                  isLoading={isSyncingRates}
+                  className="gap-1 text-xs shrink-0"
+                >
+                  <RefreshCw className="w-3 h-3 text-[hsl(var(--primary))]" />
+                  Sync Rates
+                </Button>
+              </div>
+
+              <div className="text-[11px] text-[hsl(var(--muted-foreground))] flex items-center gap-3 pt-1 border-t border-[hsl(var(--border))]">
+                <span>
+                  Base: <strong className="text-[hsl(var(--foreground))]">USD</strong>
+                </span>
+                <span>·</span>
+                <span>
+                  Current Rate: 1 USD ≈{' '}
+                  <strong className="text-[hsl(var(--foreground))] font-mono">
+                    {exchangeRates.rates[currency] || 1.0} {currency}
+                  </strong>
+                </span>
+              </div>
+            </div>
 
             <div className="pt-2 flex justify-end">
               <Button type="submit" variant="primary" size="sm" isLoading={isSaving}>

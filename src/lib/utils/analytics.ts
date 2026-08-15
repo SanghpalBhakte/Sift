@@ -7,15 +7,20 @@ import {
   UpcomingPaymentItem,
   ValueRating,
 } from '../types';
-import { normalizeMonthlyAmount } from './currency';
+import { convertCurrency, normalizeMonthlyAmount } from './currency';
 import { getDaysUntil, isUpcomingSoon } from './dates';
-import { format, subMonths, startOfMonth, parseISO, isAfter, isBefore } from 'date-fns';
+import { DEFAULT_OFFLINE_RATES } from '../services/exchangeRateService';
+import { format, subMonths, startOfMonth, parseISO, isBefore } from 'date-fns';
 
 /**
- * Calculates primary dashboard and overview stats from subscription list.
+ * Calculates primary dashboard and overview stats in the preferred display currency.
  * Excludes archived and canceled items from active recurring run-rates.
  */
-export function calculateDashboardStats(subscriptions: Subscription[]): DashboardStats {
+export function calculateDashboardStats(
+  subscriptions: Subscription[],
+  targetCurrency: string = 'USD',
+  rates: Record<string, number> = DEFAULT_OFFLINE_RATES
+): DashboardStats {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
   const pausedSubs = subscriptions.filter((s) => s.status === 'paused');
   const trialSubs = subscriptions.filter((s) => s.is_trial && s.status === 'active');
@@ -23,32 +28,35 @@ export function calculateDashboardStats(subscriptions: Subscription[]): Dashboar
     (s) => s.value_rating === 'cancel_candidate' && s.status === 'active'
   );
 
-  const monthlyTotal = activeSubs.reduce(
-    (acc, sub) =>
-      acc +
-      (sub.monthly_amount ||
-        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
-    0
-  );
+  const monthlyTotal = activeSubs.reduce((acc, sub) => {
+    const rawMonthly =
+      sub.monthly_amount ||
+      normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+    const converted = convertCurrency(rawMonthly, sub.currency || 'USD', targetCurrency, rates);
+    return acc + converted;
+  }, 0);
 
   const averageMonthlySpend =
     activeSubs.length > 0 ? Math.round((monthlyTotal / activeSubs.length) * 100) / 100 : 0;
 
-  const potentialMonthlySavings = cancelCandidates.reduce(
-    (acc, sub) =>
-      acc +
-      (sub.monthly_amount ||
-        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
-    0
-  );
+  const potentialMonthlySavings = cancelCandidates.reduce((acc, sub) => {
+    const rawMonthly =
+      sub.monthly_amount ||
+      normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+    const converted = convertCurrency(rawMonthly, sub.currency || 'USD', targetCurrency, rates);
+    return acc + converted;
+  }, 0);
 
   const upcomingRenewalsCount = activeSubs.filter((s) =>
     isUpcomingSoon(s.next_renewal_date, 7)
   ).length;
 
-  // Upcoming 30-day payment pressure
-  const next30DaysPayments = calculateUpcoming30DayCharges(subscriptions);
-  const upcoming30DaysTotal = next30DaysPayments.reduce((acc, item) => acc + item.amount, 0);
+  // Upcoming 30-day payment pressure in display currency
+  const next30DaysPayments = calculateUpcoming30DayCharges(subscriptions, 30, targetCurrency, rates);
+  const upcoming30DaysTotal = next30DaysPayments.reduce(
+    (acc, item) => acc + item.convertedAmount,
+    0
+  );
 
   // Find nearest renewal among active subscriptions
   const sortedActive = [...activeSubs].sort(
@@ -68,6 +76,7 @@ export function calculateDashboardStats(subscriptions: Subscription[]): Dashboar
     upcomingRenewalsCount,
     upcoming30DaysTotal: Math.round(upcoming30DaysTotal * 100) / 100,
     nextUpcomingRenewal,
+    displayCurrency: targetCurrency,
   };
 }
 
@@ -76,19 +85,22 @@ export function calculateDashboardStats(subscriptions: Subscription[]): Dashboar
  */
 export function calculateUpcoming30DayCharges(
   subscriptions: Subscription[],
-  daysWindow: number = 30
+  daysWindow: number = 30,
+  targetCurrency: string = 'USD',
+  rates: Record<string, number> = DEFAULT_OFFLINE_RATES
 ): UpcomingPaymentItem[] {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
-
   const upcoming: UpcomingPaymentItem[] = [];
 
   activeSubs.forEach((sub) => {
     const daysUntil = getDaysUntil(sub.next_renewal_date);
     if (daysUntil >= 0 && daysUntil <= daysWindow) {
+      const converted = convertCurrency(sub.amount, sub.currency || 'USD', targetCurrency, rates);
       upcoming.push({
         subscription: sub,
         renewalDate: sub.next_renewal_date,
         amount: sub.amount,
+        convertedAmount: converted,
         daysUntil,
         isUrgent: daysUntil <= 3,
       });
@@ -99,53 +111,58 @@ export function calculateUpcoming30DayCharges(
 }
 
 /**
- * Returns top cost-driving subscriptions ranked by normalized monthly amount.
+ * Returns top cost-driving subscriptions ranked by converted monthly run-rate.
  */
 export function calculateTopSubscriptions(
   subscriptions: Subscription[],
-  limit: number = 5
+  limit: number = 5,
+  targetCurrency: string = 'USD',
+  rates: Record<string, number> = DEFAULT_OFFLINE_RATES
 ): TopSubscriptionItem[] {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
-  const totalMonthly = activeSubs.reduce(
-    (acc, sub) =>
-      acc +
-      (sub.monthly_amount ||
-        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
-    0
-  );
 
-  const sorted = [...activeSubs].sort((a, b) => {
-    const amountA =
-      a.monthly_amount ||
-      normalizeMonthlyAmount(a.amount, a.billing_cycle, a.custom_interval_days);
-    const amountB =
-      b.monthly_amount ||
-      normalizeMonthlyAmount(b.amount, b.billing_cycle, b.custom_interval_days);
-    return amountB - amountA;
-  });
-
-  return sorted.slice(0, limit).map((sub) => {
-    const monthlyAmount =
+  const items = activeSubs.map((sub) => {
+    const rawMonthly =
       sub.monthly_amount ||
       normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+    const convertedMonthly = convertCurrency(
+      rawMonthly,
+      sub.currency || 'USD',
+      targetCurrency,
+      rates
+    );
+    return {
+      sub,
+      rawMonthly,
+      convertedMonthly,
+    };
+  });
+
+  const totalConvertedMonthly = items.reduce((acc, i) => acc + i.convertedMonthly, 0);
+
+  const sorted = items.sort((a, b) => b.convertedMonthly - a.convertedMonthly);
+
+  return sorted.slice(0, limit).map(({ sub, rawMonthly, convertedMonthly }) => {
     const percentageOfTotal =
-      totalMonthly > 0 ? Math.round((monthlyAmount / totalMonthly) * 100) : 0;
+      totalConvertedMonthly > 0 ? Math.round((convertedMonthly / totalConvertedMonthly) * 100) : 0;
 
     return {
       subscription: sub,
-      monthlyAmount: Math.round(monthlyAmount * 100) / 100,
+      monthlyAmount: Math.round(rawMonthly * 100) / 100,
+      convertedMonthlyAmount: Math.round(convertedMonthly * 100) / 100,
       percentageOfTotal,
     };
   });
 }
 
 /**
- * Calculates a clean, calm monthly spend timeline for the past N months.
- * Determines how recurring commitments stacked up over time based on start_date.
+ * Calculates a clean monthly spend timeline converted to display currency.
  */
 export function calculateSpendTrend(
   subscriptions: Subscription[],
-  monthsCount: number = 6
+  monthsCount: number = 6,
+  targetCurrency: string = 'USD',
+  rates: Record<string, number> = DEFAULT_OFFLINE_RATES
 ): SpendTrendPoint[] {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
   const points: SpendTrendPoint[] = [];
@@ -167,13 +184,13 @@ export function calculateSpendTrend(
       }
     });
 
-    const totalMonthly = subsInMonth.reduce(
-      (acc, sub) =>
-        acc +
-        (sub.monthly_amount ||
-          normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
-      0
-    );
+    const totalMonthly = subsInMonth.reduce((acc, sub) => {
+      const rawMonthly =
+        sub.monthly_amount ||
+        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+      const converted = convertCurrency(rawMonthly, sub.currency || 'USD', targetCurrency, rates);
+      return acc + converted;
+    }, 0);
 
     points.push({
       monthLabel,
@@ -195,22 +212,23 @@ export interface CategorySpendItem {
 
 export function calculateCategoryBreakdown(
   subscriptions: Subscription[],
-  categories: Category[]
+  categories: Category[],
+  targetCurrency: string = 'USD',
+  rates: Record<string, number> = DEFAULT_OFFLINE_RATES
 ): CategorySpendItem[] {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
-  const totalMonthly = activeSubs.reduce(
-    (acc, sub) =>
-      acc +
-      (sub.monthly_amount ||
-        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
-    0
-  );
+
+  const totalMonthly = activeSubs.reduce((acc, sub) => {
+    const rawMonthly =
+      sub.monthly_amount ||
+      normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+    return acc + convertCurrency(rawMonthly, sub.currency || 'USD', targetCurrency, rates);
+  }, 0);
 
   if (totalMonthly === 0) return [];
 
   const categoryMap = new Map<string, { total: number; count: number }>();
 
-  // Map of uncategorized fallback
   const uncategorizedCat: Category = {
     id: 'uncategorized',
     name: 'General & Other',
@@ -222,12 +240,14 @@ export function calculateCategoryBreakdown(
 
   activeSubs.forEach((sub) => {
     const catId = sub.category_id || 'uncategorized';
-    const monthly =
+    const rawMonthly =
       sub.monthly_amount ||
       normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+    const converted = convertCurrency(rawMonthly, sub.currency || 'USD', targetCurrency, rates);
+
     const existing = categoryMap.get(catId) || { total: 0, count: 0 };
     categoryMap.set(catId, {
-      total: existing.total + monthly,
+      total: existing.total + converted,
       count: existing.count + 1,
     });
   });
@@ -260,16 +280,18 @@ export interface ValueRatingBreakdown {
 }
 
 export function calculateValueRatingBreakdown(
-  subscriptions: Subscription[]
+  subscriptions: Subscription[],
+  targetCurrency: string = 'USD',
+  rates: Record<string, number> = DEFAULT_OFFLINE_RATES
 ): ValueRatingBreakdown[] {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
-  const totalMonthly = activeSubs.reduce(
-    (acc, sub) =>
-      acc +
-      (sub.monthly_amount ||
-        normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days)),
-    0
-  );
+
+  const totalMonthly = activeSubs.reduce((acc, sub) => {
+    const rawMonthly =
+      sub.monthly_amount ||
+      normalizeMonthlyAmount(sub.amount, sub.billing_cycle, sub.custom_interval_days);
+    return acc + convertCurrency(rawMonthly, sub.currency || 'USD', targetCurrency, rates);
+  }, 0);
 
   const ratings: { rating: ValueRating; label: string }[] = [
     { rating: 'essential', label: 'Essential' },
@@ -280,13 +302,12 @@ export function calculateValueRatingBreakdown(
 
   return ratings.map((r) => {
     const subs = activeSubs.filter((s) => s.value_rating === r.rating);
-    const monthly = subs.reduce(
-      (acc, s) =>
-        acc +
-        (s.monthly_amount ||
-          normalizeMonthlyAmount(s.amount, s.billing_cycle, s.custom_interval_days)),
-      0
-    );
+    const monthly = subs.reduce((acc, s) => {
+      const rawMonthly =
+        s.monthly_amount ||
+        normalizeMonthlyAmount(s.amount, s.billing_cycle, s.custom_interval_days);
+      return acc + convertCurrency(rawMonthly, s.currency || 'USD', targetCurrency, rates);
+    }, 0);
 
     return {
       rating: r.rating,

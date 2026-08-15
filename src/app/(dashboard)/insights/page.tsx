@@ -25,14 +25,27 @@ import {
 } from 'lucide-react';
 
 export default function InsightsPage() {
-  const { subscriptions, categories, stats, profile, isLoading, populateStarterTemplates } =
-    useSubscriptions();
+  const {
+    subscriptions,
+    categories,
+    stats,
+    profile,
+    exchangeRates,
+    displayCurrency,
+    isLoading,
+    populateStarterTemplates,
+  } = useSubscriptions();
 
-  const currency = profile?.currency_preference || 'USD';
+  const currency = displayCurrency || 'USD';
 
-  const trendData = calculateSpendTrend(subscriptions, 6);
-  const topSubscriptions = calculateTopSubscriptions(subscriptions, 5);
-  const upcoming30Days = calculateUpcoming30DayCharges(subscriptions, 30);
+  const trendData = calculateSpendTrend(subscriptions, 6, currency, exchangeRates.rates);
+  const topSubscriptions = calculateTopSubscriptions(subscriptions, 5, currency, exchangeRates.rates);
+  const upcoming30Days = calculateUpcoming30DayCharges(
+    subscriptions,
+    30,
+    currency,
+    exchangeRates.rates
+  );
 
   if (isLoading) {
     return (

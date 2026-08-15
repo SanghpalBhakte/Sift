@@ -1,14 +1,19 @@
 import { BillingCycle } from '../types';
+import { DEFAULT_OFFLINE_RATES, exchangeRateService } from '../services/exchangeRateService';
 
 export const SUPPORTED_CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
   { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
   { code: 'CAD', symbol: 'CA$', name: 'Canadian Dollar' },
   { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
   { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+  { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'AED', symbol: 'AED', name: 'UAE Dirham' },
 ];
 
 /**
@@ -20,23 +25,47 @@ export function formatCurrency(
   options: { showCents?: boolean; compact?: boolean } = {}
 ): string {
   const { showCents = true, compact = false } = options;
+  const curr = (currency || 'USD').toUpperCase().trim();
+
+  // Special rounding for zero-decimal currencies like JPY / KRW
+  const isZeroDecimal = ['JPY', 'KRW'].includes(curr);
 
   // Handle compact formatting for large numbers if needed
   if (compact && amount >= 1000) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: curr,
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      }).format(amount);
+    } catch {
+      return `${curr} ${amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toFixed(0)}`;
+    }
   }
 
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: showCents && amount % 1 !== 0 ? 2 : amount % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: curr,
+      minimumFractionDigits: isZeroDecimal ? 0 : showCents && amount % 1 !== 0 ? 2 : amount % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: isZeroDecimal ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${curr} ${amount.toFixed(isZeroDecimal ? 0 : 2)}`;
+  }
+}
+
+/**
+ * Converts amount from one currency to another using the exchange rates table
+ */
+export function convertCurrency(
+  amount: number,
+  fromCurrency: string = 'USD',
+  toCurrency: string = 'USD',
+  rates: Record<string, number> = DEFAULT_OFFLINE_RATES
+): number {
+  return exchangeRateService.convert(amount, fromCurrency, toCurrency, rates);
 }
 
 /**

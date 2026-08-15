@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import {
   Category,
   DashboardStats,
+  ExchangeRatesData,
   PaymentMethod,
   Profile,
   Subscription,
@@ -12,6 +13,7 @@ import {
 } from '../lib/types';
 import { subscriptionService } from '../lib/services/subscriptionService';
 import { calculateDashboardStats } from '../lib/utils/analytics';
+import { DEFAULT_OFFLINE_RATES, exchangeRateService } from '../lib/services/exchangeRateService';
 import { useAuth } from './AuthContext';
 
 interface SubscriptionContextType {
@@ -19,6 +21,8 @@ interface SubscriptionContextType {
   categories: Category[];
   paymentMethods: PaymentMethod[];
   profile: Profile | null;
+  exchangeRates: ExchangeRatesData;
+  displayCurrency: string;
   isLoading: boolean;
   filters: SubscriptionFilters;
   stats: DashboardStats;
@@ -30,6 +34,7 @@ interface SubscriptionContextType {
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   populateStarterTemplates: () => Promise<void>;
   resetToSampleData: () => Promise<void>;
+  refreshExchangeRates: (force?: boolean) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -42,6 +47,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRatesData>({
+    base: 'USD',
+    rates: DEFAULT_OFFLINE_RATES,
+    updatedAt: new Date().toISOString(),
+    source: 'Offline Static Baseline',
+  });
+
   const [filters, setFilters] = useState<SubscriptionFilters>({
     status: 'all',
     category_id: 'all',
@@ -50,6 +62,17 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     sortBy: 'next_renewal_date',
     sortOrder: 'asc',
   });
+
+  const displayCurrency = profile?.currency_preference || 'USD';
+
+  const loadExchangeRates = useCallback(async (force = false) => {
+    try {
+      const data = await exchangeRateService.getExchangeRates(force);
+      setExchangeRates(data);
+    } catch (err) {
+      console.warn('Error loading exchange rates:', err);
+    }
+  }, []);
 
   const loadAll = useCallback(async () => {
     setIsLoading(true);
@@ -64,12 +87,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setCategories(cats);
       setPaymentMethods(pms);
       setProfile(prof);
+      await loadExchangeRates();
     } catch (err) {
       console.error('Error loading subscription data:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadExchangeRates]);
 
   useEffect(() => {
     loadAll();
@@ -119,8 +143,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
 
   const stats = useMemo(() => {
-    return calculateDashboardStats(subscriptions);
-  }, [subscriptions]);
+    return calculateDashboardStats(subscriptions, displayCurrency, exchangeRates.rates);
+  }, [subscriptions, displayCurrency, exchangeRates.rates]);
 
   return (
     <SubscriptionContext.Provider
@@ -129,6 +153,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         categories,
         paymentMethods,
         profile,
+        exchangeRates,
+        displayCurrency,
         isLoading,
         filters,
         stats,
@@ -140,6 +166,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         updateProfile: handleUpdateProfile,
         populateStarterTemplates: handlePopulateStarterTemplates,
         resetToSampleData: handleResetToSampleData,
+        refreshExchangeRates: loadExchangeRates,
         refresh: loadAll,
       }}
     >

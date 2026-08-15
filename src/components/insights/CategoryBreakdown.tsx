@@ -10,11 +10,15 @@ import { PieChart, Layers } from 'lucide-react';
 export function CategoryBreakdown({
   subscriptions,
   categories,
+  currency = 'USD',
+  rates,
 }: {
   subscriptions: Subscription[];
   categories: Category[];
+  currency?: string;
+  rates?: Record<string, number>;
 }) {
-  const breakdown = calculateCategoryBreakdown(subscriptions, categories);
+  const breakdown = calculateCategoryBreakdown(subscriptions, categories, currency, rates);
   const totalSpend = breakdown.reduce((acc, b) => acc + b.totalMonthly, 0);
 
   if (breakdown.length === 0) {
@@ -43,7 +47,7 @@ export function CategoryBreakdown({
           <CardTitle>Monthly Spend by Category</CardTitle>
         </div>
         <span className="text-xs font-semibold text-[hsl(var(--foreground))]">
-          {formatCurrency(totalSpend, 'USD')}/mo total
+          {formatCurrency(totalSpend, currency)}/mo total
         </span>
       </CardHeader>
 
@@ -59,44 +63,42 @@ export function CategoryBreakdown({
               'bg-[hsl(var(--primary)/0.25)]',
               'bg-[hsl(var(--muted-foreground)/0.3)]',
             ];
-            const colorClass = opacityColors[idx % opacityColors.length];
+            const barColor = opacityColors[idx % opacityColors.length];
 
             return (
               <div
                 key={item.category.id}
                 style={{ width: `${Math.max(item.percentage, 2)}%` }}
-                className={`${colorClass} h-full border-r border-[hsl(var(--card))] last:border-0`}
-                title={`${item.category.name}: ${item.percentage}% (${formatCurrency(item.totalMonthly, 'USD')})`}
+                className={`${barColor} h-full transition-all`}
+                title={`${item.category.name}: ${item.percentage}% (${formatCurrency(item.totalMonthly, currency)}/mo)`}
               />
             );
           })}
         </div>
 
-        {/* Detailed Breakdown List */}
-        <div className="divide-y divide-[hsl(var(--border))]">
+        {/* Detailed Category Rows */}
+        <div className="space-y-2.5 pt-1">
           {breakdown.map((item) => (
             <div
               key={item.category.id}
-              className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between text-xs"
+              className="flex items-center justify-between text-xs p-1.5 rounded-lg hover:bg-[hsl(var(--surface)/0.5)] transition-colors"
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full bg-[hsl(var(--primary))]" />
-                <div>
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    {item.category.name}
-                  </span>
-                  <span className="text-[11px] text-[hsl(var(--muted-foreground))] ml-2">
-                    {item.count} {item.count === 1 ? 'service' : 'services'}
-                  </span>
-                </div>
+                <span className="font-medium text-[hsl(var(--foreground))] truncate">
+                  {item.category.name}
+                </span>
+                <span className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                  ({item.count} service{item.count === 1 ? '' : 's'})
+                </span>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] text-[hsl(var(--muted-foreground))] font-mono">
-                  {item.percentage}%
+              <div className="flex items-center gap-3 shrink-0 text-right">
+                <span className="font-semibold text-[hsl(var(--foreground))] font-mono">
+                  {formatCurrency(item.totalMonthly, currency)}/mo
                 </span>
-                <span className="font-semibold text-[hsl(var(--foreground))] min-w-[70px] text-right">
-                  {formatCurrency(item.totalMonthly, 'USD')}
+                <span className="text-[11px] text-[hsl(var(--muted-foreground))] w-9 text-right">
+                  {item.percentage}%
                 </span>
               </div>
             </div>
