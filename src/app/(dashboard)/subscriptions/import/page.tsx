@@ -27,14 +27,17 @@ import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { CandidateReviewCard } from '@/components/import/CandidateReviewCard';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
 import {
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   Plus,
   Inbox,
   AlertCircle,
   FileType,
+  Layers,
 } from 'lucide-react';
 
 type ImportStep = 'upload' | 'account_select' | 'map' | 'review' | 'success';
@@ -51,10 +54,12 @@ export default function StatementImportPage() {
   const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
   const [filteredCsvRows, setFilteredCsvRows] = useState<Record<string, string>[]>([]);
   
-  // Multi-account detection state
+  // Multi-account split-batch session state
   const [accountColumn, setAccountColumn] = useState<string | null>(null);
   const [accountGroups, setAccountGroups] = useState<AccountGroup[]>([]);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | 'ALL'>('ALL');
+  const [completedGroupKeys, setCompletedGroupKeys] = useState<string[]>([]);
+  const [sessionImportedTotal, setSessionImportedTotal] = useState(0);
 
   const [columnMapping, setColumnMapping] = useState<CsvColumnMapping>({
     dateColumn: '',
@@ -67,7 +72,7 @@ export default function StatementImportPage() {
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const [importedCount, setImportedCount] = useState(0);
+  const [importedBatchCount, setImportedBatchCount] = useState(0);
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('all');
   const [isRememberedFormat, setIsRememberedFormat] = useState(false);
   const [bankName, setBankName] = useState('Custom Statement Format');
@@ -88,13 +93,15 @@ export default function StatementImportPage() {
 
     setCsvHeaders(headers);
     setCsvRows(rows);
+    setCompletedGroupKeys([]);
+    setSessionImportedTotal(0);
 
     // Check for multi-account CSV
     const multiAccount = detectMultiAccountGroups(headers, rows);
     if (multiAccount.hasMultipleAccounts && multiAccount.groups.length > 1) {
       setAccountColumn(multiAccount.accountColumn);
       setAccountGroups(multiAccount.groups);
-      setSelectedGroupKey('ALL');
+      setSelectedGroupKey(multiAccount.groups[0].accountKey);
       setFilteredCsvRows(rows);
       setStep('account_select');
       return;
@@ -118,10 +125,11 @@ export default function StatementImportPage() {
   };
 
   // Step 1B: Account Group Selected
-  const handleAccountGroupConfirmed = () => {
+  const startAccountBatch = (groupKey: string | 'ALL') => {
+    setSelectedGroupKey(groupKey);
     let rowsToUse = csvRows;
-    if (selectedGroupKey !== 'ALL' && accountColumn) {
-      rowsToUse = csvRows.filter((r) => r[accountColumn] === selectedGroupKey);
+    if (groupKey !== 'ALL' && accountColumn) {
+      rowsToUse = csvRows.filter((r) => r[accountColumn] === groupKey);
     }
     setFilteredCsvRows(rowsToUse);
 
@@ -140,12 +148,18 @@ export default function StatementImportPage() {
     setStep('map');
   };
 
+  const handleAccountGroupConfirmed = () => {
+    startAccountBatch(selectedGroupKey);
+  };
+
   // Step 1C: PDF Statement Loaded
   const handlePdfLoaded = async (file: File) => {
     setUploadError(null);
     setIsProcessingPdf(true);
     setFileName(file.name);
     setFileType('pdf');
+    setCompletedGroupKeys([]);
+    setSessionImportedTotal(0);
 
     try {
       const result = await parsePdfStatement(file);
@@ -238,13 +252,33 @@ export default function StatementImportPage() {
         count++;
       }
 
-      setImportedCount(count);
+      setImportedBatchCount(count);
+      setSessionImportedTotal((prev) => prev + count);
+
+      if (selectedGroupKey !== 'ALL') {
+        setCompletedGroupKeys((prev) =>
+          prev.includes(selectedGroupKey) ? prev : [...prev, selectedGroupKey]
+        );
+      }
+
       setStep('success');
     } catch (err: any) {
       console.error('Error importing subscriptions:', err);
       alert(`Import error: ${err.message}`);
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  // Consecutive Batch Navigation
+  const remainingGroups = accountGroups.filter((g) => !completedGroupKeys.includes(g.accountKey) && g.accountKey !== selectedGroupKey);
+  const nextPendingGroup = remainingGroups[0];
+
+  const handleProceedToNextAccount = () => {
+    if (nextPendingGroup) {
+      startAccountBatch(nextPendingGroup.accountKey);
+    } else {
+      setStep('account_select');
     }
   };
 
@@ -343,9 +377,11 @@ export default function StatementImportPage() {
           groups={accountGroups}
           totalRows={csvRows.length}
           selectedGroupKey={selectedGroupKey}
+          completedGroupKeys={completedGroupKeys}
           onSelectGroup={setSelectedGroupKey}
           onContinue={handleAccountGroupConfirmed}
           onBack={() => setStep('upload')}
+          onFinishSession={() => router.push('/subscriptions')}
         />
       ) : null}
 
@@ -382,7 +418,7 @@ export default function StatementImportPage() {
                   <span className="font-mono">{fileName}</span>
                   {selectedGroupKey !== 'ALL' && accountColumn ? (
                     <span className="text-[hsl(var(--primary))] font-semibold ml-1">
-                      (Group: {selectedGroupKey})
+                      (Account: {selectedGroupKey})
                     </span>
                   ) : null}
                 </div>
@@ -480,7 +516,7 @@ export default function StatementImportPage() {
                   No recurring patterns detected
                 </h3>
                 <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
-                  We could not find repeated recurring charges in this statement. You can always add
+                  We could not find repeated recurring charges in this account batch. You can always add
                   subscriptions manually.
                 </p>
               </div>
@@ -488,10 +524,10 @@ export default function StatementImportPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setStep('upload')}
+                onClick={() => (accountGroups.length > 1 ? setStep('account_select') : setStep('upload'))}
                 className="text-xs"
               >
-                Upload Different Statement
+                {accountGroups.length > 1 ? 'Choose Different Account' : 'Upload Different Statement'}
               </Button>
             </div>
           ) : (
@@ -549,13 +585,61 @@ export default function StatementImportPage() {
 
           <div className="space-y-1.5">
             <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
-              Import Completed Successfully!
+              {accountGroups.length > 1 && remainingGroups.length > 0
+                ? 'Account Batch Imported Successfully!'
+                : 'All Subscriptions Imported!'}
             </h2>
             <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
-              Added <strong>{importedCount} subscription{importedCount === 1 ? '' : 's'}</strong> to
-              your Sift ledger. Renewal schedules and burn rates have been recalculated.
+              Added <strong>{importedBatchCount} subscription{importedBatchCount === 1 ? '' : 's'}</strong>{' '}
+              from {selectedGroupKey !== 'ALL' ? `Account (${selectedGroupKey})` : 'your statement'} to
+              the Sift ledger.
             </p>
+            {sessionImportedTotal > importedBatchCount ? (
+              <div className="pt-1">
+                <Badge variant="outline" size="sm">
+                  {sessionImportedTotal} total subscriptions added this session
+                </Badge>
+              </div>
+            ) : null}
           </div>
+
+          {/* Consecutive Multi-Account Batch Next Action */}
+          {accountGroups.length > 1 && remainingGroups.length > 0 && selectedGroupKey !== 'ALL' ? (
+            <div className="p-4 rounded-xl border border-[hsl(var(--primary)/0.2)] bg-[hsl(var(--primary)/0.04)] space-y-3 text-left">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[hsl(var(--primary))]" />
+                <span className="text-xs font-bold text-[hsl(var(--foreground))]">
+                  Next Account Ready in This Statement
+                </span>
+              </div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                You have <strong>{remainingGroups.length} remaining sub-account{remainingGroups.length === 1 ? '' : 's'}</strong>{' '}
+                in <span className="font-mono">{fileName}</span> ({nextPendingGroup.label} with {nextPendingGroup.rowCount} charges).
+              </p>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={handleProceedToNextAccount}
+                  className="gap-1.5 font-semibold"
+                >
+                  Continue with {nextPendingGroup.label} <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep('account_select')}
+                  className="text-xs"
+                >
+                  View All Batches
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="flex items-center justify-center gap-3 pt-2">
             <Link href="/subscriptions">

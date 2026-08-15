@@ -23,6 +23,23 @@ export interface CustomBankRule {
   updatedAt: string;
 }
 
+export interface CustomBankRulesExportPayload {
+  version: 1;
+  exportedAt: string;
+  app: 'Sift';
+  type: 'custom_bank_rules';
+  rules: CustomBankRule[];
+}
+
+export interface RuleImportValidationResult {
+  valid: boolean;
+  error?: string;
+  payload?: CustomBankRulesExportPayload;
+  newCount: number;
+  updateCount: number;
+  identicalCount: number;
+}
+
 /**
  * Built-in Bank Fingerprint Rules
  */
@@ -130,7 +147,6 @@ export function testCustomRule(
     if (fileMatched) {
       matchedBy.push(`File pattern: "${filePat}"`);
     } else {
-      // If file pattern was specified but failed, rule does not match
       return { matches: false, matchedBy: [] };
     }
   }
@@ -239,11 +255,182 @@ export function toggleCustomBankRule(id: string, isEnabled: boolean): void {
   if (typeof window === 'undefined') return;
   try {
     const existing = getCustomBankRules();
-    const updated = existing.map((r) => (r.id === id ? { ...r, isEnabled, updatedAt: new Date().toISOString() } : r));
+    const updated = existing.map((r) =>
+      r.id === id ? { ...r, isEnabled, updatedAt: new Date().toISOString() } : r
+    );
     localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(updated));
   } catch (err) {
     console.warn('Failed to toggle custom bank rule:', err);
   }
+}
+
+/**
+ * Export all user-defined custom bank recognition rules as JSON string
+ */
+export function exportCustomBankRulesJson(): string {
+  const rules = getCustomBankRules();
+  const payload: CustomBankRulesExportPayload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    app: 'Sift',
+    type: 'custom_bank_rules',
+    rules,
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+/**
+ * Validate imported JSON text before applying to localStorage
+ */
+export function validateBankRulesJson(jsonText: string): RuleImportValidationResult {
+  if (!jsonText || !jsonText.trim()) {
+    return { valid: false, error: 'The provided JSON file is empty.', newCount: 0, updateCount: 0, identicalCount: 0 };
+  }
+
+  try {
+    const parsed = JSON.parse(jsonText);
+
+    // Structure validation
+    if (!parsed || typeof parsed !== 'object') {
+      return { valid: false, error: 'Invalid JSON root structure.', newCount: 0, updateCount: 0, identicalCount: 0 };
+    }
+
+    if (parsed.version !== 1 || parsed.type !== 'custom_bank_rules' || !Array.isArray(parsed.rules)) {
+      return {
+        valid: false,
+        error: 'Incompatible file schema. Expected a Sift custom bank rules export (version 1).',
+        newCount: 0,
+        updateCount: 0,
+        identicalCount: 0,
+      };
+    }
+
+    // Validate each rule in array
+    const validRules: CustomBankRule[] = [];
+    for (let i = 0; i < parsed.rules.length; i++) {
+      const r = parsed.rules[i];
+      if (!r || typeof r !== 'object' || !r.bankName || typeof r.bankName !== 'string') {
+        return {
+          valid: false,
+          error: `Rule at index ${i + 1} is missing a valid bankName string.`,
+          newCount: 0,
+          updateCount: 0,
+          identicalCount: 0,
+        };
+      }
+
+      // Check regex safety if present
+      if (r.headerRegexPattern) {
+        try {
+          new RegExp(r.headerRegexPattern, 'i');
+        } catch (e: any) {
+          return {
+            valid: false,
+            error: `Rule "${r.bankName}" contains an invalid regular expression: ${e.message}`,
+            newCount: 0,
+            updateCount: 0,
+            identicalCount: 0,
+          };
+        }
+      }
+
+      validRules.push({
+        id: r.id || `rule-${Date.now()}-${i}`,
+        bankName: r.bankName.trim(),
+        filePattern: r.filePattern?.trim() || undefined,
+        headerKeywords: Array.isArray(r.headerKeywords) ? r.headerKeywords : [],
+        headerRegexPattern: r.headerRegexPattern?.trim() || undefined,
+        isEnabled: r.isEnabled !== false,
+        createdAt: r.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    // Check overlaps with existing local rules
+    const existing = getCustomBankRules();
+    let newCount = 0;
+    let updateCount = 0;
+    let identicalCount = 0;
+
+    for (const incoming of validRules) {
+      const match = existing.find(
+        (e) => e.id === incoming.id || e.bankName.toLowerCase() === incoming.bankName.toLowerCase()
+      );
+      if (!match) {
+        newCount++;
+      } else {
+        // Compare signatures
+        const isIdentical =
+          match.bankName === incoming.bankName &&
+          match.filePattern === incoming.filePattern &&
+          match.headerRegexPattern === incoming.headerRegexPattern &&
+          match.headerKeywords.join(',') === incoming.headerKeywords.join(',');
+
+        if (isIdentical) {
+          identicalCount++;
+        } else {
+          updateCount++;
+        }
+      }
+    }
+
+    return {
+      valid: true,
+      payload: {
+        ...parsed,
+        rules: validRules,
+      },
+      newCount,
+      updateCount,
+      identicalCount,
+    };
+  } catch (err: any) {
+    return {
+      valid: false,
+      error: `JSON parse failed: ${err.message}`,
+      newCount: 0,
+      updateCount: 0,
+      identicalCount: 0,
+    };
+  }
+}
+
+/**
+ * Apply validated custom rules using either 'merge' or 'replace' mode
+ */
+export function applyBankRulesImport(
+  importedRules: CustomBankRule[],
+  mode: 'merge' | 'replace'
+): { added: number; updated: number; total: number } {
+  if (typeof window === 'undefined') return { added: 0, updated: 0, total: 0 };
+
+  const existing = getCustomBankRules();
+
+  if (mode === 'replace') {
+    localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(importedRules));
+    return { added: importedRules.length, updated: 0, total: importedRules.length };
+  }
+
+  // Merge Mode: Overwrite matching bankName/id, insert new ones
+  const nextRules = [...existing];
+  let added = 0;
+  let updated = 0;
+
+  for (const rule of importedRules) {
+    const idx = nextRules.findIndex(
+      (e) => e.id === rule.id || e.bankName.toLowerCase() === rule.bankName.toLowerCase()
+    );
+    if (idx >= 0) {
+      nextRules[idx] = { ...nextRules[idx], ...rule, updatedAt: new Date().toISOString() };
+      updated++;
+    } else {
+      nextRules.push(rule);
+      added++;
+    }
+  }
+
+  localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(nextRules));
+  return { added, updated, total: nextRules.length };
 }
 
 /**
