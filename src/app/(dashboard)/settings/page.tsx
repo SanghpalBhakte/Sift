@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
@@ -113,6 +113,31 @@ export default function SettingsPage() {
     profile?.notifications_enabled !== false
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [highlightBenchmarks, setHighlightBenchmarks] = useState(false);
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (typeof window !== 'undefined' && window.location.hash === '#category-benchmarks') {
+        setHighlightBenchmarks(true);
+        const el = document.getElementById('category-benchmarks');
+        if (el) {
+          const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          el.scrollIntoView({
+            behavior: isReducedMotion ? 'auto' : 'smooth',
+            block: 'center',
+          });
+        }
+        const timer = setTimeout(() => {
+          setHighlightBenchmarks(false);
+        }, 2800);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   const toggleOffset = (days: number) => {
     if (selectedOffsets.includes(days)) {
@@ -665,14 +690,34 @@ export default function SettingsPage() {
 
               {/* Optional Per-Category Overrides */}
               {categories.length > 0 ? (
-                <div id="category-benchmarks" className="space-y-2 pt-3 border-t border-border/70 scroll-mt-6">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="text-xs font-semibold text-foreground">
-                      Per-Category Benchmark Overrides (Optional)
-                    </label>
+                <div
+                  id="category-benchmarks"
+                  className={cn(
+                    'space-y-2 pt-3 border-t border-border/70 scroll-mt-6 rounded-xl p-3 -mx-3 transition-colors duration-700 ease-out motion-reduce:transition-none',
+                    highlightBenchmarks
+                      ? 'bg-primary/[0.05] ring-1 ring-primary/40 shadow-xs'
+                      : 'bg-transparent ring-0'
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-semibold text-foreground">
+                        Per-Category Benchmark Overrides (Optional)
+                      </label>
+                      {highlightBenchmarks ? (
+                        <Badge
+                          variant="primary"
+                          size="sm"
+                          className="font-mono text-[10px] animate-in fade-in duration-200 motion-reduce:animate-none"
+                        >
+                          Focused
+                        </Badge>
+                      ) : null}
+                    </div>
                     {Object.keys(categoryBenchmarks).length > 0 ? (
                       <Badge variant="primary" size="sm" className="font-mono text-[10px]">
-                        {Object.keys(categoryBenchmarks).length} Active Override{Object.keys(categoryBenchmarks).length === 1 ? '' : 's'}
+                        {Object.keys(categoryBenchmarks).length} Active Override
+                        {Object.keys(categoryBenchmarks).length === 1 ? '' : 's'}
                       </Badge>
                     ) : null}
                   </div>

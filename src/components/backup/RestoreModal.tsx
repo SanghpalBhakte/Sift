@@ -105,6 +105,14 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     onClose();
   };
 
+  const handleNavigateToCategoryBenchmarks = () => {
+    handleClose();
+    if (typeof window !== 'undefined') {
+      window.location.hash = '#category-benchmarks';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
+  };
+
   const handleStartCreateCategory = (unmatched: {
     sourceKey: string;
     sourceName?: string;
@@ -565,7 +573,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                     </div>
                     <a
                       href="#category-benchmarks"
-                      onClick={handleClose}
+                      onClick={handleNavigateToCategoryBenchmarks}
                       className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
                     >
                       <span>Review skipped category mappings</span>
@@ -1108,7 +1116,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
           {restoreResult ? (
             <div className="flex items-center justify-between w-full gap-2">
               {restoreResult.skippedCollisionCount + restoreResult.skippedUnmatchedCount > 0 ? (
-                <a href="#category-benchmarks" onClick={handleClose}>
+                <a href="#category-benchmarks" onClick={handleNavigateToCategoryBenchmarks}>
                   <Button type="button" variant="outline" size="sm" className="gap-1.5 text-xs">
                     <span>Review Skipped Mappings</span>
                     <ExternalLink className="w-3 h-3" />
