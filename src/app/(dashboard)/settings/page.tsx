@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useAuth } from '@/context/AuthContext';
@@ -804,6 +805,32 @@ export default function SettingsPage() {
               set in <code className="px-1.5 py-0.5 rounded bg-surface font-mono text-[11px]">.env.local</code>.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* 7.5 Privacy & Data Architecture */}
+      <Card className="border-border bg-surface/30">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <CardTitle>Privacy & Data Ownership</CardTitle>
+          </div>
+          <Link href="/privacy">
+            <Button variant="outline" size="sm" className="text-xs gap-1">
+              Read Policy <Info className="w-3 h-3" />
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+          <p>
+            Sift is client-side and privacy-first. We do not track external app logins, browser history, or bank passwords.
+            Imports are processed locally on your device.
+          </p>
+          <div className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground flex-wrap">
+            <span>• No third-party ad tracking</span>
+            <span>• Open JSON & CSV export</span>
+            <span>• Instant deletion anytime</span>
+          </div>
         </CardContent>
       </Card>
 
