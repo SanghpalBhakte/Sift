@@ -9,6 +9,7 @@ import {
   validateBackupJson,
   generateBackupReadme,
   remapCategoryBenchmarkOverrides,
+  findCategorySuggestion,
 } from './backup';
 import { Profile, Subscription, Category } from '../types';
 
@@ -252,6 +253,32 @@ describe('Backup & Export Manifest Engine', () => {
       expect(report.remappedBenchmarks).toEqual({
         'dest-1': 10,
       });
+    });
+  });
+
+  describe('Advisory Category Similarity Suggestions', () => {
+    const workspaceCategories: Category[] = [
+      { id: 'cat-media', name: 'Media & Streaming', slug: 'media-streaming', color: '#6366f1', icon: 'tv', created_at: '' },
+      { id: 'cat-dev', name: 'Software & Dev', slug: 'software-dev', color: '#10b981', icon: 'code', created_at: '' },
+      { id: 'cat-ops', name: 'Infrastructure', slug: 'infra', color: '#f59e0b', icon: 'server', created_at: '' },
+    ];
+
+    it('suggests closest match for similar category names like Streaming Services -> Media & Streaming', () => {
+      const suggestion = findCategorySuggestion('Streaming Services', workspaceCategories);
+      expect(suggestion).not.toBeNull();
+      expect(suggestion?.category.id).toBe('cat-media');
+      expect(suggestion?.similarity).toBeGreaterThan(0.5);
+    });
+
+    it('suggests Developer Tools -> Software & Dev based on partial keyword overlap', () => {
+      const suggestion = findCategorySuggestion('Software Development', workspaceCategories);
+      expect(suggestion).not.toBeNull();
+      expect(suggestion?.category.id).toBe('cat-dev');
+    });
+
+    it('returns null when category name has no plausible similarity rather than giving misleading suggestion', () => {
+      const suggestion = findCategorySuggestion('Health & Medical', workspaceCategories);
+      expect(suggestion).toBeNull();
     });
   });
 });

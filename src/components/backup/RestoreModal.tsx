@@ -3,7 +3,11 @@
 import React, { useState, useRef } from 'react';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { BackupValidationResult, SiftBackupData } from '@/lib/types';
-import { validateBackupJson, remapCategoryBenchmarkOverrides } from '@/lib/utils/backup';
+import {
+  validateBackupJson,
+  remapCategoryBenchmarkOverrides,
+  findCategorySuggestion,
+} from '@/lib/utils/backup';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -33,6 +37,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
   const [validation, setValidation] = useState<BackupValidationResult | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [restoreMode, setRestoreMode] = useState<'merge' | 'replace'>('merge');
+  const [manualRemappings, setManualRemappings] = useState<Record<string, string>>({});
   const [isRestoring, setIsRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +45,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
+    setManualRemappings({});
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -116,12 +122,26 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
           categories
         );
 
+        // Merge user-confirmed manual remappings on top of auto-mapped benchmarks
+        const finalBenchmarks = { ...benchmarkReport.remappedBenchmarks };
+        const rawBackupBenchmarks = backup.profile.category_annual_benchmarks || {};
+
+        for (const [sourceKey, targetCatId] of Object.entries(manualRemappings)) {
+          if (
+            targetCatId &&
+            targetCatId !== 'skip' &&
+            typeof rawBackupBenchmarks[sourceKey] === 'number'
+          ) {
+            finalBenchmarks[targetCatId] = rawBackupBenchmarks[sourceKey];
+          }
+        }
+
         await updateProfile({
           currency_preference: backup.profile.currency_preference,
           theme_preference: backup.profile.theme_preference,
           default_reminder_days: backup.profile.default_reminder_days,
           annual_benchmark_percent: backup.profile.annual_benchmark_percent ?? 16.7,
-          category_annual_benchmarks: benchmarkReport.remappedBenchmarks,
+          category_annual_benchmarks: finalBenchmarks,
         });
       }
 
@@ -267,7 +287,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                 </div>
               </div>
 
-              {/* Ambiguous Slug Collision Warning Callout */}
+              {/* Interactive Category Benchmark Remapping & Recovery Callout */}
               {(() => {
                 if (!validation.data?.profile?.category_annual_benchmarks) return null;
                 const rep = remapCategoryBenchmarkOverrides(
@@ -278,56 +298,196 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
 
                 if (rep.collisions.length === 0 && rep.unmatched.length === 0) return null;
 
+                const globalBenchmark = validation.data?.profile?.annual_benchmark_percent ?? 16.7;
+                const manuallyRemappedCount = Object.values(manualRemappings).filter(
+                  (v) => v && v !== 'skip'
+                ).length;
+
                 return (
-                  <div className="space-y-2.5">
+                  <div className="p-3.5 rounded-xl border border-border bg-surface/40 space-y-3 text-xs">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                        <Layers className="w-3.5 h-3.5 text-primary" />
+                        <span>Interactive Category Recovery (Optional)</span>
+                      </div>
+                      <Badge
+                        variant={manuallyRemappedCount > 0 ? 'primary' : 'outline'}
+                        size="sm"
+                        className="text-[10px] font-mono"
+                      >
+                        {manuallyRemappedCount} of {rep.collisions.length + rep.unmatched.length} Remapped
+                      </Badge>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      The following category overrides could not be matched automatically and will stay skipped by default. You can optionally remap them to a local workspace category below.
+                    </p>
+
+                    {/* Collisions List */}
                     {rep.collisions.length > 0 ? (
-                      <div className="p-3 rounded-xl border border-warning/30 bg-warning/5 space-y-2 text-xs">
-                        <div className="flex items-center gap-2 text-warning font-semibold text-xs">
-                          <AlertTriangle className="w-4 h-4 shrink-0" />
-                          <span>Ambiguous Category Overrides Skipped ({rep.collisions.length})</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          To avoid misconfiguration, the following category overrides were skipped because their slug matched multiple categories in this workspace:
-                        </p>
-                        <div className="space-y-1.5 pt-0.5">
-                          {rep.collisions.map((col, idx) => (
+                      <div className="space-y-2 pt-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Ambiguous Matches ({rep.collisions.length})
+                        </span>
+                        {rep.collisions.map((col) => {
+                          const currentSelection = manualRemappings[col.sourceKey] || 'skip';
+                          const suggestion = findCategorySuggestion(col.sourceName || col.sourceSlug, categories);
+                          const isCustom = currentSelection !== 'skip';
+
+                          return (
                             <div
-                              key={idx}
-                              className="p-2 rounded-lg bg-card border border-border text-[11px] space-y-0.5"
+                              key={col.sourceKey}
+                              className={`p-2.5 rounded-lg border transition-all space-y-2 ${
+                                isCustom ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'
+                              }`}
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <span className="font-semibold text-foreground">
-                                  {col.sourceName}{' '}
-                                  <span className="font-mono text-muted-foreground font-normal text-[10px]">
-                                    ({col.sourceSlug})
-                                  </span>
-                                </span>
-                                <Badge variant="warning" size="sm" className="font-mono text-[10px]">
-                                  {col.configuredBenchmark}% Skipped
+                                <div className="space-y-0.5 min-w-0">
+                                  <div className="font-semibold text-foreground text-[11px] truncate flex items-center gap-1.5">
+                                    <span>{col.sourceName}</span>
+                                    <span className="font-mono text-muted-foreground font-normal text-[10px]">
+                                      ({col.sourceSlug})
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground">
+                                    Matched {col.conflictingCategories.length} local categories ({col.conflictingCategories.map((c) => `"${c.name}"`).join(', ')})
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant={isCustom ? 'primary' : 'warning'}
+                                  size="sm"
+                                  className="font-mono text-[10px] shrink-0"
+                                >
+                                  {col.configuredBenchmark}% {isCustom ? 'Remapped' : 'Skipped'}
                                 </Badge>
                               </div>
-                              <div className="text-muted-foreground text-[10px] leading-relaxed">
-                                Matched {col.conflictingCategories.length} workspace categories ({col.conflictingCategories.map((c) => `"${c.name}"`).join(', ')}). Will default to {validation.data?.profile?.annual_benchmark_percent ?? 16.7}% global benchmark.
+
+                              <div className="flex items-center gap-2 pt-1.5 border-t border-border/50">
+                                <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
+                                  Map to:
+                                </span>
+                                <select
+                                  value={currentSelection}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === 'skip') {
+                                      const next = { ...manualRemappings };
+                                      delete next[col.sourceKey];
+                                      setManualRemappings(next);
+                                    } else {
+                                      setManualRemappings({
+                                        ...manualRemappings,
+                                        [col.sourceKey]: val,
+                                      });
+                                    }
+                                  }}
+                                  className="w-full h-7 px-2 text-[11px] rounded-md border border-border bg-surface text-foreground font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                                >
+                                  <option value="skip">
+                                    Skip (Use global {globalBenchmark}% benchmark)
+                                  </option>
+                                  {suggestion ? (
+                                    <option value={suggestion.category.id}>
+                                      Suggested: {suggestion.category.name} ({Math.round(suggestion.similarity * 100)}% match)
+                                    </option>
+                                  ) : null}
+                                  <optgroup label="Available Workspace Categories">
+                                    {categories.map((c) => (
+                                      <option key={c.id} value={c.id}>
+                                        {c.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                </select>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          );
+                        })}
                       </div>
                     ) : null}
 
+                    {/* Unmatched List */}
                     {rep.unmatched.length > 0 ? (
-                      <div className="p-2.5 rounded-xl border border-border bg-surface/40 space-y-1 text-[11px]">
-                        <span className="font-semibold text-foreground block text-[10px]">
-                          Unmatched Category Overrides ({rep.unmatched.length}):
+                      <div className="space-y-2 pt-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Unmatched Categories ({rep.unmatched.length})
                         </span>
-                        <div className="space-y-0.5">
-                          {rep.unmatched.map((un, idx) => (
-                            <div key={idx} className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
-                              <span>{un.sourceName || un.sourceSlug || un.sourceKey}</span>
-                              <span>{un.configuredBenchmark}% (category not in workspace, inherits global)</span>
+                        {rep.unmatched.map((un) => {
+                          const currentSelection = manualRemappings[un.sourceKey] || 'skip';
+                          const suggestion = findCategorySuggestion(un.sourceName || un.sourceSlug || '', categories);
+                          const isCustom = currentSelection !== 'skip';
+
+                          return (
+                            <div
+                              key={un.sourceKey}
+                              className={`p-2.5 rounded-lg border transition-all space-y-2 ${
+                                isCustom ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="space-y-0.5 min-w-0">
+                                  <div className="font-semibold text-foreground text-[11px] truncate flex items-center gap-1.5">
+                                    <span>{un.sourceName || un.sourceSlug || un.sourceKey}</span>
+                                    {un.sourceSlug ? (
+                                      <span className="font-mono text-muted-foreground font-normal text-[10px]">
+                                        ({un.sourceSlug})
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground">
+                                    Category not present in current workspace
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant={isCustom ? 'primary' : 'outline'}
+                                  size="sm"
+                                  className="font-mono text-[10px] shrink-0"
+                                >
+                                  {un.configuredBenchmark}% {isCustom ? 'Remapped' : 'Skipped'}
+                                </Badge>
+                              </div>
+
+                              <div className="flex items-center gap-2 pt-1.5 border-t border-border/50">
+                                <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
+                                  Map to:
+                                </span>
+                                <select
+                                  value={currentSelection}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === 'skip') {
+                                      const next = { ...manualRemappings };
+                                      delete next[un.sourceKey];
+                                      setManualRemappings(next);
+                                    } else {
+                                      setManualRemappings({
+                                        ...manualRemappings,
+                                        [un.sourceKey]: val,
+                                      });
+                                    }
+                                  }}
+                                  className="w-full h-7 px-2 text-[11px] rounded-md border border-border bg-surface text-foreground font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                                >
+                                  <option value="skip">
+                                    Skip (Use global {globalBenchmark}% benchmark)
+                                  </option>
+                                  {suggestion ? (
+                                    <option value={suggestion.category.id}>
+                                      Suggested: {suggestion.category.name} ({Math.round(suggestion.similarity * 100)}% match)
+                                    </option>
+                                  ) : null}
+                                  <optgroup label="Available Workspace Categories">
+                                    {categories.map((c) => (
+                                      <option key={c.id} value={c.id}>
+                                        {c.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                </select>
+                              </div>
                             </div>
-                          ))}
-                        </div>
+                          );
+                        })}
                       </div>
                     ) : null}
                   </div>

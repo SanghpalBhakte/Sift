@@ -351,3 +351,61 @@ export function remapCategoryBenchmarkOverrides(
     unmatched,
   };
 }
+
+/**
+ * Calculates string similarity score between 0 and 1 using bigram Jaccard/Dice coefficient
+ */
+export function calculateStringSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+  const s2 = str2.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+
+  if (s1 === s2) return 1.0;
+  if (!s1 || !s2) return 0.0;
+  if (s1.includes(s2) || s2.includes(s1)) return 0.85;
+
+  const getBigrams = (str: string) => {
+    const bigrams = new Set<string>();
+    for (let i = 0; i < str.length - 1; i++) {
+      bigrams.add(str.slice(i, i + 2));
+    }
+    return bigrams;
+  };
+
+  const b1 = getBigrams(s1);
+  const b2 = getBigrams(s2);
+
+  if (b1.size === 0 || b2.size === 0) return 0.0;
+
+  let intersection = 0;
+  for (const item of b1) {
+    if (b2.has(item)) intersection++;
+  }
+
+  return (2.0 * intersection) / (b1.size + b2.size);
+}
+
+/**
+ * Ranks candidate destination categories for an unmatched item based on name/slug similarity.
+ * Note: Suggestions are advisory ONLY for manual review and are NEVER auto-applied silently.
+ */
+export function findCategorySuggestion(
+  sourceNameOrSlug: string,
+  categories: Category[],
+  threshold: number = 0.55
+): { category: Category; similarity: number } | null {
+  if (!sourceNameOrSlug || categories.length === 0) return null;
+
+  let bestMatch: { category: Category; similarity: number } | null = null;
+
+  for (const cat of categories) {
+    const nameScore = calculateStringSimilarity(sourceNameOrSlug, cat.name);
+    const slugScore = cat.slug ? calculateStringSimilarity(sourceNameOrSlug, cat.slug) : 0;
+    const score = Math.max(nameScore, slugScore);
+
+    if (score >= threshold && (!bestMatch || score > bestMatch.similarity)) {
+      bestMatch = { category: cat, similarity: score };
+    }
+  }
+
+  return bestMatch;
+}
