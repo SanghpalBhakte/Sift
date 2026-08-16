@@ -96,10 +96,13 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
   const [createCategoryError, setCreateCategoryError] = useState<string | null>(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState<boolean>(false);
 
-  // Batch Category Creation State
+  // Batch Category Creation & Bulk Inline Editing State
   const [isBatchPreviewOpen, setIsBatchPreviewOpen] = useState(false);
   const [isBatchCreating, setIsBatchCreating] = useState(false);
   const [batchSuccessMessage, setBatchSuccessMessage] = useState<string | null>(null);
+  const [editedBatchRows, setEditedBatchRows] = useState<
+    Record<string, { name: string; slug: string; slugTouched?: boolean }>
+  >({});
 
   if (!isOpen) return null;
 
@@ -113,6 +116,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     setCreateCategoryError(null);
     setIsBatchPreviewOpen(false);
     setBatchSuccessMessage(null);
+    setEditedBatchRows({});
     onClose();
   };
 
@@ -199,6 +203,37 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     }
   };
 
+  const handleUpdateBatchRow = (
+    sourceKey: string,
+    newName: string,
+    newSlug: string,
+    slugTouched = false
+  ) => {
+    setEditedBatchRows((prev) => {
+      const prevRow = prev[sourceKey];
+      const isSlugTouched = slugTouched || prevRow?.slugTouched;
+      let computedSlug = newSlug;
+
+      // If user is editing name and hasn't manually customized slug, auto-generate slug
+      if (!isSlugTouched && !slugTouched) {
+        computedSlug = newName
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+      }
+
+      return {
+        ...prev,
+        [sourceKey]: {
+          name: newName,
+          slug: computedSlug,
+          slugTouched: isSlugTouched,
+        },
+      };
+    });
+  };
+
   const batchPreviewItems = useMemo(() => {
     if (!validation?.data?.profile?.category_annual_benchmarks) return [];
     const report = remapCategoryBenchmarkOverrides(
@@ -207,29 +242,34 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
       categories
     );
 
-    return report.unmatched.map((un, index) => {
+    // Pass 1: Resolve names, raw inputs, and normalized slugs (including user edits)
+    const itemsWithValues = report.unmatched.map((un, index) => {
       const backupCat = validation.data?.categories?.find(
         (c) => c.id === un.sourceKey || c.slug === un.sourceSlug
       );
-      const name = (backupCat?.name || un.sourceName || un.sourceSlug || 'Category').trim();
-      const slug = (
+      const defaultName = (backupCat?.name || un.sourceName || un.sourceSlug || 'Category').trim();
+      const defaultSlug = (
         backupCat?.slug ||
         un.sourceSlug ||
-        name
+        defaultName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '')
       )
         .trim()
         .toLowerCase();
-      const color = resolveCategoryDefaultColor(backupCat?.color, name || slug, index);
+
+      const edited = editedBatchRows[un.sourceKey];
+      const name = edited?.name !== undefined ? edited.name : defaultName;
+      const rawSlug = edited?.slug !== undefined ? edited.slug : defaultSlug;
+      const cleanSlug = rawSlug
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      const color = resolveCategoryDefaultColor(backupCat?.color, name || cleanSlug, index);
       const icon = backupCat?.icon || 'folder';
-      const hasNameConflict = categories.some(
-        (c) => c.name.trim().toLowerCase() === name.toLowerCase()
-      );
-      const hasSlugConflict = categories.some(
-        (c) => c.slug && c.slug.trim().toLowerCase() === slug
-      );
       const isAlreadyRemapped = Boolean(
         manualRemappings[un.sourceKey] && manualRemappings[un.sourceKey] !== 'skip'
       );
@@ -237,20 +277,70 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
       return {
         sourceKey: un.sourceKey,
         name,
-        slug,
+        rawSlug,
+        slug: cleanSlug,
         color,
         icon,
         configuredBenchmark: un.configuredBenchmark,
-        hasConflict: hasNameConflict || hasSlugConflict,
-        conflictReason: hasNameConflict
-          ? `Name "${name}" already exists`
-          : hasSlugConflict
-          ? `Slug "${slug}" already exists`
-          : null,
         isAlreadyRemapped,
+        index,
       };
     });
-  }, [validation, categories, manualRemappings]);
+
+    // Pass 2: Rigorous validation against active workspace categories AND intra-batch uniqueness
+    return itemsWithValues.map((item, idx) => {
+      let hasConflict = false;
+      let conflictReason: string | null = null;
+
+      if (!item.name.trim()) {
+        hasConflict = true;
+        conflictReason = 'Name cannot be blank';
+      } else if (!item.slug.trim()) {
+        hasConflict = true;
+        conflictReason = 'Slug cannot be blank';
+      } else {
+        const workspaceNameConflict = categories.some(
+          (c) => c.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+        );
+        const workspaceSlugConflict = categories.some(
+          (c) => c.slug && c.slug.trim().toLowerCase() === item.slug
+        );
+
+        if (workspaceNameConflict) {
+          hasConflict = true;
+          conflictReason = `Name "${item.name.trim()}" exists in workspace`;
+        } else if (workspaceSlugConflict) {
+          hasConflict = true;
+          conflictReason = `Slug "${item.slug}" exists in workspace`;
+        } else {
+          // Check intra-batch duplicate slugs or names
+          const batchSlugDup = itemsWithValues.some(
+            (other, oIdx) => oIdx !== idx && other.slug === item.slug && other.slug.length > 0
+          );
+          const batchNameDup = itemsWithValues.some(
+            (other, oIdx) =>
+              oIdx !== idx &&
+              other.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
+              other.name.trim().length > 0
+          );
+
+          if (batchSlugDup) {
+            hasConflict = true;
+            conflictReason = `Duplicate slug "${item.slug}" in batch`;
+          } else if (batchNameDup) {
+            hasConflict = true;
+            conflictReason = `Duplicate name "${item.name.trim()}" in batch`;
+          }
+        }
+      }
+
+      return {
+        ...item,
+        hasConflict,
+        conflictReason,
+      };
+    });
+  }, [validation, categories, manualRemappings, editedBatchRows]);
 
   const creatableBatchItems = useMemo(() => {
     return batchPreviewItems.filter((i) => !i.hasConflict && !i.isAlreadyRemapped);
@@ -264,8 +354,8 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
       let count = 0;
       for (const item of creatableBatchItems) {
         const created = await addCategory({
-          name: item.name,
-          slug: item.slug,
+          name: item.name.trim(),
+          slug: item.slug.trim(),
           color: item.color,
           icon: item.icon,
         });
@@ -274,6 +364,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
       }
       setManualRemappings(newMappings);
       setIsBatchPreviewOpen(false);
+      setEditedBatchRows({});
       setBatchSuccessMessage(
         `Created ${count} missing ${count === 1 ? 'category' : 'categories'} and mapped ${count === 1 ? 'its' : 'their'} benchmark ${count === 1 ? 'override' : 'overrides'}.`
       );
@@ -290,6 +381,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     setRestoreResult(null);
     setIsBatchPreviewOpen(false);
     setBatchSuccessMessage(null);
+    setEditedBatchRows({});
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -1043,60 +1135,121 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                                   </button>
                                 </div>
 
-                                {/* Preview Itemized Rows */}
-                                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-0.5">
+                                {/* Preview Itemized Rows with Bulk Inline Editing */}
+                                <div className="max-h-60 overflow-y-auto space-y-2 pr-0.5">
                                   {batchPreviewItems.map((item) => (
                                     <div
                                       key={item.sourceKey}
-                                      className={`p-2 rounded-lg border text-xs flex items-center justify-between gap-2 ${
+                                      className={`p-2.5 rounded-lg border text-xs space-y-2 transition-all ${
                                         item.hasConflict
-                                          ? 'border-warning/30 bg-warning/5 opacity-75'
+                                          ? 'border-warning/40 bg-warning/5 ring-1 ring-warning/20'
                                           : item.isAlreadyRemapped
                                           ? 'border-border/60 bg-surface/30 opacity-75'
                                           : 'border-border bg-surface/60'
                                       }`}
                                     >
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span
-                                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                                          style={{ backgroundColor: item.color }}
-                                        />
-                                        <div className="truncate">
-                                          <span className="font-semibold text-foreground">{item.name}</span>
-                                          <span className="text-[10px] text-muted-foreground font-mono ml-1.5">
-                                            ({item.slug})
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                          <span
+                                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                                            style={{ backgroundColor: item.color }}
+                                          />
+                                          <span className="text-[10px] text-muted-foreground font-medium truncate">
+                                            Imported Key: {item.sourceKey}
                                           </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <Badge
+                                            variant="outline"
+                                            size="sm"
+                                            className="font-mono text-[10px]"
+                                          >
+                                            {item.configuredBenchmark}% Override
+                                          </Badge>
+                                          {item.hasConflict ? (
+                                            <Badge
+                                              variant="danger"
+                                              size="sm"
+                                              className="text-[9px] font-normal"
+                                            >
+                                              Conflict: {item.conflictReason}
+                                            </Badge>
+                                          ) : item.isAlreadyRemapped ? (
+                                            <Badge variant="muted" size="sm" className="text-[9px]">
+                                              Remapped
+                                            </Badge>
+                                          ) : (
+                                            <Badge
+                                              variant="primary"
+                                              size="sm"
+                                              className="text-[9px]"
+                                            >
+                                              Will Create
+                                            </Badge>
+                                          )}
                                         </div>
                                       </div>
 
-                                      <div className="flex items-center gap-1.5 shrink-0">
-                                        <Badge variant="outline" size="sm" className="font-mono text-[10px]">
-                                          {item.configuredBenchmark}%
-                                        </Badge>
-                                        {item.hasConflict ? (
-                                          <Badge variant="danger" size="sm" className="text-[9px]">
-                                            Conflict: {item.conflictReason}
-                                          </Badge>
-                                        ) : item.isAlreadyRemapped ? (
-                                          <Badge variant="muted" size="sm" className="text-[9px]">
-                                            Remapped
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="primary" size="sm" className="text-[9px]">
-                                            Will Create
-                                          </Badge>
-                                        )}
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                                        <div>
+                                          <label className="text-[9px] font-medium text-muted-foreground block mb-0.5">
+                                            Category Name
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={item.name}
+                                            onChange={(e) =>
+                                              handleUpdateBatchRow(
+                                                item.sourceKey,
+                                                e.target.value,
+                                                item.rawSlug,
+                                                false
+                                              )
+                                            }
+                                            placeholder="e.g. Media & Streaming"
+                                            className="w-full h-7 px-2 text-xs font-medium rounded border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[9px] font-medium text-muted-foreground block mb-0.5">
+                                            Slug (Normalized)
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={item.rawSlug}
+                                            onChange={(e) =>
+                                              handleUpdateBatchRow(
+                                                item.sourceKey,
+                                                item.name,
+                                                e.target.value,
+                                                true
+                                              )
+                                            }
+                                            placeholder="e.g. media-streaming"
+                                            className="w-full h-7 px-2 text-xs font-mono rounded border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                          />
+                                        </div>
                                       </div>
                                     </div>
                                   ))}
                                 </div>
 
-                                <div className="p-2 rounded-lg bg-surface/60 border border-border/60 text-[10px] text-muted-foreground flex items-center gap-1.5">
-                                  <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span>
-                                    Imported colors & icons will be preserved. You can customize them anytime in Settings.
-                                  </span>
-                                </div>
+                                {batchPreviewItems.length > creatableBatchItems.length ? (
+                                  <div className="p-2 rounded-lg bg-warning-subtle border border-warning/30 text-[10px] text-warning flex items-center gap-1.5">
+                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                    <span>
+                                      {batchPreviewItems.length - creatableBatchItems.length} row(s) have conflicts or are already remapped. Only the {creatableBatchItems.length} valid row(s) will be created.
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="p-2 rounded-lg bg-surface/60 border border-border/60 text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                                    <span>
+                                      Imported colors & icons will be preserved. You can customize them anytime in Settings.
+                                    </span>
+                                  </div>
+                                )}
 
                                 <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
                                   <Button
@@ -1119,7 +1272,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                                   >
                                     <FolderPlus className="w-3.5 h-3.5" />
                                     <span>
-                                      Create {creatableBatchItems.length} Categor{creatableBatchItems.length === 1 ? 'y' : 'ies'} & Map
+                                      Create {creatableBatchItems.length} Valid Categor{creatableBatchItems.length === 1 ? 'y' : 'ies'} & Map
                                     </span>
                                   </Button>
                                 </div>
