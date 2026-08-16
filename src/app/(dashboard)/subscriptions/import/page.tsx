@@ -40,6 +40,7 @@ import {
   FileType,
   Layers,
   Coins,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -48,7 +49,7 @@ type ReviewFilter = 'all' | 'selected' | 'unselected' | 'flagged';
 
 export default function StatementImportPage() {
   const router = useRouter();
-  const { categories, profile, addSubscription } = useSubscriptions();
+  const { subscriptions, categories, profile, addSubscription } = useSubscriptions();
 
   const [step, setStep] = useState<ImportStep>('upload');
   const [fileName, setFileName] = useState<string>('');
@@ -86,6 +87,18 @@ export default function StatementImportPage() {
     selectedGroupKey !== 'ALL'
       ? groupCurrencies[selectedGroupKey] || profileCurrency
       : profileCurrency;
+
+  const isMultiAccountBatch = accountGroups.length > 1;
+  const currentBatchNum = completedGroupKeys.length + 1;
+  const totalBatchNum = accountGroups.length;
+
+  const hasComparisonData =
+    (isMultiAccountBatch && completedGroupKeys.length >= 1) ||
+    (!isMultiAccountBatch && subscriptions.length > 0);
+
+  const trendBadgeText = isMultiAccountBatch
+    ? `Statement ${currentBatchNum} of ${totalBatchNum} — Trend Analysis Enabled`
+    : 'Statement 2 of 2 — Trend Analysis Enabled';
 
   // Step 1A: CSV File Loaded
   const handleCsvLoaded = (csvContent: string, name: string) => {
@@ -437,7 +450,7 @@ export default function StatementImportPage() {
           <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
               <div>
-                <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <div className="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
                   {fileType === 'pdf' ? (
                     <FileType className="w-4 h-4 text-primary" />
                   ) : null}
@@ -447,6 +460,14 @@ export default function StatementImportPage() {
                   <Badge variant="outline" size="sm" className="font-mono flex items-center gap-1">
                     <Coins className="w-3 h-3 text-primary" /> {activeBatchCurrency}
                   </Badge>
+
+                  {/* Multi-statement Trend Analysis Badge */}
+                  {hasComparisonData ? (
+                    <Badge variant="success" size="sm" className="gap-1 font-mono text-[10px] shadow-xs">
+                      <TrendingUp className="w-3 h-3" />
+                      {trendBadgeText}
+                    </Badge>
+                  ) : null}
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   Scanned {normalizedTransactions.length} statement transactions from{' '}
@@ -571,15 +592,22 @@ export default function StatementImportPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredCandidates.map((candidate) => (
-                <CandidateReviewCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  categories={categories}
-                  onToggleSelect={toggleCandidateSelect}
-                  onUpdateCandidate={handleUpdateCandidate}
-                />
-              ))}
+              {filteredCandidates.map((candidate) => {
+                const existingMatch = subscriptions.find(
+                  (s) => s.name.toLowerCase().trim() === candidate.merchantName.toLowerCase().trim()
+                );
+
+                return (
+                  <CandidateReviewCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    categories={categories}
+                    existingSubscription={existingMatch}
+                    onToggleSelect={toggleCandidateSelect}
+                    onUpdateCandidate={handleUpdateCandidate}
+                  />
+                );
+              })}
 
               {filteredCandidates.length === 0 ? (
                 <div className="p-8 text-center bg-surface/40 rounded-xl border border-border text-xs text-muted-foreground">
@@ -633,13 +661,19 @@ export default function StatementImportPage() {
               from {selectedGroupKey !== 'ALL' ? `Account (${selectedGroupKey})` : 'your statement'} to
               the Sift ledger in <strong className="font-mono">{activeBatchCurrency}</strong>.
             </p>
-            {sessionImportedTotal > importedBatchCount ? (
-              <div className="pt-1">
+            <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
+              {hasComparisonData ? (
+                <Badge variant="success" size="sm" className="gap-1 font-mono">
+                  <TrendingUp className="w-3 h-3" />
+                  {trendBadgeText}
+                </Badge>
+              ) : null}
+              {sessionImportedTotal > importedBatchCount ? (
                 <Badge variant="outline" size="sm">
                   {sessionImportedTotal} total subscriptions added this session
                 </Badge>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
 
           {/* Consecutive Multi-Account Batch Next Action */}

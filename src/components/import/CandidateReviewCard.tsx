@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Category, RecurringCandidate, ValueRating } from '@/lib/types';
+import { Category, RecurringCandidate, Subscription, ValueRating } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils/currency';
 import { formatDate } from '@/lib/utils/dates';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
-import { ChevronDown, ChevronUp, Sparkles, Layers, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Sparkles, Layers, AlertCircle, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface CandidateReviewCardProps {
   candidate: RecurringCandidate;
   categories: Category[];
+  existingSubscription?: Subscription;
   onToggleSelect: (id: string) => void;
   onUpdateCandidate: (id: string, updates: Partial<RecurringCandidate>) => void;
 }
@@ -19,6 +20,7 @@ interface CandidateReviewCardProps {
 export function CandidateReviewCard({
   candidate,
   categories,
+  existingSubscription,
   onToggleSelect,
   onUpdateCandidate,
 }: CandidateReviewCardProps) {
@@ -116,8 +118,26 @@ export function CandidateReviewCard({
                       Grouped {uniqueDescriptors.size} variants
                     </span>
                   ) : null}
+
+                  {existingSubscription ? (
+                    <Badge variant="success" size="sm" className="gap-1 font-mono text-[10px]">
+                      <TrendingUp className="w-3 h-3" />
+                      Prior Statement Record · Trend Comparison Active
+                    </Badge>
+                  ) : null}
                 </div>
               )}
+
+              {/* Price delta comparison against existing subscription if amounts differ */}
+              {existingSubscription && candidate.amount !== existingSubscription.amount ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-warning">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+                  <span>
+                    Price change observed: {formatCurrency(existingSubscription.amount, existingSubscription.currency)} →{' '}
+                    {formatCurrency(candidate.amount, candidate.currency)}
+                  </span>
+                </div>
+              ) : null}
 
               <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                 <span>
