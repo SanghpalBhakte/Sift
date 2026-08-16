@@ -28,6 +28,7 @@ import {
   FolderPlus,
   Sparkles,
   Check,
+  RotateCcw,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/dates';
 
@@ -1126,13 +1127,26 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                                       Create {creatableBatchItems.length} workspace categories from imported metadata to restore their discount benchmark overrides.
                                     </p>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsBatchPreviewOpen(false)}
-                                    className="text-muted-foreground hover:text-foreground p-1 text-xs cursor-pointer"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {Object.keys(editedBatchRows).length > 0 ? (
+                                      <button
+                                        type="button"
+                                        title="Reset all edits to imported defaults"
+                                        onClick={() => setEditedBatchRows({})}
+                                        className="text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer flex items-center gap-1 text-[10px] hover:bg-surface/60 transition-colors"
+                                      >
+                                        <RotateCcw className="w-3 h-3" />
+                                        <span>Reset edits</span>
+                                      </button>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsBatchPreviewOpen(false)}
+                                      className="text-muted-foreground hover:text-foreground p-1 text-xs cursor-pointer"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {/* Preview Itemized Rows with Bulk Inline Editing */}
