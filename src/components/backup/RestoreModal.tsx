@@ -237,32 +237,102 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                       </span>
                     </div>
                   ) : null}
-                  {validation.data?.profile?.category_annual_benchmarks &&
-                  Object.keys(validation.data.profile.category_annual_benchmarks).length > 0 ? (
-                    (() => {
-                      const rep = remapCategoryBenchmarkOverrides(
-                        validation.data.profile.category_annual_benchmarks,
-                        validation.data.categories || [],
-                        categories
-                      );
-                      const parts: string[] = [];
-                      if (rep.matchedByUuid > 0) parts.push(`${rep.matchedByUuid} by ID`);
-                      if (rep.matchedBySlug > 0) parts.push(`${rep.matchedBySlug} by slug fallback`);
-                      if (rep.skippedAmbiguous > 0) parts.push(`${rep.skippedAmbiguous} ambiguous skipped`);
-                      if (rep.skippedMissing > 0) parts.push(`${rep.skippedMissing} missing skipped`);
+                  {(() => {
+                    if (
+                      !validation.data?.profile?.category_annual_benchmarks ||
+                      Object.keys(validation.data.profile.category_annual_benchmarks).length === 0
+                    ) {
+                      return null;
+                    }
+                    const rep = remapCategoryBenchmarkOverrides(
+                      validation.data.profile.category_annual_benchmarks,
+                      validation.data.categories || [],
+                      categories
+                    );
+                    const parts: string[] = [];
+                    if (rep.matchedByUuid > 0) parts.push(`${rep.matchedByUuid} by ID`);
+                    if (rep.matchedBySlug > 0) parts.push(`${rep.matchedBySlug} by slug fallback`);
+                    if (rep.skippedAmbiguous > 0) parts.push(`${rep.skippedAmbiguous} ambiguous skipped`);
+                    if (rep.skippedMissing > 0) parts.push(`${rep.skippedMissing} missing skipped`);
 
-                      return (
-                        <div className="col-span-2 text-[10px] text-[hsl(var(--muted-foreground))] pt-1 border-t border-[hsl(var(--border)/0.5)]">
-                          <span className="font-semibold text-[hsl(var(--foreground))]">
-                            Category Overrides ({Object.keys(validation.data.profile.category_annual_benchmarks).length}):{' '}
-                          </span>
-                          <span>{parts.join(', ') || 'No overrides mapped'}</span>
-                        </div>
-                      );
-                    })()
-                  ) : null}
+                    return (
+                      <div className="col-span-2 text-[10px] text-[hsl(var(--muted-foreground))] pt-1 border-t border-[hsl(var(--border)/0.5)]">
+                        <span className="font-semibold text-[hsl(var(--foreground))]">
+                          Category Overrides ({Object.keys(validation.data.profile.category_annual_benchmarks).length}):{' '}
+                        </span>
+                        <span>{parts.join(', ') || 'No overrides mapped'}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
+
+              {/* Ambiguous Slug Collision Warning Callout */}
+              {(() => {
+                if (!validation.data?.profile?.category_annual_benchmarks) return null;
+                const rep = remapCategoryBenchmarkOverrides(
+                  validation.data.profile.category_annual_benchmarks,
+                  validation.data.categories || [],
+                  categories
+                );
+
+                if (rep.collisions.length === 0 && rep.unmatched.length === 0) return null;
+
+                return (
+                  <div className="space-y-2.5">
+                    {rep.collisions.length > 0 ? (
+                      <div className="p-3 rounded-xl border border-warning/30 bg-warning/5 space-y-2 text-xs">
+                        <div className="flex items-center gap-2 text-warning font-semibold text-xs">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>Ambiguous Category Overrides Skipped ({rep.collisions.length})</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          To avoid misconfiguration, the following category overrides were skipped because their slug matched multiple categories in this workspace:
+                        </p>
+                        <div className="space-y-1.5 pt-0.5">
+                          {rep.collisions.map((col, idx) => (
+                            <div
+                              key={idx}
+                              className="p-2 rounded-lg bg-card border border-border text-[11px] space-y-0.5"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-semibold text-foreground">
+                                  {col.sourceName}{' '}
+                                  <span className="font-mono text-muted-foreground font-normal text-[10px]">
+                                    ({col.sourceSlug})
+                                  </span>
+                                </span>
+                                <Badge variant="warning" size="sm" className="font-mono text-[10px]">
+                                  {col.configuredBenchmark}% Skipped
+                                </Badge>
+                              </div>
+                              <div className="text-muted-foreground text-[10px] leading-relaxed">
+                                Matched {col.conflictingCategories.length} workspace categories ({col.conflictingCategories.map((c) => `"${c.name}"`).join(', ')}). Will default to {validation.data?.profile?.annual_benchmark_percent ?? 16.7}% global benchmark.
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {rep.unmatched.length > 0 ? (
+                      <div className="p-2.5 rounded-xl border border-border bg-surface/40 space-y-1 text-[11px]">
+                        <span className="font-semibold text-foreground block text-[10px]">
+                          Unmatched Category Overrides ({rep.unmatched.length}):
+                        </span>
+                        <div className="space-y-0.5">
+                          {rep.unmatched.map((un, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+                              <span>{un.sourceName || un.sourceSlug || un.sourceKey}</span>
+                              <span>{un.configuredBenchmark}% (category not in workspace, inherits global)</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()}
 
               {/* Restore Strategy Selection */}
               <div className="space-y-2">

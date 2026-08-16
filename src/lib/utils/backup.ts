@@ -216,12 +216,29 @@ export function downloadFile(content: string, filename: string, mimeType: string
   URL.revokeObjectURL(url);
 }
 
+export interface CategoryBenchmarkCollision {
+  sourceKey: string;
+  sourceSlug: string;
+  sourceName?: string;
+  configuredBenchmark: number;
+  conflictingCategories: { id: string; name: string; slug: string }[];
+}
+
+export interface CategoryBenchmarkUnmatched {
+  sourceKey: string;
+  sourceSlug?: string;
+  sourceName?: string;
+  configuredBenchmark: number;
+}
+
 export interface CategoryBenchmarkRestoreReport {
   remappedBenchmarks: Record<string, number>;
   matchedByUuid: number;
   matchedBySlug: number;
   skippedAmbiguous: number;
   skippedMissing: number;
+  collisions: CategoryBenchmarkCollision[];
+  unmatched: CategoryBenchmarkUnmatched[];
 }
 
 /**
@@ -236,6 +253,8 @@ export function remapCategoryBenchmarkOverrides(
   currentCategories: Category[] = []
 ): CategoryBenchmarkRestoreReport {
   const remappedBenchmarks: Record<string, number> = {};
+  const collisions: CategoryBenchmarkCollision[] = [];
+  const unmatched: CategoryBenchmarkUnmatched[] = [];
   let matchedByUuid = 0;
   let matchedBySlug = 0;
   let skippedAmbiguous = 0;
@@ -248,6 +267,8 @@ export function remapCategoryBenchmarkOverrides(
       matchedBySlug,
       skippedAmbiguous,
       skippedMissing,
+      collisions,
+      unmatched,
     };
   }
 
@@ -264,15 +285,24 @@ export function remapCategoryBenchmarkOverrides(
 
     // 2. Fallback path: Find category slug from backup categories metadata or direct slug key
     let sourceSlug: string | undefined;
+    let sourceName: string | undefined;
     const backupCat = backupCategories.find((c) => c.id === key);
-    if (backupCat?.slug) {
-      sourceSlug = backupCat.slug.trim().toLowerCase();
+    if (backupCat) {
+      sourceName = backupCat.name;
+      if (backupCat.slug) {
+        sourceSlug = backupCat.slug.trim().toLowerCase();
+      }
     } else if (currentCategories.some((c) => c.slug?.trim().toLowerCase() === key.trim().toLowerCase())) {
       sourceSlug = key.trim().toLowerCase();
     }
 
     if (!sourceSlug) {
       skippedMissing++;
+      unmatched.push({
+        sourceKey: key,
+        sourceName,
+        configuredBenchmark: value,
+      });
       continue;
     }
 
@@ -288,9 +318,26 @@ export function remapCategoryBenchmarkOverrides(
     } else if (slugMatches.length > 1) {
       // Ambiguous collision - safe skip without guessing
       skippedAmbiguous++;
+      collisions.push({
+        sourceKey: key,
+        sourceSlug,
+        sourceName: sourceName || sourceSlug,
+        configuredBenchmark: value,
+        conflictingCategories: slugMatches.map((c) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+        })),
+      });
     } else {
       // No active category matching this slug
       skippedMissing++;
+      unmatched.push({
+        sourceKey: key,
+        sourceSlug,
+        sourceName: sourceName || sourceSlug,
+        configuredBenchmark: value,
+      });
     }
   }
 
@@ -300,5 +347,7 @@ export function remapCategoryBenchmarkOverrides(
     matchedBySlug,
     skippedAmbiguous,
     skippedMissing,
+    collisions,
+    unmatched,
   };
 }

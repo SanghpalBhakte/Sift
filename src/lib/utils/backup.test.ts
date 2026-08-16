@@ -222,6 +222,11 @@ describe('Backup & Export Manifest Engine', () => {
 
       expect(report.matchedBySlug).toBe(1);
       expect(report.skippedAmbiguous).toBe(1);
+      expect(report.collisions).toHaveLength(1);
+      expect(report.collisions[0].sourceSlug).toBe('software-dev');
+      expect(report.collisions[0].sourceName).toBe('Software & Dev');
+      expect(report.collisions[0].configuredBenchmark).toBe(10);
+      expect(report.collisions[0].conflictingCategories).toHaveLength(2);
       expect(report.remappedBenchmarks).toEqual({
         'unique-1': 20,
       });
@@ -241,6 +246,9 @@ describe('Backup & Export Manifest Engine', () => {
 
       expect(report.matchedBySlug).toBe(1);
       expect(report.skippedMissing).toBe(1);
+      expect(report.unmatched).toHaveLength(1);
+      expect(report.unmatched[0].sourceName).toBe('Productivity');
+      expect(report.unmatched[0].configuredBenchmark).toBe(15);
       expect(report.remappedBenchmarks).toEqual({
         'dest-1': 10,
       });
