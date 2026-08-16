@@ -55,10 +55,10 @@ Sift provides a **Subscription Health & Action Center** to help you make calm fi
 
 ### B. Price-Hike Alerts
 - **Source**: Triggered only when observable historical billing entries exist—specifically when an edited or newly imported statement shows a price higher than the recorded `previous_amount`.
-- **Limitation**: Sift does not use bank OAuth scraping or store bank login credentials. As a result, price-hike detection is limited to imported statement data and manually updated amounts. Price-hike detection in Sift depends on recorded billing history. If a subscription has only a single entered amount, Sift cannot infer a trend until a second statement or a manual update provides comparison data.
+- **Limitation**: Sift does not use bank OAuth scraping or store bank login credentials. Sift can detect price changes only when it has enough historical evidence to compare against. For subscriptions with a single entry, Sift must wait for a later imported statement or a manually edited amount before it can infer a trend.
 
 ### C. Plan Alternatives & Downgrade Suggestions
-- **Limitation**: Sift does not track merchant feature-set changes or plan-limit changes. Where downgrade or alternative-plan suggestions are shown, they are based on visible pricing tiers and user-provided subscription data rather than live merchant plan intelligence.
+- **Limitation**: Sift does not access merchant admin panels or store provider credentials. As a result, plan and feature quota comparisons are based on user-entered audit ratings, visible pricing tiers, and merchant cancellation links rather than live provider-side intelligence.
 
 ### D. Cancellation Assistance & Merchant Responsibility
 - **Honesty**: Sift also does not store merchant login credentials. Where a subscription must be canceled through a merchant’s website, Sift can help the user track, review, and prepare the cancellation, but the user must complete the final action directly with the merchant.

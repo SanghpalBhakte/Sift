@@ -167,7 +167,7 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-foreground">Price-Hike Detection</div>
                 <div className="text-[11px] leading-relaxed">
-                  Sift does not use bank OAuth scraping or store bank login credentials. As a result, price-hike detection is limited to imported statement data and manually updated amounts. If a subscription has only a single entered amount, Sift cannot infer a trend until a second statement or a manual update provides comparison data.
+                  Sift can detect price changes only when it has enough historical evidence to compare against. For subscriptions with a single entry, Sift must wait for a later imported statement or a manually edited amount before it can infer a trend. Sift does not use bank OAuth scraping or store bank login credentials.
                 </div>
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-foreground">Plan Alternatives & Downgrade Suggestions</div>
                 <div className="text-[11px] leading-relaxed">
-                  Sift does not track merchant feature-set changes or plan-limit changes. Where downgrade or alternative-plan suggestions are shown, they are based on visible pricing tiers and user-provided subscription data rather than live merchant plan intelligence.
+                  Sift does not access merchant admin panels or store provider credentials. As a result, plan and feature quota comparisons are based on user-entered audit ratings, visible pricing tiers, and merchant cancellation links rather than live provider-side intelligence.
                 </div>
               </div>
             </div>
