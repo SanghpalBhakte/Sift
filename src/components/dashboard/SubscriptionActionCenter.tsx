@@ -371,6 +371,16 @@ export function SubscriptionActionCenter() {
             );
           })}
         </CardContent>
+
+        {/* Privacy-First Ledger Boundary Footer */}
+        <div className="p-3 bg-surface/40 border-t border-border flex items-start gap-2.5 text-xs text-muted-foreground">
+          <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-[11px] leading-relaxed">
+            <strong className="font-semibold text-foreground">Client-Side & Privacy-First: </strong>
+            Sift does not track external app logins, browser activity, or background screen usage. Utilization insights
+            come directly from your declared value ratings, and price-increase reviews rely strictly on observable recorded billing history.
+          </p>
+        </div>
       </Card>
 
       {/* Cancellation Review Modal */}

@@ -277,13 +277,12 @@ export function CancellationReviewModal({
                 </div>
               ) : null}
 
-              {/* Product Honesty Disclaimer */}
+              {/* Product Honesty & Client-Side Privacy Disclaimer */}
               <div className="p-3 rounded-xl bg-surface/70 border border-border flex items-start gap-2.5 text-xs text-muted-foreground">
                 <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                 <div className="space-y-0.5 text-[11px] leading-relaxed">
-                  <span className="font-semibold text-foreground">How Sift cancellation works: </span>
-                  Marking this service canceled updates your personal ledger and stops renewal reminders in Sift.
-                  To stop future credit card charges, ensure you also cancel directly on the provider&apos;s website.
+                  <span className="font-semibold text-foreground">Client-Side & Privacy-First: </span>
+                  Sift updates your personal ledger and stops renewal notifications. Because Sift does not store merchant credentials or track bank logins, remember to also complete cancellation directly on {subscription.name}&apos;s billing portal if you haven&apos;t done so.
                 </div>
               </div>
             </>

@@ -43,8 +43,8 @@ export function ValueRatingAnalysis({ subscriptions }: { subscriptions: Subscrip
 
       <CardContent className="space-y-4 pt-1">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Sift classifies spending into utility tiers so you can quickly isolate subscriptions that
-          no longer justify their recurring cost.
+          Sift organizes spend into user-declared utility tiers. Because Sift is privacy-first and never monitors
+          your browser or app usage, value alignments reflect your own ongoing audit ratings.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

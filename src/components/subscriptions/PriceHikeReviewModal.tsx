@@ -194,9 +194,9 @@ export function PriceHikeReviewModal({
                   <span>Why this appears</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
-                  Your recorded billing amount increased by {formatCurrency(delta, subscription.currency)}/
-                  {subscription.billing_cycle}. You can mark this price acceptable to dismiss alerts, set
-                  renewal reminders, or review cancellation options.
+                  Based on your recorded ledger history, this subscription increased by {formatCurrency(delta, subscription.currency)}/
+                  {subscription.billing_cycle}. Sift detects price changes strictly from your imported statements and manual updates.
+                  You can mark this price acceptable to dismiss alerts, set renewal reminders, or review cancellation options.
                 </p>
               </div>
 

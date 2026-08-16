@@ -111,7 +111,7 @@ describe('generateSubscriptionHealthActions', () => {
     expect(annualAction).toBeDefined();
     expect(annualAction?.severity).toBe('warning');
     expect(annualAction?.impactAmount).toBe(480);
-    expect(annualAction?.heuristicRule).toContain('Yearly billing cycle');
+    expect(annualAction?.heuristicRule).toContain('Yearly plan');
   });
 
   it('flags potential overlapping services within known clusters like AI assistants', () => {

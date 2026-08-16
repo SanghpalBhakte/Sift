@@ -144,7 +144,7 @@ export function detectPriceHikes(
         percentageIncrease,
         nextRenewalDate: sub.next_renewal_date,
         whyExplanation: `Recorded price increase from ${formatCurrency(sub.previous_amount, sub.currency)} to ${formatCurrency(sub.amount, sub.currency)} (+${percentageIncrease}%).`,
-        heuristicRule: 'Rule: current amount > previous recorded amount',
+        heuristicRule: 'Recorded history: Current amount > Previous amount',
         isReviewed,
         reviewedAt: sub.price_hike_reviewed_at,
       });
