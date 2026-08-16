@@ -32,18 +32,34 @@ interface RestoreModalProps {
   onSuccess: () => void;
 }
 
-interface RestoreCompletionSummary {
+export type RestoreOutcomeStatus =
+  | 'uuid'
+  | 'slug'
+  | 'manual'
+  | 'collision'
+  | 'unmatched';
+
+export interface RestoreOutcomeItem {
+  key: string;
+  name: string;
+  slug?: string;
+  benchmark: number;
+  status: RestoreOutcomeStatus;
+  statusLabel: string;
+  details: string;
+}
+
+export interface RestoreCompletionSummary {
   subscriptionCount: number;
   mode: 'merge' | 'replace';
   globalBenchmark: number;
   activeOverridesCount: number;
-  skippedItems: Array<{
-    name: string;
-    slug?: string;
-    benchmark: number;
-    reason: 'collision' | 'unmatched';
-    details?: string;
-  }>;
+  matchedByUuid: number;
+  matchedBySlug: number;
+  manuallyRemapped: number;
+  skippedCollisionCount: number;
+  skippedUnmatchedCount: number;
+  items: RestoreOutcomeItem[];
 }
 
 export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) {
@@ -173,34 +189,122 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
           category_annual_benchmarks: finalBenchmarks,
         });
 
-        // Compute skipped items that were not manually remapped
-        const skippedItems = [
-          ...benchmarkReport.collisions
-            .filter((c) => !manualRemappings[c.sourceKey] || manualRemappings[c.sourceKey] === 'skip')
-            .map((c) => ({
-              name: c.sourceName || c.sourceSlug,
-              slug: c.sourceSlug,
-              benchmark: c.configuredBenchmark,
-              reason: 'collision' as const,
-              details: `Matched ${c.conflictingCategories.length} local categories (${c.conflictingCategories.map((cat) => `"${cat.name}"`).join(', ')})`,
-            })),
-          ...benchmarkReport.unmatched
-            .filter((u) => !manualRemappings[u.sourceKey] || manualRemappings[u.sourceKey] === 'skip')
-            .map((u) => ({
-              name: u.sourceName || u.sourceSlug || u.sourceKey,
-              slug: u.sourceSlug,
-              benchmark: u.configuredBenchmark,
-              reason: 'unmatched' as const,
-              details: 'Category is not present in this workspace',
-            })),
-        ];
+        // Build comprehensive itemized outcome list for all category overrides
+        const outcomeItems: RestoreOutcomeItem[] = [];
+        let skippedCollisionCount = 0;
+        let skippedUnmatchedCount = 0;
+
+        for (const [key, value] of Object.entries(rawBackupBenchmarks)) {
+          if (typeof value !== 'number' || isNaN(value)) continue;
+
+          // 1. User manual remapping
+          const manualTargetId = manualRemappings[key];
+          if (manualTargetId && manualTargetId !== 'skip') {
+            const targetCat = categories.find((c) => c.id === manualTargetId);
+            const backupCat = (backup.categories || []).find((c) => c.id === key);
+            outcomeItems.push({
+              key,
+              name: backupCat?.name || key,
+              slug: backupCat?.slug,
+              benchmark: value,
+              status: 'manual',
+              statusLabel: 'Manually Remapped',
+              details: `Remapped to local category "${targetCat?.name || manualTargetId}" during restore review`,
+            });
+            continue;
+          }
+
+          // 2. Exact UUID match
+          const exactCat = categories.find((c) => c.id === key);
+          if (exactCat) {
+            outcomeItems.push({
+              key,
+              name: exactCat.name,
+              slug: exactCat.slug,
+              benchmark: value,
+              status: 'uuid',
+              statusLabel: 'Matched by ID',
+              details: 'Automatically matched by unique category ID',
+            });
+            continue;
+          }
+
+          // 3. Slug Fallback
+          let sourceSlug: string | undefined;
+          let sourceName: string | undefined;
+          const backupCat = (backup.categories || []).find((c) => c.id === key);
+          if (backupCat) {
+            sourceName = backupCat.name;
+            if (backupCat.slug) sourceSlug = backupCat.slug.trim().toLowerCase();
+          } else if (
+            categories.some((c) => c.slug?.trim().toLowerCase() === key.trim().toLowerCase())
+          ) {
+            sourceSlug = key.trim().toLowerCase();
+          }
+
+          if (!sourceSlug) {
+            skippedUnmatchedCount++;
+            outcomeItems.push({
+              key,
+              name: sourceName || key,
+              benchmark: value,
+              status: 'unmatched',
+              statusLabel: 'Skipped: No Match',
+              details: 'Category was not found in active workspace (defaults to global benchmark)',
+            });
+            continue;
+          }
+
+          const slugMatches = categories.filter(
+            (c) => c.slug && c.slug.trim().toLowerCase() === sourceSlug
+          );
+
+          if (slugMatches.length === 1) {
+            outcomeItems.push({
+              key,
+              name: sourceName || slugMatches[0].name,
+              slug: sourceSlug,
+              benchmark: value,
+              status: 'slug',
+              statusLabel: 'Matched by Slug',
+              details: `Automatically matched via unique slug to "${slugMatches[0].name}"`,
+            });
+          } else if (slugMatches.length > 1) {
+            skippedCollisionCount++;
+            outcomeItems.push({
+              key,
+              name: sourceName || sourceSlug,
+              slug: sourceSlug,
+              benchmark: value,
+              status: 'collision',
+              statusLabel: 'Skipped: Collision',
+              details: `Ambiguous match with ${slugMatches.length} local categories (${slugMatches.map((c) => `"${c.name}"`).join(', ')})`,
+            });
+          } else {
+            skippedUnmatchedCount++;
+            outcomeItems.push({
+              key,
+              name: sourceName || sourceSlug,
+              slug: sourceSlug,
+              benchmark: value,
+              status: 'unmatched',
+              statusLabel: 'Skipped: No Match',
+              details: 'Category slug was not found in active workspace (defaults to global benchmark)',
+            });
+          }
+        }
 
         setRestoreResult({
           subscriptionCount: backup.subscriptions.length,
           mode: restoreMode,
           globalBenchmark: backup.profile.annual_benchmark_percent ?? 16.7,
           activeOverridesCount: Object.keys(finalBenchmarks).length,
-          skippedItems,
+          matchedByUuid: outcomeItems.filter((i) => i.status === 'uuid').length,
+          matchedBySlug: outcomeItems.filter((i) => i.status === 'slug').length,
+          manuallyRemapped: outcomeItems.filter((i) => i.status === 'manual').length,
+          skippedCollisionCount,
+          skippedUnmatchedCount,
+          items: outcomeItems,
         });
       } else {
         setRestoreResult({
@@ -208,7 +312,12 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
           mode: restoreMode,
           globalBenchmark: 16.7,
           activeOverridesCount: 0,
-          skippedItems: [],
+          matchedByUuid: 0,
+          matchedBySlug: 0,
+          manuallyRemapped: 0,
+          skippedCollisionCount: 0,
+          skippedUnmatchedCount: 0,
+          items: [],
         });
       }
 
@@ -258,11 +367,12 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Successfully {restoreResult.mode === 'replace' ? 'replaced' : 'imported and merged'}{' '}
-                    {restoreResult.subscriptionCount} subscriptions into your active workspace.
+                    {restoreResult.subscriptionCount} subscriptions and updated your preferences.
                   </p>
                 </div>
               </div>
 
+              {/* Key Summary Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div className="p-2.5 rounded-lg border border-border bg-surface/50 text-center">
                   <div className="text-[10px] text-muted-foreground">Subscriptions</div>
@@ -284,15 +394,50 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                 </div>
               </div>
 
-              {/* Skipped Items Notice & Accordion */}
-              {restoreResult.skippedItems.length > 0 ? (
+              {/* Category Override Breakdown Chips */}
+              {restoreResult.items.length > 0 ? (
+                <div className="p-2.5 rounded-xl border border-border bg-surface/30 space-y-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                    Category Mapping Breakdown
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 text-[11px]">
+                    {restoreResult.matchedByUuid > 0 ? (
+                      <Badge variant="primary" size="sm" className="font-mono text-[10px]">
+                        {restoreResult.matchedByUuid} by ID
+                      </Badge>
+                    ) : null}
+                    {restoreResult.matchedBySlug > 0 ? (
+                      <Badge variant="outline" size="sm" className="font-mono text-[10px]">
+                        {restoreResult.matchedBySlug} by Slug Fallback
+                      </Badge>
+                    ) : null}
+                    {restoreResult.manuallyRemapped > 0 ? (
+                      <Badge variant="primary" size="sm" className="font-mono text-[10px]">
+                        {restoreResult.manuallyRemapped} Manually Remapped
+                      </Badge>
+                    ) : null}
+                    {restoreResult.skippedCollisionCount > 0 ? (
+                      <Badge variant="warning" size="sm" className="font-mono text-[10px]">
+                        {restoreResult.skippedCollisionCount} Collisions Skipped
+                      </Badge>
+                    ) : null}
+                    {restoreResult.skippedUnmatchedCount > 0 ? (
+                      <Badge variant="outline" size="sm" className="font-mono text-[10px] text-muted-foreground">
+                        {restoreResult.skippedUnmatchedCount} Unmatched Skipped
+                      </Badge>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* 1-Click Fix Link Callout for Skipped Items */}
+              {restoreResult.skippedCollisionCount + restoreResult.skippedUnmatchedCount > 0 ? (
                 <div className="p-3.5 rounded-xl border border-border bg-surface/40 space-y-2.5">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
-                      <AlertTriangle className="w-3.5 h-3.5 text-warning" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
                       <span>
-                        {restoreResult.skippedItems.length} Category Override
-                        {restoreResult.skippedItems.length === 1 ? '' : 's'} Skipped
+                        Review Skipped Category Mappings ({restoreResult.skippedCollisionCount + restoreResult.skippedUnmatchedCount})
                       </span>
                     </div>
                     <a
@@ -300,63 +445,80 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                       onClick={handleClose}
                       className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
                     >
-                      <span>Fix in Settings</span>
+                      <span>Review skipped category mappings</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    These category overrides were skipped to preserve safety and will default to your global{' '}
-                    {restoreResult.globalBenchmark}% benchmark. You can configure them anytime in Settings.
+                    To prevent inaccurate annual savings estimates, these category overrides were skipped without guessing. Subscriptions in these categories will safely use your {restoreResult.globalBenchmark}% global benchmark until you configure them in Settings.
                   </p>
+                </div>
+              ) : null}
 
-                  <div className="pt-1 border-t border-border/50">
-                    <button
-                      type="button"
-                      onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
-                      className="flex items-center justify-between w-full py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    >
-                      <span>
-                        {isDetailsExpanded
-                          ? 'Hide skipped item details'
-                          : 'Show skipped item details'}
-                      </span>
-                      {isDetailsExpanded ? (
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-
+              {/* Expandable Resolution & Itemized Breakdown Accordion */}
+              {restoreResult.items.length > 0 ? (
+                <div className="p-3 rounded-xl border border-border bg-surface/30 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
+                    className="flex items-center justify-between w-full py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <span>
+                      {isDetailsExpanded
+                        ? 'Hide itemized category mapping details'
+                        : `Show itemized category mapping details (${restoreResult.items.length})`}
+                    </span>
                     {isDetailsExpanded ? (
-                      <div className="space-y-1.5 pt-2 animate-in fade-in duration-150">
-                        {restoreResult.skippedItems.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="p-2 rounded-lg bg-card border border-border flex items-center justify-between gap-2 text-[11px]"
-                          >
-                            <div className="min-w-0">
-                              <div className="font-medium text-foreground truncate">
-                                {item.name}{' '}
-                                {item.slug ? (
-                                  <span className="font-mono text-muted-foreground text-[10px]">
-                                    ({item.slug})
-                                  </span>
-                                ) : null}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground">{item.details}</div>
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+
+                  {isDetailsExpanded ? (
+                    <div className="space-y-1.5 pt-1.5 border-t border-border/50 animate-in fade-in duration-150 max-h-56 overflow-y-auto pr-1">
+                      {restoreResult.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2 rounded-lg bg-card border border-border space-y-1 text-[11px]"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="font-semibold text-foreground truncate min-w-0 flex items-center gap-1.5">
+                              <span>{item.name}</span>
+                              {item.slug ? (
+                                <span className="font-mono text-muted-foreground font-normal text-[10px]">
+                                  ({item.slug})
+                                </span>
+                              ) : null}
                             </div>
-                            <Badge
-                              variant="outline"
-                              size="sm"
-                              className="font-mono text-[10px] shrink-0"
-                            >
-                              {item.benchmark}% Skipped
-                            </Badge>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Badge
+                                variant={
+                                  item.status === 'uuid' || item.status === 'manual'
+                                    ? 'primary'
+                                    : item.status === 'slug'
+                                      ? 'outline'
+                                      : item.status === 'collision'
+                                        ? 'warning'
+                                        : 'outline'
+                                }
+                                size="sm"
+                                className="font-mono text-[10px]"
+                              >
+                                {item.statusLabel}
+                              </Badge>
+                              <span className="font-mono font-semibold text-foreground text-[10px]">
+                                {item.benchmark}%
+                              </span>
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
+                          <div className="text-[10px] text-muted-foreground leading-relaxed">
+                            {item.details}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -738,10 +900,10 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
         <div className="p-4 border-t border-[hsl(var(--border))] flex items-center justify-between">
           {restoreResult ? (
             <div className="flex items-center justify-between w-full gap-2">
-              {restoreResult.skippedItems.length > 0 ? (
+              {restoreResult.skippedCollisionCount + restoreResult.skippedUnmatchedCount > 0 ? (
                 <a href="#category-benchmarks" onClick={handleClose}>
                   <Button type="button" variant="outline" size="sm" className="gap-1.5 text-xs">
-                    <span>Fix Category Mappings</span>
+                    <span>Review Skipped Mappings</span>
                     <ExternalLink className="w-3 h-3" />
                   </Button>
                 </a>
