@@ -55,9 +55,12 @@ Sift provides a **Subscription Health & Action Center** to help you make calm fi
 
 ### B. Price-Hike Alerts
 - **Source**: Triggered only when observable historical billing entries exist—specifically when an edited or newly imported statement shows a price higher than the recorded `previous_amount`.
-- **Limitation**: If you track a subscription without prior statement history or previous price records, Sift cannot guess whether the merchant recently increased their pricing.
+- **Limitation**: Sift does not use bank OAuth scraping or store bank login credentials. As a result, price-hike detection is limited to imported statement data and manually updated amounts.
 
-### C. Overlapping Service Clusters
+### C. Cancellation Assistance & Merchant Responsibility
+- **Honesty**: Sift also does not store merchant login credentials. Where a subscription must be canceled through a merchant’s website, Sift can help the user track, review, and prepare the cancellation, but the user must complete the final action directly with the merchant.
+
+### D. Overlapping Service Clusters
 - **Source**: Rule-based matching against known service clusters (such as multiple AI assistants, cloud hosting platforms, or music streaming providers) within the same category.
 - **Honesty**: Overlap alerts are informational suggestions to review duplication—not absolute commands.
 

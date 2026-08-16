@@ -167,7 +167,17 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-foreground">Price-Hike Detection</div>
                 <div className="text-[11px] leading-relaxed">
-                  Price increase alerts only trigger when observable evidence exists in your recorded ledger—such as when a newly imported statement or price edit exceeds your previous recorded amount. Without recorded billing history, Sift does not speculate on price changes.
+                  Sift does not use bank OAuth scraping or store bank login credentials. As a result, price-hike detection is limited to imported statement data and manually updated amounts.
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl border border-border bg-surface/40 flex items-start gap-3">
+              <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <div className="text-xs font-semibold text-foreground">Cancellation Assistance & Merchant Responsibility</div>
+                <div className="text-[11px] leading-relaxed">
+                  Sift also does not store merchant login credentials. Where a subscription must be canceled through a merchant’s website, Sift can help the user track, review, and prepare the cancellation, but the user must complete the final action directly with the merchant.
                 </div>
               </div>
             </div>
