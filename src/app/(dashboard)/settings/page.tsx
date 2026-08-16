@@ -665,7 +665,7 @@ export default function SettingsPage() {
 
               {/* Optional Per-Category Overrides */}
               {categories.length > 0 ? (
-                <div className="space-y-2 pt-3 border-t border-border/70">
+                <div id="category-benchmarks" className="space-y-2 pt-3 border-t border-border/70 scroll-mt-6">
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-xs font-semibold text-foreground">
                       Per-Category Benchmark Overrides (Optional)
