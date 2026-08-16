@@ -105,6 +105,120 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     Record<string, { name: string; slug: string; slugTouched?: boolean }>
   >({});
 
+  // --- Hooks must all be declared before any early return ---
+
+  const batchPreviewItems = useMemo(() => {
+    if (!validation?.data?.profile?.category_annual_benchmarks) return [];
+    const report = remapCategoryBenchmarkOverrides(
+      validation.data.profile.category_annual_benchmarks || {},
+      validation.data.categories || [],
+      categories
+    );
+
+    // Pass 1: Resolve names, raw inputs, and normalized slugs (including user edits)
+    const itemsWithValues = report.unmatched.map((un, index) => {
+      const backupCat = validation.data?.categories?.find(
+        (c) => c.id === un.sourceKey || c.slug === un.sourceSlug
+      );
+      const defaultName = (backupCat?.name || un.sourceName || un.sourceSlug || 'Category').trim();
+      const defaultSlug = (
+        backupCat?.slug ||
+        un.sourceSlug ||
+        defaultName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+      )
+        .trim()
+        .toLowerCase();
+
+      const edited = editedBatchRows[un.sourceKey];
+      const name = edited?.name !== undefined ? edited.name : defaultName;
+      const rawSlug = edited?.slug !== undefined ? edited.slug : defaultSlug;
+      const cleanSlug = rawSlug
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      const color = resolveCategoryDefaultColor(backupCat?.color, name || cleanSlug, index);
+      const icon = backupCat?.icon || 'folder';
+      const isAlreadyRemapped = Boolean(
+        manualRemappings[un.sourceKey] && manualRemappings[un.sourceKey] !== 'skip'
+      );
+
+      return {
+        sourceKey: un.sourceKey,
+        name,
+        rawSlug,
+        slug: cleanSlug,
+        color,
+        icon,
+        configuredBenchmark: un.configuredBenchmark,
+        isAlreadyRemapped,
+        index,
+      };
+    });
+
+    // Pass 2: Rigorous validation against active workspace categories AND intra-batch uniqueness
+    return itemsWithValues.map((item, idx) => {
+      let hasConflict = false;
+      let conflictReason: string | null = null;
+
+      if (!item.name.trim()) {
+        hasConflict = true;
+        conflictReason = 'Name cannot be blank';
+      } else if (!item.slug.trim()) {
+        hasConflict = true;
+        conflictReason = 'Slug cannot be blank';
+      } else {
+        const workspaceNameConflict = categories.some(
+          (c) => c.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+        );
+        const workspaceSlugConflict = categories.some(
+          (c) => c.slug && c.slug.trim().toLowerCase() === item.slug
+        );
+
+        if (workspaceNameConflict) {
+          hasConflict = true;
+          conflictReason = `Name "${item.name.trim()}" exists in workspace`;
+        } else if (workspaceSlugConflict) {
+          hasConflict = true;
+          conflictReason = `Slug "${item.slug}" exists in workspace`;
+        } else {
+          // Check intra-batch duplicate slugs or names
+          const batchSlugDup = itemsWithValues.some(
+            (other, oIdx) => oIdx !== idx && other.slug === item.slug && other.slug.length > 0
+          );
+          const batchNameDup = itemsWithValues.some(
+            (other, oIdx) =>
+              oIdx !== idx &&
+              other.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
+              other.name.trim().length > 0
+          );
+
+          if (batchSlugDup) {
+            hasConflict = true;
+            conflictReason = `Duplicate slug "${item.slug}" in batch`;
+          } else if (batchNameDup) {
+            hasConflict = true;
+            conflictReason = `Duplicate name "${item.name.trim()}" in batch`;
+          }
+        }
+      }
+
+      return {
+        ...item,
+        hasConflict,
+        conflictReason,
+      };
+    });
+  }, [validation, categories, manualRemappings, editedBatchRows]);
+
+  const creatableBatchItems = useMemo(() => {
+    return batchPreviewItems.filter((i) => !i.hasConflict && !i.isAlreadyRemapped);
+  }, [batchPreviewItems]);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -235,117 +349,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     });
   };
 
-  const batchPreviewItems = useMemo(() => {
-    if (!validation?.data?.profile?.category_annual_benchmarks) return [];
-    const report = remapCategoryBenchmarkOverrides(
-      validation.data.profile.category_annual_benchmarks || {},
-      validation.data.categories || [],
-      categories
-    );
 
-    // Pass 1: Resolve names, raw inputs, and normalized slugs (including user edits)
-    const itemsWithValues = report.unmatched.map((un, index) => {
-      const backupCat = validation.data?.categories?.find(
-        (c) => c.id === un.sourceKey || c.slug === un.sourceSlug
-      );
-      const defaultName = (backupCat?.name || un.sourceName || un.sourceSlug || 'Category').trim();
-      const defaultSlug = (
-        backupCat?.slug ||
-        un.sourceSlug ||
-        defaultName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '')
-      )
-        .trim()
-        .toLowerCase();
-
-      const edited = editedBatchRows[un.sourceKey];
-      const name = edited?.name !== undefined ? edited.name : defaultName;
-      const rawSlug = edited?.slug !== undefined ? edited.slug : defaultSlug;
-      const cleanSlug = rawSlug
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-
-      const color = resolveCategoryDefaultColor(backupCat?.color, name || cleanSlug, index);
-      const icon = backupCat?.icon || 'folder';
-      const isAlreadyRemapped = Boolean(
-        manualRemappings[un.sourceKey] && manualRemappings[un.sourceKey] !== 'skip'
-      );
-
-      return {
-        sourceKey: un.sourceKey,
-        name,
-        rawSlug,
-        slug: cleanSlug,
-        color,
-        icon,
-        configuredBenchmark: un.configuredBenchmark,
-        isAlreadyRemapped,
-        index,
-      };
-    });
-
-    // Pass 2: Rigorous validation against active workspace categories AND intra-batch uniqueness
-    return itemsWithValues.map((item, idx) => {
-      let hasConflict = false;
-      let conflictReason: string | null = null;
-
-      if (!item.name.trim()) {
-        hasConflict = true;
-        conflictReason = 'Name cannot be blank';
-      } else if (!item.slug.trim()) {
-        hasConflict = true;
-        conflictReason = 'Slug cannot be blank';
-      } else {
-        const workspaceNameConflict = categories.some(
-          (c) => c.name.trim().toLowerCase() === item.name.trim().toLowerCase()
-        );
-        const workspaceSlugConflict = categories.some(
-          (c) => c.slug && c.slug.trim().toLowerCase() === item.slug
-        );
-
-        if (workspaceNameConflict) {
-          hasConflict = true;
-          conflictReason = `Name "${item.name.trim()}" exists in workspace`;
-        } else if (workspaceSlugConflict) {
-          hasConflict = true;
-          conflictReason = `Slug "${item.slug}" exists in workspace`;
-        } else {
-          // Check intra-batch duplicate slugs or names
-          const batchSlugDup = itemsWithValues.some(
-            (other, oIdx) => oIdx !== idx && other.slug === item.slug && other.slug.length > 0
-          );
-          const batchNameDup = itemsWithValues.some(
-            (other, oIdx) =>
-              oIdx !== idx &&
-              other.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
-              other.name.trim().length > 0
-          );
-
-          if (batchSlugDup) {
-            hasConflict = true;
-            conflictReason = `Duplicate slug "${item.slug}" in batch`;
-          } else if (batchNameDup) {
-            hasConflict = true;
-            conflictReason = `Duplicate name "${item.name.trim()}" in batch`;
-          }
-        }
-      }
-
-      return {
-        ...item,
-        hasConflict,
-        conflictReason,
-      };
-    });
-  }, [validation, categories, manualRemappings, editedBatchRows]);
-
-  const creatableBatchItems = useMemo(() => {
-    return batchPreviewItems.filter((i) => !i.hasConflict && !i.isAlreadyRemapped);
-  }, [batchPreviewItems]);
 
   const handleExecuteBatchCreate = async () => {
     if (creatableBatchItems.length === 0) return;
