@@ -7,16 +7,13 @@ import { useAuth } from '@/context/AuthContext';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { AlertsBanner } from '@/components/reminders/AlertsBanner';
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
+import { SubscriptionActionCenter } from '@/components/dashboard/SubscriptionActionCenter';
 import { UpcomingRenewals } from '@/components/subscriptions/UpcomingRenewals';
-import { TrialAlerts } from '@/components/subscriptions/TrialAlerts';
-import { CancelCandidates } from '@/components/subscriptions/CancelCandidates';
 import { CategoryBreakdown } from '@/components/insights/CategoryBreakdown';
-import { AnnualOptimizationReview } from '@/components/insights/AnnualOptimizationReview';
 import { SubscriptionCard } from '@/components/subscriptions/SubscriptionCard';
 import { MetricCardSkeleton, SubscriptionCardSkeleton } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/lib/utils/currency';
 import { getCountdownBadge, formatDate } from '@/lib/utils/dates';
-import { getUpcomingAnnualRenewals } from '@/lib/utils/annualOptimization';
 import {
   Plus,
   CreditCard,
@@ -35,7 +32,6 @@ export default function DashboardPage() {
     subscriptions,
     categories,
     stats,
-    profile,
     exchangeRates,
     displayCurrency,
     isLoading,
@@ -55,7 +51,6 @@ export default function DashboardPage() {
     : null;
 
   const targetCurrency = stats.displayCurrency || displayCurrency || 'USD';
-  const upcomingAnnuals = getUpcomingAnnualRenewals(subscriptions, 30);
 
   // Skeleton loading state
   if (isLoading) {
@@ -171,7 +166,7 @@ export default function DashboardPage() {
       {/* Onboarding Checklist (dismissible) */}
       <OnboardingChecklist />
 
-      {/* Alerts Banner */}
+      {/* Alerts Banner (Quiet system notifications) */}
       <AlertsBanner />
 
       {/* Metric Cards */}
@@ -233,39 +228,25 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Free Trial Alerts */}
-      {stats.trialCount > 0 ? (
-        <section>
-          <TrialAlerts subscriptions={subscriptions} />
-        </section>
-      ) : null}
+      {/* Subscription Health & Financial Action Center */}
+      <section>
+        <SubscriptionActionCenter />
+      </section>
 
-      {/* Annual Renewal Review */}
-      {upcomingAnnuals.length > 0 ? (
-        <section>
-          <AnnualOptimizationReview items={upcomingAnnuals} currency={targetCurrency} />
-        </section>
-      ) : null}
-
-      {/* Upcoming Renewals & Cancel Candidates */}
+      {/* Upcoming Renewals & Spend Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section>
           <UpcomingRenewals subscriptions={subscriptions} />
         </section>
         <section>
-          <CancelCandidates subscriptions={subscriptions} />
+          <CategoryBreakdown
+            subscriptions={subscriptions}
+            categories={categories}
+            currency={targetCurrency}
+            rates={exchangeRates.rates}
+          />
         </section>
       </div>
-
-      {/* Category Spend Distribution */}
-      <section>
-        <CategoryBreakdown
-          subscriptions={subscriptions}
-          categories={categories}
-          currency={targetCurrency}
-          rates={exchangeRates.rates}
-        />
-      </section>
 
       {/* Active Subscriptions List */}
       <section className="space-y-3">
