@@ -103,6 +103,14 @@ export function SubscriptionForm({
     setIsSubmitting(true);
 
     try {
+      let prevAmount = initialData?.previous_amount || undefined;
+      let priceHikeReviewedAt = initialData?.price_hike_reviewed_at || undefined;
+
+      if (initialData && parsedAmount !== initialData.amount) {
+        prevAmount = initialData.amount;
+        priceHikeReviewedAt = undefined; // Reset review state so new price hike is flagged
+      }
+
       const payload: SubscriptionFormData = {
         name: name.trim(),
         description: description.trim() || undefined,
@@ -124,6 +132,10 @@ export function SubscriptionForm({
         value_rating: valueRating,
         cancel_url: cancelUrl.trim() || undefined,
         notes: notes.trim() || undefined,
+        previous_amount: prevAmount,
+        price_hike_reviewed_at: priceHikeReviewedAt,
+        cancellation_reason: initialData?.cancellation_reason,
+        cancellation_effective_date: initialData?.cancellation_effective_date,
       };
 
       await onSubmit(payload);

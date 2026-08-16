@@ -144,6 +144,26 @@ describe('generateSubscriptionHealthActions', () => {
     expect(outsized?.whyExplanation).toContain('one-quarter');
   });
 
+  it('flags unreviewed recorded price hike where current amount > previous amount', () => {
+    const subs: Subscription[] = [
+      createMockSub({
+        name: 'Disney Plus',
+        amount: 15.99,
+        previous_amount: 11.99,
+        billing_cycle: 'monthly',
+      }),
+    ];
+
+    const result = generateSubscriptionHealthActions(subs, mockCategories, 'USD');
+
+    const hikeAction = result.items.find((i) => i.type === 'price_hike');
+    expect(hikeAction).toBeDefined();
+    expect(hikeAction?.severity).toBe('warning');
+    expect(hikeAction?.title).toContain('Disney Plus');
+    expect(hikeAction?.subtitle).toContain('11.99');
+    expect(hikeAction?.subtitle).toContain('15.99');
+  });
+
   it('sorts urgent items before warning and info items', () => {
     const futureDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const subs: Subscription[] = [

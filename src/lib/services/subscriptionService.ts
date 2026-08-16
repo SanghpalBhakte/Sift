@@ -216,6 +216,10 @@ class SubscriptionService {
             notes: form.notes || null,
             monthly_amount: monthlyAmount,
             monthly_alternative_price: form.monthly_alternative_price || null,
+            previous_amount: form.previous_amount || null,
+            price_hike_reviewed_at: form.price_hike_reviewed_at || null,
+            cancellation_reason: form.cancellation_reason || null,
+            cancellation_effective_date: form.cancellation_effective_date || null,
           })
           .select('*, category:categories(*), payment_method:payment_methods(*)')
           .single();
@@ -295,6 +299,10 @@ class SubscriptionService {
           notes: updatedSub.notes || null,
           monthly_amount: updatedSub.monthly_amount,
           monthly_alternative_price: updatedSub.monthly_alternative_price || null,
+          previous_amount: updatedSub.previous_amount || null,
+          price_hike_reviewed_at: updatedSub.price_hike_reviewed_at || null,
+          cancellation_reason: updatedSub.cancellation_reason || null,
+          cancellation_effective_date: updatedSub.cancellation_effective_date || null,
           updated_at: updatedSub.updated_at,
         })
         .eq('id', id);

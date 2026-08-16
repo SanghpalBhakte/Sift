@@ -8,25 +8,26 @@ import {
   HealthActionItem,
   ActionSeverity,
 } from '@/lib/utils/subscriptionHealth';
+import { Subscription } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { AnimatedCurrency } from '../ui/AnimatedCurrency';
+import { CancellationReviewModal } from '../subscriptions/CancellationReviewModal';
+import { PriceHikeReviewModal } from '../subscriptions/PriceHikeReviewModal';
 import { formatCurrency } from '@/lib/utils/currency';
 import {
   ShieldAlert,
   ShieldCheck,
-  AlertCircle,
   Clock,
   Sparkles,
   ExternalLink,
   Scissors,
-  Layers,
   ArrowRight,
   ChevronRight,
   TrendingDown,
+  TrendingUp,
   Info,
-  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -38,11 +39,11 @@ export function SubscriptionActionCenter() {
     categories,
     displayCurrency,
     exchangeRates,
-    toggleStatus,
   } = useSubscriptions();
 
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
-  const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
+  const [selectedSubForCancel, setSelectedSubForCancel] = useState<Subscription | null>(null);
+  const [selectedSubForPriceHike, setSelectedSubForPriceHike] = useState<Subscription | null>(null);
 
   const targetCurrency = displayCurrency || 'USD';
   const summary = generateSubscriptionHealthActions(
@@ -70,17 +71,6 @@ export function SubscriptionActionCenter() {
     if (activeTab === 'info') return item.severity === 'info';
     return true;
   });
-
-  const handleMarkCanceled = async (subId: string) => {
-    setIsProcessingId(subId);
-    try {
-      await toggleStatus(subId, 'canceled');
-    } catch (err) {
-      console.error('Failed to cancel subscription:', err);
-    } finally {
-      setIsProcessingId(null);
-    }
-  };
 
   const getSeverityBadge = (severity: ActionSeverity) => {
     switch (severity) {
@@ -130,7 +120,7 @@ export function SubscriptionActionCenter() {
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
                 All {totalActiveCount} active subscriptions are in good standing. No upcoming trial conversions,
-                pending annual renewals, or overlapping service clusters were detected.
+                unreviewed price hikes, pending annual renewals, or overlapping service clusters were detected.
               </p>
             </div>
           </div>
@@ -146,227 +136,260 @@ export function SubscriptionActionCenter() {
   }
 
   return (
-    <Card className="border-border shadow-xs overflow-hidden">
-      {/* Header Bar */}
-      <CardHeader className="border-b border-border/70 pb-3 sm:pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <ShieldAlert
-                  className={cn(
-                    'w-4 h-4 shrink-0',
-                    urgentCount > 0
-                      ? 'text-danger'
-                      : warningCount > 0
-                      ? 'text-warning'
-                      : 'text-primary'
-                  )}
-                  aria-hidden="true"
-                />
-                <CardTitle className="text-sm sm:text-base">
-                  Financial Action Center
-                </CardTitle>
-              </div>
-
-              <Badge
-                variant={
-                  healthScore >= 80 ? 'success' : healthScore >= 60 ? 'warning' : 'danger'
-                }
-                size="sm"
-                className="font-mono text-[11px]"
-              >
-                Health Score {healthScore}/100 · {statusLabel}
-              </Badge>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              {summary.statusDescription}
-            </p>
-          </div>
-
-          {/* Potential Monthly Savings Indicator */}
-          {potentialMonthlySavings > 0 ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success-subtle/30 border border-success/25 shrink-0">
-              <TrendingDown className="w-4 h-4 text-success shrink-0" />
-              <div>
-                <div className="text-xs font-bold text-foreground">
-                  +<AnimatedCurrency value={potentialMonthlySavings} currency={targetCurrency} />
-                  <span className="text-[10px] font-normal text-muted-foreground">/mo</span>
-                </div>
-                <div className="text-[10px] text-muted-foreground">
-                  Identified cancel savings
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        {/* Tab Filters */}
-        <div className="flex items-center gap-1.5 pt-3 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('all')}
-            className={cn(
-              'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer',
-              activeTab === 'all'
-                ? 'bg-surface text-foreground shadow-xs font-semibold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            All Actions ({items.length})
-          </button>
-
-          {urgentCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setActiveTab('urgent')}
-              className={cn(
-                'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1',
-                activeTab === 'urgent'
-                  ? 'bg-danger-subtle text-danger shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:text-danger'
-              )}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-danger" />
-              Urgent ({urgentCount})
-            </button>
-          ) : null}
-
-          {warningCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setActiveTab('warning')}
-              className={cn(
-                'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1',
-                activeTab === 'warning'
-                  ? 'bg-warning-subtle text-warning shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:text-warning'
-              )}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-warning" />
-              Review Due ({warningCount})
-            </button>
-          ) : null}
-
-          {infoCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setActiveTab('info')}
-              className={cn(
-                'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1',
-                activeTab === 'info'
-                  ? 'bg-primary/10 text-primary shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:text-primary'
-              )}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              Optimizations ({infoCount})
-            </button>
-          ) : null}
-        </div>
-      </CardHeader>
-
-      {/* Action Cards List */}
-      <CardContent className="p-0 divide-y divide-border">
-        {filteredItems.map((action) => (
-          <div
-            key={action.id}
-            className={cn(
-              'p-4 sm:p-5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4',
-              action.severity === 'urgent'
-                ? 'bg-danger-subtle/5 hover:bg-danger-subtle/10'
-                : action.severity === 'warning'
-                ? 'bg-warning-subtle/5 hover:bg-warning-subtle/10'
-                : 'hover:bg-surface/40'
-            )}
-          >
-            {/* Left Info & Explanation */}
-            <div className="space-y-2 min-w-0 max-w-2xl">
+    <>
+      <Card className="border-border shadow-xs overflow-hidden">
+        {/* Header Bar */}
+        <CardHeader className="border-b border-border/70 pb-3 sm:pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                {getSeverityBadge(action.severity)}
-                <h4 className="text-sm font-bold text-foreground">
-                  {action.title}
-                </h4>
-                <span className="text-xs font-semibold font-mono text-muted-foreground">
-                  {action.impactLabel}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <ShieldAlert
+                    className={cn(
+                      'w-4 h-4 shrink-0',
+                      urgentCount > 0
+                        ? 'text-danger'
+                        : warningCount > 0
+                        ? 'text-warning'
+                        : 'text-primary'
+                    )}
+                    aria-hidden="true"
+                  />
+                  <CardTitle className="text-sm sm:text-base">
+                    Financial Action Center
+                  </CardTitle>
+                </div>
+
+                <Badge
+                  variant={
+                    healthScore >= 80 ? 'success' : healthScore >= 60 ? 'warning' : 'danger'
+                  }
+                  size="sm"
+                  className="font-mono text-[11px]"
+                >
+                  Health Score {healthScore}/100 · {statusLabel}
+                </Badge>
               </div>
 
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {action.subtitle}
+              <p className="text-xs text-muted-foreground">
+                {summary.statusDescription}
               </p>
+            </div>
 
-              {/* Transparent "Why this appears" reason tag */}
-              <div className="inline-flex items-start gap-1.5 px-2.5 py-1 rounded-lg bg-surface/70 border border-border/80 text-[11px] text-muted-foreground leading-snug">
-                <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+            {/* Potential Monthly Savings Indicator */}
+            {potentialMonthlySavings > 0 ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success-subtle/30 border border-success/25 shrink-0">
+                <TrendingDown className="w-4 h-4 text-success shrink-0" />
                 <div>
-                  <strong className="font-semibold text-foreground">Why this appears: </strong>
-                  <span>{action.whyExplanation}</span>{' '}
-                  <span className="font-mono text-[10px] text-muted-foreground/80">({action.heuristicRule})</span>
+                  <div className="text-xs font-bold text-foreground">
+                    +<AnimatedCurrency value={potentialMonthlySavings} currency={targetCurrency} />
+                    <span className="text-[10px] font-normal text-muted-foreground">/mo</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    Identified cancel savings
+                  </div>
                 </div>
               </div>
-
-              {/* Related Subscriptions (For Overlap Clusters) */}
-              {action.relatedSubscriptions && action.relatedSubscriptions.length > 0 ? (
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  {action.relatedSubscriptions.map((rel) => (
-                    <Link
-                      key={rel.id}
-                      href={`/subscriptions/${rel.id}/edit`}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-card border border-border text-foreground hover:border-primary transition-colors"
-                    >
-                      <span>{rel.name}</span>
-                      <span className="text-muted-foreground font-mono">
-                        ({formatCurrency(rel.amount, rel.currency)})
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            {/* Right Action Buttons */}
-            <div className="flex items-center gap-2 shrink-0 self-start md:self-center pt-2 md:pt-0">
-              {action.cancelUrl ? (
-                <a
-                  href={action.cancelUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex"
-                >
-                  <Button variant="outline" size="sm" className="text-xs gap-1 text-danger hover:border-danger">
-                    Direct Cancel <ExternalLink className="w-3 h-3" />
-                  </Button>
-                </a>
-              ) : null}
-
-              {action.type === 'cancel_candidate' && action.subscriptionId ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  isLoading={isProcessingId === action.subscriptionId}
-                  onClick={() => handleMarkCanceled(action.subscriptionId!)}
-                  className="text-xs gap-1 text-danger hover:bg-danger-subtle hover:border-danger"
-                >
-                  <Scissors className="w-3.5 h-3.5" /> Mark Canceled
-                </Button>
-              ) : null}
-
-              <Link href={action.actionUrl || '/subscriptions'}>
-                <Button
-                  variant={action.severity === 'urgent' ? 'primary' : 'outline'}
-                  size="sm"
-                  className="text-xs gap-1 shadow-xs"
-                >
-                  {action.suggestedActionLabel} <ChevronRight className="w-3.5 h-3.5" />
-                </Button>
-              </Link>
-            </div>
+            ) : null}
           </div>
-        ))}
-      </CardContent>
-    </Card>
+
+          {/* Tab Filters */}
+          <div className="flex items-center gap-1.5 pt-3 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer',
+                activeTab === 'all'
+                  ? 'bg-surface text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              All Actions ({items.length})
+            </button>
+
+            {urgentCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab('urgent')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1',
+                  activeTab === 'urgent'
+                    ? 'bg-danger-subtle text-danger shadow-xs font-semibold'
+                    : 'text-muted-foreground hover:text-danger'
+                )}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-danger" />
+                Urgent ({urgentCount})
+              </button>
+            ) : null}
+
+            {warningCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab('warning')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1',
+                  activeTab === 'warning'
+                    ? 'bg-warning-subtle text-warning shadow-xs font-semibold'
+                    : 'text-muted-foreground hover:text-warning'
+                )}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+                Review Due ({warningCount})
+              </button>
+            ) : null}
+
+            {infoCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab('info')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1',
+                  activeTab === 'info'
+                    ? 'bg-primary/10 text-primary shadow-xs font-semibold'
+                    : 'text-muted-foreground hover:text-primary'
+                )}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Optimizations ({infoCount})
+              </button>
+            ) : null}
+          </div>
+        </CardHeader>
+
+        {/* Action Cards List */}
+        <CardContent className="p-0 divide-y divide-border">
+          {filteredItems.map((action) => {
+            const correspondingSub = subscriptions.find((s) => s.id === action.subscriptionId);
+
+            return (
+              <div
+                key={action.id}
+                className={cn(
+                  'p-4 sm:p-5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4',
+                  action.severity === 'urgent'
+                    ? 'bg-danger-subtle/5 hover:bg-danger-subtle/10'
+                    : action.severity === 'warning'
+                    ? 'bg-warning-subtle/5 hover:bg-warning-subtle/10'
+                    : 'hover:bg-surface/40'
+                )}
+              >
+                {/* Left Info & Explanation */}
+                <div className="space-y-2 min-w-0 max-w-2xl">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {getSeverityBadge(action.severity)}
+                    <h4 className="text-sm font-bold text-foreground">
+                      {action.title}
+                    </h4>
+                    <span className="text-xs font-semibold font-mono text-muted-foreground">
+                      {action.impactLabel}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {action.subtitle}
+                  </p>
+
+                  {/* Transparent "Why this appears" reason tag */}
+                  <div className="inline-flex items-start gap-1.5 px-2.5 py-1 rounded-lg bg-surface/70 border border-border/80 text-[11px] text-muted-foreground leading-snug">
+                    <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="font-semibold text-foreground">Why this appears: </strong>
+                      <span>{action.whyExplanation}</span>{' '}
+                      <span className="font-mono text-[10px] text-muted-foreground/80">({action.heuristicRule})</span>
+                    </div>
+                  </div>
+
+                  {/* Related Subscriptions (For Overlap Clusters) */}
+                  {action.relatedSubscriptions && action.relatedSubscriptions.length > 0 ? (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      {action.relatedSubscriptions.map((rel) => (
+                        <Link
+                          key={rel.id}
+                          href={`/subscriptions/${rel.id}/edit`}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-card border border-border text-foreground hover:border-primary transition-colors"
+                        >
+                          <span>{rel.name}</span>
+                          <span className="text-muted-foreground font-mono">
+                            ({formatCurrency(rel.amount, rel.currency)})
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Right Action Buttons */}
+                <div className="flex items-center gap-2 shrink-0 self-start md:self-center pt-2 md:pt-0">
+                  {action.cancelUrl ? (
+                    <a
+                      href={action.cancelUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex"
+                    >
+                      <Button variant="outline" size="sm" className="text-xs gap-1 text-danger hover:border-danger">
+                        Direct Cancel <ExternalLink className="w-3 h-3" />
+                      </Button>
+                    </a>
+                  ) : null}
+
+                  {action.type === 'price_hike' && correspondingSub ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSubForPriceHike(correspondingSub)}
+                      className="text-xs gap-1 text-warning hover:border-warning"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" /> Review Increase
+                    </Button>
+                  ) : action.type === 'cancel_candidate' && correspondingSub ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSubForCancel(correspondingSub)}
+                      className="text-xs gap-1 text-danger hover:bg-danger-subtle hover:border-danger"
+                    >
+                      <Scissors className="w-3.5 h-3.5" /> Cancel Review
+                    </Button>
+                  ) : (
+                    <Link href={action.actionUrl || '/subscriptions'}>
+                      <Button
+                        variant={action.severity === 'urgent' ? 'primary' : 'outline'}
+                        size="sm"
+                        className="text-xs gap-1 shadow-xs"
+                      >
+                        {action.suggestedActionLabel} <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Cancellation Review Modal */}
+      <CancellationReviewModal
+        subscription={selectedSubForCancel}
+        isOpen={Boolean(selectedSubForCancel)}
+        onClose={() => setSelectedSubForCancel(null)}
+      />
+
+      {/* Price Hike Review Modal */}
+      <PriceHikeReviewModal
+        subscription={selectedSubForPriceHike}
+        isOpen={Boolean(selectedSubForPriceHike)}
+        onClose={() => setSelectedSubForPriceHike(null)}
+        onOpenCancelModal={(sub) => {
+          setSelectedSubForPriceHike(null);
+          setSelectedSubForCancel(sub);
+        }}
+      />
+    </>
   );
 }

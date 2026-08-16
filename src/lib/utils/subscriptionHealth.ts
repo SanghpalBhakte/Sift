@@ -13,6 +13,7 @@ export type ActionSeverity = 'urgent' | 'warning' | 'info';
 export type ActionType =
   | 'trial_expiring'
   | 'cancel_candidate'
+  | 'price_hike'
   | 'annual_renewal_due'
   | 'rarely_used_audit'
   | 'renewal_imminent'
@@ -181,6 +182,53 @@ export function generateSubscriptionHealthActions(
         subscriptionName: sub.name,
         cancelUrl: sub.cancel_url,
         suggestedActionLabel: sub.cancel_url ? 'Open Cancel Link' : 'Mark as Canceled',
+        actionUrl: `/subscriptions/${sub.id}/edit`,
+      });
+    });
+
+  // ---------------------------------------------------------------------------
+  // 2.5 SIGNAL: Price Hike Detected
+  // ---------------------------------------------------------------------------
+  activeSubs
+    .filter(
+      (s) =>
+        typeof s.previous_amount === 'number' &&
+        s.previous_amount > 0 &&
+        s.amount > s.previous_amount &&
+        !s.price_hike_reviewed_at
+    )
+    .forEach((sub) => {
+      const oldMonthly = convertCurrency(
+        normalizeMonthlyAmount(sub.previous_amount!, sub.billing_cycle),
+        sub.currency || 'USD',
+        targetCurrency,
+        rates
+      );
+      const newMonthly = convertCurrency(
+        sub.monthly_amount || normalizeMonthlyAmount(sub.amount, sub.billing_cycle),
+        sub.currency || 'USD',
+        targetCurrency,
+        rates
+      );
+      const monthlyDelta = Math.max(0, Math.round((newMonthly - oldMonthly) * 100) / 100);
+      const percentageIncrease = Math.round(((sub.amount - sub.previous_amount!) / sub.previous_amount!) * 100);
+
+      items.push({
+        id: `health-hike-${sub.id}`,
+        type: 'price_hike',
+        severity: 'warning',
+        title: `Price increase: ${sub.name}`,
+        subtitle: `Increased from ${formatCurrency(sub.previous_amount!, sub.currency)} to ${formatCurrency(sub.amount, sub.currency)} (+${percentageIncrease}%)`,
+        whyExplanation: `Recorded price increased by ${formatCurrency(sub.amount - sub.previous_amount!, sub.currency)}/${sub.billing_cycle} (+${percentageIncrease}%).`,
+        heuristicRule: 'Rule: current amount > previous recorded amount',
+        impactAmount: monthlyDelta,
+        impactCurrency: targetCurrency,
+        impactLabel: `+${formatCurrency(monthlyDelta, targetCurrency)}/mo delta`,
+        impactType: 'charge_review',
+        subscriptionId: sub.id,
+        subscriptionName: sub.name,
+        cancelUrl: sub.cancel_url,
+        suggestedActionLabel: 'Review Price Change',
         actionUrl: `/subscriptions/${sub.id}/edit`,
       });
     });

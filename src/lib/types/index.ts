@@ -71,12 +71,46 @@ export interface Subscription {
   notes?: string;
   monthly_amount: number; // normalized monthly amount
   monthly_alternative_price?: number | null; // optional monthly plan price for annual arbitrage comparison
+  
+  // Price-Hike & Cancellation Tracking
+  previous_amount?: number | null; // previous price before recorded increase
+  price_hike_reviewed_at?: string | null; // timestamp when user acknowledged price change
+  cancellation_reason?: CancellationReason | null; // structured cancellation reason
+  cancellation_notes?: string | null;
+  cancellation_effective_date?: string | null;
+
   created_at: string;
   updated_at: string;
   
   // Expanded relations (optional, when joined)
   category?: Category;
   payment_method?: PaymentMethod;
+}
+
+export type CancellationReason =
+  | 'too_expensive'
+  | 'not_using_enough'
+  | 'temporary_pause'
+  | 'switching_service'
+  | 'duplicate_overlap'
+  | 'missing_value'
+  | 'other';
+
+export interface PriceHikeAlert {
+  id: string;
+  subscriptionId: string;
+  subscriptionName: string;
+  currentAmount: number;
+  previousAmount: number;
+  currency: string;
+  billingCycle: BillingCycle;
+  monthlyDelta: number;
+  percentageIncrease: number;
+  nextRenewalDate: string;
+  whyExplanation: string;
+  heuristicRule: string;
+  isReviewed: boolean;
+  reviewedAt?: string | null;
 }
 
 export interface Reminder {
