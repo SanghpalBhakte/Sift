@@ -10,6 +10,8 @@ import {
   generateBackupReadme,
   remapCategoryBenchmarkOverrides,
   findCategorySuggestion,
+  resolveCategoryDefaultColor,
+  DEFAULT_CATEGORY_PRESET_COLORS,
 } from './backup';
 import { Profile, Subscription, Category } from '../types';
 
@@ -376,6 +378,37 @@ describe('Backup & Export Manifest Engine', () => {
     it('returns null when category name has no plausible similarity rather than giving misleading suggestion', () => {
       const suggestion = findCategorySuggestion('Health & Medical', workspaceCategories);
       expect(suggestion).toBeNull();
+    });
+  });
+
+  describe('Category Preset Color Rules', () => {
+    it('preserves valid imported colors without alteration', () => {
+      expect(resolveCategoryDefaultColor('#ff0055', 'Design Tools')).toBe('#ff0055');
+      expect(resolveCategoryDefaultColor('terracotta', 'Media')).toBe('terracotta');
+      expect(resolveCategoryDefaultColor('  #10b981  ', 'Dev')).toBe('#10b981');
+    });
+
+    it('assigns deterministic preset colors from palette when imported color is missing or empty', () => {
+      const color1 = resolveCategoryDefaultColor(null, 'Developer Tools');
+      const color2 = resolveCategoryDefaultColor('', 'Developer Tools');
+      const color3 = resolveCategoryDefaultColor(undefined, 'Developer Tools');
+
+      expect(color1).toBe(color2);
+      expect(color2).toBe(color3);
+      expect(DEFAULT_CATEGORY_PRESET_COLORS).toContain(color1);
+    });
+
+    it('distributes colors evenly across the preset palette using index offset during batch creation', () => {
+      const colors = Array.from({ length: DEFAULT_CATEGORY_PRESET_COLORS.length }, (_, i) =>
+        resolveCategoryDefaultColor(null, `Category ${i}`, i)
+      );
+
+      expect(colors).toEqual([...DEFAULT_CATEGORY_PRESET_COLORS]);
+    });
+
+    it('falls back to the primary theme preset (#10b981) when both color and name are omitted', () => {
+      expect(resolveCategoryDefaultColor(null, null)).toBe('#10b981');
+      expect(resolveCategoryDefaultColor('', '')).toBe('#10b981');
     });
   });
 });

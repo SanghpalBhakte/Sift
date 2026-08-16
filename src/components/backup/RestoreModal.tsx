@@ -7,6 +7,7 @@ import {
   validateBackupJson,
   remapCategoryBenchmarkOverrides,
   findCategorySuggestion,
+  resolveCategoryDefaultColor,
 } from '@/lib/utils/backup';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -143,7 +144,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     setCreatingCategoryFor(unmatched.sourceKey);
     setNewCategoryName(initialName);
     setNewCategorySlug(initialSlug);
-    setNewCategoryColor(backupCat?.color || '#6366f1');
+    setNewCategoryColor(resolveCategoryDefaultColor(backupCat?.color, initialName || initialSlug));
     setNewCategoryIcon(backupCat?.icon || 'folder');
     setCreateCategoryError(null);
   };
@@ -206,7 +207,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
       categories
     );
 
-    return report.unmatched.map((un) => {
+    return report.unmatched.map((un, index) => {
       const backupCat = validation.data?.categories?.find(
         (c) => c.id === un.sourceKey || c.slug === un.sourceSlug
       );
@@ -221,7 +222,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
       )
         .trim()
         .toLowerCase();
-      const color = backupCat?.color || '#6366f1';
+      const color = resolveCategoryDefaultColor(backupCat?.color, name || slug, index);
       const icon = backupCat?.icon || 'folder';
       const hasNameConflict = categories.some(
         (c) => c.name.trim().toLowerCase() === name.toLowerCase()

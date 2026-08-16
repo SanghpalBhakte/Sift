@@ -454,3 +454,50 @@ export function findCategorySuggestion(
 
   return bestMatch;
 }
+
+/**
+ * Calm, theme-safe palette for imported/created categories lacking explicit color metadata.
+ * Designed for visual clarity and contrast in both Paper Ledger (light) and Night Shelf (dark) themes.
+ */
+export const DEFAULT_CATEGORY_PRESET_COLORS = [
+  '#10b981', // Moss / Emerald
+  '#6366f1', // Indigo
+  '#f59e0b', // Ochre / Amber
+  '#06b6d4', // Cyan / Sky
+  '#8b5cf6', // Violet / Purple
+  '#f97316', // Terracotta / Coral
+  '#14b8a6', // Sage / Teal
+  '#64748b', // Slate / Stone
+] as const;
+
+/**
+ * Deterministically resolves a preset category color.
+ * If importedColor is provided and non-empty, it is preserved.
+ * Otherwise, assigns a deterministic preset color based on item index or name/slug hash.
+ */
+export function resolveCategoryDefaultColor(
+  importedColor?: string | null,
+  nameOrSlug?: string | null,
+  index?: number
+): string {
+  if (importedColor && importedColor.trim()) {
+    return importedColor.trim();
+  }
+
+  if (index !== undefined && index >= 0) {
+    return DEFAULT_CATEGORY_PRESET_COLORS[index % DEFAULT_CATEGORY_PRESET_COLORS.length];
+  }
+
+  if (nameOrSlug && nameOrSlug.trim()) {
+    let hash = 0;
+    const str = nameOrSlug.trim().toLowerCase();
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const colorIndex = Math.abs(hash) % DEFAULT_CATEGORY_PRESET_COLORS.length;
+    return DEFAULT_CATEGORY_PRESET_COLORS[colorIndex];
+  }
+
+  return DEFAULT_CATEGORY_PRESET_COLORS[0];
+}

@@ -16,6 +16,7 @@ import {
 import { createClient } from '../supabase/client';
 import { calculateDashboardStats } from '../utils/analytics';
 import { normalizeMonthlyAmount } from '../utils/currency';
+import { resolveCategoryDefaultColor } from '../utils/backup';
 
 const STORAGE_KEYS = {
   SUBSCRIPTIONS: 'sift_subscriptions_v1',
@@ -374,7 +375,7 @@ class SubscriptionService {
           : `cat-${Date.now()}`,
       name: categoryData.name.trim(),
       slug,
-      color: categoryData.color || '#6366f1',
+      color: resolveCategoryDefaultColor(categoryData.color, categoryData.name || slug),
       icon: categoryData.icon || 'folder',
       created_at: new Date().toISOString(),
     };
