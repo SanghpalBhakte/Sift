@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -47,13 +47,13 @@ export default function SignUpPage() {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <div className="inline-flex w-10 h-10 rounded-xl bg-[hsl(var(--primary))] items-center justify-center text-[hsl(var(--primary-foreground))] font-bold text-lg mb-1 shadow-xs">
+        <div className="inline-flex w-10 h-10 rounded-xl bg-primary items-center justify-center text-primary-foreground font-bold text-lg mb-1 shadow-xs">
           S
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           Create your Sift workspace
         </h1>
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+        <p className="text-xs text-muted-foreground">
           Peaceful recurring spend and subscription management
         </p>
       </div>
@@ -62,11 +62,11 @@ export default function SignUpPage() {
         <CardContent className="pt-5 space-y-4">
           {needsConfirmation ? (
             <div className="text-center py-4 space-y-3">
-              <CheckCircle2 className="w-8 h-8 text-[hsl(var(--success))] mx-auto" />
-              <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
+              <CheckCircle2 className="w-8 h-8 text-success mx-auto" />
+              <h3 className="text-sm font-semibold text-foreground">
                 Confirm your email
               </h3>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              <p className="text-xs text-muted-foreground">
                 We sent a confirmation link to <strong>{email}</strong>. Please check your inbox
                 to activate your account.
               </p>
@@ -79,7 +79,7 @@ export default function SignUpPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error ? (
-                <div className="p-2.5 text-xs bg-[hsl(var(--danger-subtle))] border border-[hsl(var(--danger)/0.3)] text-[hsl(var(--danger))] rounded-md">
+                <div className="p-2.5 text-xs bg-danger-subtle border border-danger/30 text-danger rounded-md">
                   {error}
                 </div>
               ) : null}
@@ -124,11 +124,11 @@ export default function SignUpPage() {
             </form>
           )}
 
-          <div className="pt-2 border-t border-[hsl(var(--border))] text-center text-xs text-[hsl(var(--muted-foreground))]">
+          <div className="pt-2 border-t border-border text-center text-xs text-muted-foreground">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="font-medium text-[hsl(var(--primary))] hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               Sign in
             </Link>

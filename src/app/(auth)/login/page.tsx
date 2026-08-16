@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 function LoginForm() {
   const router = useRouter();
@@ -60,13 +61,13 @@ function LoginForm() {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <div className="inline-flex w-10 h-10 rounded-xl bg-[hsl(var(--primary))] items-center justify-center text-[hsl(var(--primary-foreground))] font-bold text-lg mb-1 shadow-xs">
+        <div className="inline-flex w-10 h-10 rounded-xl bg-primary items-center justify-center text-primary-foreground font-bold text-lg mb-1 shadow-xs">
           S
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           Welcome back to Sift
         </h1>
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+        <p className="text-xs text-muted-foreground">
           Your calm recurring spend workspace
         </p>
       </div>
@@ -74,18 +75,19 @@ function LoginForm() {
       <Card>
         <CardContent className="pt-5 space-y-4">
           {/* Mode Switcher */}
-          <div className="grid grid-cols-2 p-1 bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-lg text-xs">
+          <div className="grid grid-cols-2 p-1 bg-surface border border-border rounded-lg text-xs">
             <button
               type="button"
               onClick={() => {
                 setAuthMode('password');
                 setError(null);
               }}
-              className={`py-1.5 font-medium rounded-md transition-all ${
+              className={cn(
+                'py-1.5 font-medium rounded-md transition-all cursor-pointer',
                 authMode === 'password'
-                  ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs font-semibold'
-                  : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-              }`}
+                  ? 'bg-card text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
             >
               Password
             </button>
@@ -95,11 +97,12 @@ function LoginForm() {
                 setAuthMode('otp');
                 setError(null);
               }}
-              className={`py-1.5 font-medium rounded-md transition-all ${
+              className={cn(
+                'py-1.5 font-medium rounded-md transition-all cursor-pointer',
                 authMode === 'otp'
-                  ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs font-semibold'
-                  : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-              }`}
+                  ? 'bg-card text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
             >
               Magic Link
             </button>
@@ -107,17 +110,17 @@ function LoginForm() {
 
           {isOtpSent ? (
             <div className="text-center py-4 space-y-3">
-              <CheckCircle2 className="w-8 h-8 text-[hsl(var(--success))] mx-auto" />
-              <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
+              <CheckCircle2 className="w-8 h-8 text-success mx-auto" />
+              <h3 className="text-sm font-semibold text-foreground">
                 Check your inbox
               </h3>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              <p className="text-xs text-muted-foreground">
                 We sent a secure magic sign-in link to <strong>{email}</strong>.
               </p>
               <button
                 type="button"
                 onClick={() => setIsOtpSent(false)}
-                className="text-xs text-[hsl(var(--primary))] hover:underline pt-2 inline-block"
+                className="text-xs text-primary hover:underline pt-2 inline-block cursor-pointer"
               >
                 Sign in with password instead
               </button>
@@ -125,7 +128,7 @@ function LoginForm() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error ? (
-                <div className="p-2.5 text-xs bg-[hsl(var(--danger-subtle))] border border-[hsl(var(--danger)/0.3)] text-[hsl(var(--danger))] rounded-md">
+                <div className="p-2.5 text-xs bg-danger-subtle border border-danger/30 text-danger rounded-md">
                   {error}
                 </div>
               ) : null}
@@ -163,11 +166,11 @@ function LoginForm() {
             </form>
           )}
 
-          <div className="pt-2 border-t border-[hsl(var(--border))] text-center text-xs text-[hsl(var(--muted-foreground))]">
+          <div className="pt-2 border-t border-border text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{' '}
             <Link
               href="/signup"
-              className="font-medium text-[hsl(var(--primary))] hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               Sign up
             </Link>
@@ -186,7 +189,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="py-16 text-center text-xs text-[hsl(var(--muted-foreground))]">
+        <div className="py-16 text-center text-xs text-muted-foreground">
           Loading sign in...
         </div>
       }
