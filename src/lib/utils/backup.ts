@@ -49,6 +49,8 @@ export function generateFullBackupJson(params: {
       currency_preference: profile?.currency_preference || 'USD',
       theme_preference: profile?.theme_preference || 'paper-ledger',
       default_reminder_days: profile?.default_reminder_days || [7, 3, 1],
+      annual_benchmark_percent: profile?.annual_benchmark_percent ?? 16.7,
+      category_annual_benchmarks: profile?.category_annual_benchmarks ?? {},
       notifications_enabled: profile?.notifications_enabled !== false,
       notify_renewals: profile?.notify_renewals !== false,
       notify_trials: profile?.notify_trials !== false,
@@ -131,6 +133,7 @@ CONTENTS SUMMARY:
 - Categories: ${backup.categories.length}
 - Primary Currency: ${backup.profile.currency_preference || 'USD'}
 - Theme: ${backup.profile.theme_preference || 'Paper Ledger'}
+- Annual Discount Benchmark: ${backup.profile.annual_benchmark_percent ?? 16.7}% (${Object.keys(backup.profile.category_annual_benchmarks || {}).length} category override(s))
 
 FILE DESCRIPTIONS:
 1. sift-backup-${backup.exported_at.split('T')[0]}.json

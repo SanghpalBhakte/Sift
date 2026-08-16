@@ -114,6 +114,8 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
           currency_preference: backup.profile.currency_preference,
           theme_preference: backup.profile.theme_preference,
           default_reminder_days: backup.profile.default_reminder_days,
+          annual_benchmark_percent: backup.profile.annual_benchmark_percent ?? 16.7,
+          category_annual_benchmarks: backup.profile.category_annual_benchmarks ?? {},
         });
       }
 
