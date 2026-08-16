@@ -51,7 +51,14 @@ export function SubscriptionActionCenter() {
 
   const targetCurrency = displayCurrency || 'USD';
   const userBenchmark = profile?.annual_benchmark_percent || 16.7;
-  const arbitrageCandidates = getAnnualArbitrageCandidates(subscriptions, 15, userBenchmark);
+  const categoryOverrides = profile?.category_annual_benchmarks || {};
+  const arbitrageCandidates = getAnnualArbitrageCandidates(
+    subscriptions,
+    15,
+    userBenchmark,
+    categoryOverrides,
+    categories
+  );
   const totalArbitrageSavings = arbitrageCandidates.reduce(
     (acc, c) => acc + c.projectedAnnualSavings,
     0

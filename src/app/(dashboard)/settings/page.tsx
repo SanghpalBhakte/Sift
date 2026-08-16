@@ -97,6 +97,9 @@ export default function SettingsPage() {
   const [annualBenchmark, setAnnualBenchmark] = useState<number>(
     profile?.annual_benchmark_percent || 16.7
   );
+  const [categoryBenchmarks, setCategoryBenchmarks] = useState<Record<string, number>>(
+    profile?.category_annual_benchmarks || {}
+  );
   const [selectedOffsets, setSelectedOffsets] = useState<number[]>(
     profile?.default_reminder_days || [7, 3, 1]
   );
@@ -127,6 +130,7 @@ export default function SettingsPage() {
         currency_preference: currency,
         full_name: name,
         annual_benchmark_percent: Number(annualBenchmark),
+        category_annual_benchmarks: categoryBenchmarks,
         default_reminder_days: selectedOffsets,
         notifications_enabled: notificationsEnabled,
         notify_renewals: notifyRenewals,
@@ -658,6 +662,75 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
+
+              {/* Optional Per-Category Overrides */}
+              {categories.length > 0 ? (
+                <div className="space-y-2 pt-3 border-t border-border/70">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs font-semibold text-foreground">
+                      Per-Category Benchmark Overrides (Optional)
+                    </label>
+                    {Object.keys(categoryBenchmarks).length > 0 ? (
+                      <Badge variant="primary" size="sm" className="font-mono text-[10px]">
+                        {Object.keys(categoryBenchmarks).length} Active Override{Object.keys(categoryBenchmarks).length === 1 ? '' : 's'}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Define custom discount expectations for specific categories (e.g. 10% for Dev Tools or 20% for Streaming). Unconfigured categories inherit the {annualBenchmark}% global benchmark.
+                  </p>
+
+                  <div className="space-y-1.5 pt-1">
+                    {categories.map((cat) => {
+                      const currentOverride = categoryBenchmarks[cat.id];
+                      const isCustom = typeof currentOverride === 'number';
+
+                      return (
+                        <div
+                          key={cat.id}
+                          className="p-2.5 rounded-lg border border-border bg-surface/40 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full shrink-0"
+                              style={{ backgroundColor: cat.color }}
+                            />
+                            <span className="font-medium text-foreground truncate">
+                              {cat.name}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <select
+                              value={isCustom ? String(currentOverride) : 'default'}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'default') {
+                                  const next = { ...categoryBenchmarks };
+                                  delete next[cat.id];
+                                  setCategoryBenchmarks(next);
+                                } else {
+                                  setCategoryBenchmarks({
+                                    ...categoryBenchmarks,
+                                    [cat.id]: parseFloat(val),
+                                  });
+                                }
+                              }}
+                              className="h-7 px-2 text-xs rounded-md border border-border bg-card text-foreground font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                            >
+                              <option value="default">Default ({annualBenchmark}%)</option>
+                              <option value="10">10% — Conservative</option>
+                              <option value="15">15% — Standard</option>
+                              <option value="16.7">16.7% — 2 mos free</option>
+                              <option value="20">20% — Aggressive</option>
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="pt-2 flex justify-end">

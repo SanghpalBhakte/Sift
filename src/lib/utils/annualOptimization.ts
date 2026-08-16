@@ -3,7 +3,7 @@
 // Path: src/lib/utils/annualOptimization.ts
 // =============================================================================
 
-import { AnnualComparisonResult, AnnualInsightType, Subscription } from '../types';
+import { AnnualComparisonResult, AnnualInsightType, Category, Subscription } from '../types';
 import { getDaysUntil } from './dates';
 
 export interface AnnualSavingsMetrics {
@@ -161,11 +161,14 @@ export interface AnnualArbitrageCandidate {
 /**
  * Pure evaluation function to identify stable, high-value monthly subscriptions
  * that qualify for grouped annual discount arbitrage review.
+ * Supports optional per-category benchmark overrides with fallback to global benchmark.
  */
 export function getAnnualArbitrageCandidates(
   subscriptions: Subscription[],
   minAnnualSavingsThreshold: number = 15,
-  benchmarkPercent: number = 16.7
+  globalBenchmarkPercent: number = 16.7,
+  categoryBenchmarkOverrides: Record<string, number> = {},
+  categories: Category[] = []
 ): AnnualArbitrageCandidate[] {
   const activeMonthly = subscriptions.filter(
     (s) =>
@@ -177,9 +180,11 @@ export function getAnnualArbitrageCandidates(
       s.amount >= 5
   );
 
-  const safeBenchmark =
-    typeof benchmarkPercent === 'number' && benchmarkPercent > 0 && benchmarkPercent < 100
-      ? benchmarkPercent
+  const fallbackBenchmark =
+    typeof globalBenchmarkPercent === 'number' &&
+    globalBenchmarkPercent > 0 &&
+    globalBenchmarkPercent < 100
+      ? globalBenchmarkPercent
       : 16.7;
 
   const candidates: AnnualArbitrageCandidate[] = [];
@@ -187,6 +192,26 @@ export function getAnnualArbitrageCandidates(
   for (const sub of activeMonthly) {
     const monthlyCost = sub.amount;
     const yearlyAtMonthlyRate = Math.round(monthlyCost * 12 * 100) / 100;
+
+    // Check for explicit category-specific override
+    let categoryName = '';
+    if (sub.category_id && categories.length > 0) {
+      const matchedCat = categories.find((c) => c.id === sub.category_id);
+      if (matchedCat) {
+        categoryName = matchedCat.name;
+      }
+    }
+
+    const categoryOverride =
+      sub.category_id && categoryBenchmarkOverrides
+        ? categoryBenchmarkOverrides[sub.category_id]
+        : undefined;
+
+    const hasCategoryOverride =
+      typeof categoryOverride === 'number' && categoryOverride > 0 && categoryOverride < 100;
+
+    const effectiveBenchmark = hasCategoryOverride ? categoryOverride : fallbackBenchmark;
+    const safeBenchmark = Math.round(effectiveBenchmark * 10) / 10;
 
     // Benchmark discount (default: ~16.7% annual discount / 2 months free equivalent)
     // or explicit monthly alternative if configured
@@ -210,6 +235,10 @@ export function getAnnualArbitrageCandidates(
 
     if (projectedAnnualSavings >= minAnnualSavingsThreshold) {
       const isEssential = sub.value_rating === 'essential';
+      const benchmarkLabel = hasCategoryOverride
+        ? `${safeBenchmark}% ${categoryName || 'category'} override`
+        : `${safeBenchmark}% benchmark`;
+
       candidates.push({
         subscription: sub,
         currentMonthlyCost: monthlyCost,
@@ -219,10 +248,14 @@ export function getAnnualArbitrageCandidates(
         savingsPercent,
         confidence: isEssential ? 'high' : 'medium',
         eligibilityRule: isEssential
-          ? `Rule: Declared Essential value rating with active monthly billing >= $5/mo (${safeBenchmark}% benchmark)`
-          : `Rule: Declared Useful value rating with active monthly billing >= $5/mo (${safeBenchmark}% benchmark)`,
+          ? `Rule: Declared Essential value rating with active monthly billing >= $5/mo (${benchmarkLabel})`
+          : `Rule: Declared Useful value rating with active monthly billing >= $5/mo (${benchmarkLabel})`,
         whyExplanation: isEssential
-          ? `You marked ${sub.name} as Essential. Because you plan to keep this service long-term, converting from monthly to annual typically saves ~${savingsPercent}%.`
+          ? hasCategoryOverride
+            ? `You marked ${sub.name} as Essential. For ${categoryName || 'this category'}, you set a custom ${safeBenchmark}% annual discount benchmark.`
+            : `You marked ${sub.name} as Essential. Because you plan to keep this service long-term, converting from monthly to annual typically saves ~${savingsPercent}%.`
+          : hasCategoryOverride
+          ? `Active ${categoryName || 'monthly'} tool with useful rating. Annual billing provides immediate recurring savings (~${safeBenchmark}% ${categoryName || 'category'} benchmark).`
           : `Active service with useful rating. Annual billing provides immediate recurring savings (~${savingsPercent}% benchmark).`,
       });
     }

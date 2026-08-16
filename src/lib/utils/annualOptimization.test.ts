@@ -294,4 +294,70 @@ describe('getAnnualArbitrageCandidates', () => {
     expect(cand20[0].projectedAnnualSavings).toBe(48);
     expect(cand20[0].savingsPercent).toBe(20);
   });
+
+  it('applies per-category benchmark overrides when configured and falls back to global benchmark otherwise', () => {
+    const devCategory = { id: 'cat-dev', name: 'Software & Dev', slug: 'dev', color: '#10b981', icon: 'code', created_at: '' };
+    const mediaCategory = { id: 'cat-media', name: 'Media & Streaming', slug: 'media', color: '#6366f1', icon: 'tv', created_at: '' };
+
+    const devSub: Subscription = {
+      ...baseMonthlySub,
+      id: 'sub-dev',
+      name: 'GitHub Copilot',
+      category_id: 'cat-dev',
+      amount: 20, // $240/yr run-rate
+    };
+
+    const mediaSub: Subscription = {
+      ...baseMonthlySub,
+      id: 'sub-media',
+      name: 'Netflix Premium',
+      category_id: 'cat-media',
+      amount: 20, // $240/yr run-rate
+    };
+
+    const otherSub: Subscription = {
+      ...baseMonthlySub,
+      id: 'sub-other',
+      name: 'Cloud Storage',
+      category_id: null,
+      amount: 20, // $240/yr run-rate
+    };
+
+    // Global benchmark = 15%, but Dev Tools = 10% override and Media = 20% override
+    const categoryOverrides = {
+      'cat-dev': 10,
+      'cat-media': 20,
+    };
+
+    const candidates = getAnnualArbitrageCandidates(
+      [devSub, mediaSub, otherSub],
+      15,
+      15, // global benchmark: 15%
+      categoryOverrides,
+      [devCategory, mediaCategory]
+    );
+
+    expect(candidates).toHaveLength(3);
+
+    // Media sub uses 20% override -> $240 * 0.80 = $192/yr ($48 savings)
+    const mediaResult = candidates.find((c) => c.subscription.id === 'sub-media');
+    expect(mediaResult?.projectedAnnualCost).toBe(192);
+    expect(mediaResult?.projectedAnnualSavings).toBe(48);
+    expect(mediaResult?.savingsPercent).toBe(20);
+    expect(mediaResult?.eligibilityRule).toContain('20% Media & Streaming override');
+
+    // Dev sub uses 10% override -> $240 * 0.90 = $216/yr ($24 savings)
+    const devResult = candidates.find((c) => c.subscription.id === 'sub-dev');
+    expect(devResult?.projectedAnnualCost).toBe(216);
+    expect(devResult?.projectedAnnualSavings).toBe(24);
+    expect(devResult?.savingsPercent).toBe(10);
+    expect(devResult?.eligibilityRule).toContain('10% Software & Dev override');
+
+    // Other sub has no category override -> falls back to 15% global -> $240 * 0.85 = $204/yr ($36 savings)
+    const otherResult = candidates.find((c) => c.subscription.id === 'sub-other');
+    expect(otherResult?.projectedAnnualCost).toBe(204);
+    expect(otherResult?.projectedAnnualSavings).toBe(36);
+    expect(otherResult?.savingsPercent).toBe(15);
+    expect(otherResult?.eligibilityRule).toContain('15% benchmark');
+  });
 });

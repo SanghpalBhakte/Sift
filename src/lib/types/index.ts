@@ -22,6 +22,7 @@ export interface Profile {
   theme_preference: 'paper-ledger' | 'night-shelf' | 'system';
   default_reminder_days: number[];
   annual_benchmark_percent?: number;
+  category_annual_benchmarks?: Record<string, number>; // map category_id -> benchmark percentage
   notifications_enabled?: boolean;
   notify_renewals?: boolean;
   notify_trials?: boolean;
