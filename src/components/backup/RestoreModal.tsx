@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { BackupValidationResult, SiftBackupData } from '@/lib/types';
-import { validateBackupJson } from '@/lib/utils/backup';
+import { validateBackupJson, remapCategoryBenchmarkOverrides } from '@/lib/utils/backup';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -110,12 +110,18 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
 
       // Restore Profile Preferences if present
       if (backup.profile) {
+        const benchmarkReport = remapCategoryBenchmarkOverrides(
+          backup.profile.category_annual_benchmarks || {},
+          backup.categories || [],
+          categories
+        );
+
         await updateProfile({
           currency_preference: backup.profile.currency_preference,
           theme_preference: backup.profile.theme_preference,
           default_reminder_days: backup.profile.default_reminder_days,
           annual_benchmark_percent: backup.profile.annual_benchmark_percent ?? 16.7,
-          category_annual_benchmarks: backup.profile.category_annual_benchmarks ?? {},
+          category_annual_benchmarks: benchmarkReport.remappedBenchmarks,
         });
       }
 
@@ -223,6 +229,38 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                     <span className="text-[hsl(var(--muted-foreground))]">File: </span>
                     <span className="font-mono text-[hsl(var(--foreground))]">{fileName}</span>
                   </div>
+                  {validation.data?.profile?.annual_benchmark_percent !== undefined ? (
+                    <div>
+                      <span className="text-[hsl(var(--muted-foreground))]">Discount Benchmark: </span>
+                      <span className="font-semibold text-[hsl(var(--foreground))]">
+                        {validation.data.profile.annual_benchmark_percent}%
+                      </span>
+                    </div>
+                  ) : null}
+                  {validation.data?.profile?.category_annual_benchmarks &&
+                  Object.keys(validation.data.profile.category_annual_benchmarks).length > 0 ? (
+                    (() => {
+                      const rep = remapCategoryBenchmarkOverrides(
+                        validation.data.profile.category_annual_benchmarks,
+                        validation.data.categories || [],
+                        categories
+                      );
+                      const parts: string[] = [];
+                      if (rep.matchedByUuid > 0) parts.push(`${rep.matchedByUuid} by ID`);
+                      if (rep.matchedBySlug > 0) parts.push(`${rep.matchedBySlug} by slug fallback`);
+                      if (rep.skippedAmbiguous > 0) parts.push(`${rep.skippedAmbiguous} ambiguous skipped`);
+                      if (rep.skippedMissing > 0) parts.push(`${rep.skippedMissing} missing skipped`);
+
+                      return (
+                        <div className="col-span-2 text-[10px] text-[hsl(var(--muted-foreground))] pt-1 border-t border-[hsl(var(--border)/0.5)]">
+                          <span className="font-semibold text-[hsl(var(--foreground))]">
+                            Category Overrides ({Object.keys(validation.data.profile.category_annual_benchmarks).length}):{' '}
+                          </span>
+                          <span>{parts.join(', ') || 'No overrides mapped'}</span>
+                        </div>
+                      );
+                    })()
+                  ) : null}
                 </div>
               </div>
 

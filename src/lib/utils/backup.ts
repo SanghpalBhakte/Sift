@@ -215,3 +215,90 @@ export function downloadFile(content: string, filename: string, mimeType: string
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+export interface CategoryBenchmarkRestoreReport {
+  remappedBenchmarks: Record<string, number>;
+  matchedByUuid: number;
+  matchedBySlug: number;
+  skippedAmbiguous: number;
+  skippedMissing: number;
+}
+
+/**
+ * Maps backup category benchmark overrides to the active workspace categories.
+ * Primary: Match by exact Category UUID.
+ * Fallback: Match by Category Slug when UUID differs across database instances.
+ * Safety: Ambiguous matches (multiple categories with identical slugs) are skipped without guessing.
+ */
+export function remapCategoryBenchmarkOverrides(
+  backupBenchmarks: Record<string, number> = {},
+  backupCategories: Category[] = [],
+  currentCategories: Category[] = []
+): CategoryBenchmarkRestoreReport {
+  const remappedBenchmarks: Record<string, number> = {};
+  let matchedByUuid = 0;
+  let matchedBySlug = 0;
+  let skippedAmbiguous = 0;
+  let skippedMissing = 0;
+
+  if (!backupBenchmarks || typeof backupBenchmarks !== 'object') {
+    return {
+      remappedBenchmarks,
+      matchedByUuid,
+      matchedBySlug,
+      skippedAmbiguous,
+      skippedMissing,
+    };
+  }
+
+  for (const [key, value] of Object.entries(backupBenchmarks)) {
+    if (typeof value !== 'number' || isNaN(value)) continue;
+
+    // 1. Primary path: Exact UUID match in active categories
+    const exactUuidMatch = currentCategories.find((c) => c.id === key);
+    if (exactUuidMatch) {
+      remappedBenchmarks[exactUuidMatch.id] = value;
+      matchedByUuid++;
+      continue;
+    }
+
+    // 2. Fallback path: Find category slug from backup categories metadata or direct slug key
+    let sourceSlug: string | undefined;
+    const backupCat = backupCategories.find((c) => c.id === key);
+    if (backupCat?.slug) {
+      sourceSlug = backupCat.slug.trim().toLowerCase();
+    } else if (currentCategories.some((c) => c.slug?.trim().toLowerCase() === key.trim().toLowerCase())) {
+      sourceSlug = key.trim().toLowerCase();
+    }
+
+    if (!sourceSlug) {
+      skippedMissing++;
+      continue;
+    }
+
+    // Search for matching categories by slug in active categories
+    const slugMatches = currentCategories.filter(
+      (c) => c.slug && c.slug.trim().toLowerCase() === sourceSlug
+    );
+
+    if (slugMatches.length === 1) {
+      // Unique deterministic slug match
+      remappedBenchmarks[slugMatches[0].id] = value;
+      matchedBySlug++;
+    } else if (slugMatches.length > 1) {
+      // Ambiguous collision - safe skip without guessing
+      skippedAmbiguous++;
+    } else {
+      // No active category matching this slug
+      skippedMissing++;
+    }
+  }
+
+  return {
+    remappedBenchmarks,
+    matchedByUuid,
+    matchedBySlug,
+    skippedAmbiguous,
+    skippedMissing,
+  };
+}

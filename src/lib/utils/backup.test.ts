@@ -8,6 +8,7 @@ import {
   generateFullBackupJson,
   validateBackupJson,
   generateBackupReadme,
+  remapCategoryBenchmarkOverrides,
 } from './backup';
 import { Profile, Subscription, Category } from '../types';
 
@@ -146,5 +147,103 @@ describe('Backup & Export Manifest Engine', () => {
     const readme = generateBackupReadme(backup);
     expect(readme).toContain('Annual Discount Benchmark: 20% (2 category override(s))');
     expect(readme).toContain('SIFT DATA BACKUP MANIFEST');
+  });
+
+  describe('remapCategoryBenchmarkOverrides (Portability & Slug Fallback)', () => {
+    const sourceBackupCategories: Category[] = [
+      { id: 'src-uuid-1', name: 'Software & Dev', slug: 'software-dev', color: '#10b981', icon: 'code', created_at: '' },
+      { id: 'src-uuid-2', name: 'Media & Streaming', slug: 'media-streaming', color: '#6366f1', icon: 'tv', created_at: '' },
+      { id: 'src-uuid-3', name: 'Productivity', slug: 'productivity', color: '#f59e0b', icon: 'briefcase', created_at: '' },
+    ];
+
+    it('matches by exact category UUID when restoring on the same instance', () => {
+      const activeCategories: Category[] = [
+        { id: 'src-uuid-1', name: 'Software & Dev', slug: 'software-dev', color: '#10b981', icon: 'code', created_at: '' },
+        { id: 'src-uuid-2', name: 'Media & Streaming', slug: 'media-streaming', color: '#6366f1', icon: 'tv', created_at: '' },
+      ];
+
+      const backupBenchmarks = {
+        'src-uuid-1': 10,
+        'src-uuid-2': 20,
+      };
+
+      const report = remapCategoryBenchmarkOverrides(backupBenchmarks, sourceBackupCategories, activeCategories);
+
+      expect(report.matchedByUuid).toBe(2);
+      expect(report.matchedBySlug).toBe(0);
+      expect(report.skippedAmbiguous).toBe(0);
+      expect(report.skippedMissing).toBe(0);
+      expect(report.remappedBenchmarks).toEqual({
+        'src-uuid-1': 10,
+        'src-uuid-2': 20,
+      });
+    });
+
+    it('falls back to matching by slug when restoring on a fresh instance with different category UUIDs', () => {
+      const destFreshCategories: Category[] = [
+        { id: 'dest-new-uuid-1', name: 'Software & Dev', slug: 'software-dev', color: '#10b981', icon: 'code', created_at: '' },
+        { id: 'dest-new-uuid-2', name: 'Media & Streaming', slug: 'media-streaming', color: '#6366f1', icon: 'tv', created_at: '' },
+      ];
+
+      const backupBenchmarks = {
+        'src-uuid-1': 10,
+        'src-uuid-2': 20,
+      };
+
+      const report = remapCategoryBenchmarkOverrides(backupBenchmarks, sourceBackupCategories, destFreshCategories);
+
+      expect(report.matchedByUuid).toBe(0);
+      expect(report.matchedBySlug).toBe(2);
+      expect(report.skippedAmbiguous).toBe(0);
+      expect(report.skippedMissing).toBe(0);
+      expect(report.remappedBenchmarks).toEqual({
+        'dest-new-uuid-1': 10,
+        'dest-new-uuid-2': 20,
+      });
+    });
+
+    it('safely skips ambiguous slug collisions without guessing when duplicate destination slugs exist', () => {
+      const destCategoriesWithDuplicateSlugs: Category[] = [
+        { id: 'dup-1', name: 'Dev 1', slug: 'software-dev', color: '#10b981', icon: 'code', created_at: '' },
+        { id: 'dup-2', name: 'Dev 2', slug: 'software-dev', color: '#10b981', icon: 'code', created_at: '' },
+        { id: 'unique-1', name: 'Media', slug: 'media-streaming', color: '#6366f1', icon: 'tv', created_at: '' },
+      ];
+
+      const backupBenchmarks = {
+        'src-uuid-1': 10, // Slug: software-dev (ambiguous in destination)
+        'src-uuid-2': 20, // Slug: media-streaming (unique)
+      };
+
+      const report = remapCategoryBenchmarkOverrides(
+        backupBenchmarks,
+        sourceBackupCategories,
+        destCategoriesWithDuplicateSlugs
+      );
+
+      expect(report.matchedBySlug).toBe(1);
+      expect(report.skippedAmbiguous).toBe(1);
+      expect(report.remappedBenchmarks).toEqual({
+        'unique-1': 20,
+      });
+    });
+
+    it('safely skips categories that are missing in the destination workspace', () => {
+      const destCategories: Category[] = [
+        { id: 'dest-1', name: 'Software & Dev', slug: 'software-dev', color: '#10b981', icon: 'code', created_at: '' },
+      ];
+
+      const backupBenchmarks = {
+        'src-uuid-1': 10, // Found
+        'src-uuid-3': 15, // Productivity (missing in destination)
+      };
+
+      const report = remapCategoryBenchmarkOverrides(backupBenchmarks, sourceBackupCategories, destCategories);
+
+      expect(report.matchedBySlug).toBe(1);
+      expect(report.skippedMissing).toBe(1);
+      expect(report.remappedBenchmarks).toEqual({
+        'dest-1': 10,
+      });
+    });
   });
 });
