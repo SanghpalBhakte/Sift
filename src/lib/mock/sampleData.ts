@@ -8,6 +8,7 @@ export const defaultProfile: Profile = {
   currency_preference: 'USD',
   theme_preference: 'paper-ledger',
   default_reminder_days: [7, 3, 1],
+  annual_benchmark_percent: 16.7,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };

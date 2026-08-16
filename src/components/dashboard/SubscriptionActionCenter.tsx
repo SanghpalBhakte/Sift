@@ -39,6 +39,7 @@ export function SubscriptionActionCenter() {
   const {
     subscriptions,
     categories,
+    profile,
     displayCurrency,
     exchangeRates,
   } = useSubscriptions();
@@ -49,7 +50,8 @@ export function SubscriptionActionCenter() {
   const [isArbitrageModalOpen, setIsArbitrageModalOpen] = useState(false);
 
   const targetCurrency = displayCurrency || 'USD';
-  const arbitrageCandidates = getAnnualArbitrageCandidates(subscriptions);
+  const userBenchmark = profile?.annual_benchmark_percent || 16.7;
+  const arbitrageCandidates = getAnnualArbitrageCandidates(subscriptions, 15, userBenchmark);
   const totalArbitrageSavings = arbitrageCandidates.reduce(
     (acc, c) => acc + c.projectedAnnualSavings,
     0
@@ -457,6 +459,7 @@ export function SubscriptionActionCenter() {
         isOpen={isArbitrageModalOpen}
         candidates={arbitrageCandidates}
         targetCurrency={targetCurrency}
+        benchmarkPercent={userBenchmark}
         onClose={() => setIsArbitrageModalOpen(false)}
       />
     </>

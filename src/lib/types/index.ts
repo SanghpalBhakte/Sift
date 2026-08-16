@@ -21,6 +21,7 @@ export interface Profile {
   currency_preference: string;
   theme_preference: 'paper-ledger' | 'night-shelf' | 'system';
   default_reminder_days: number[];
+  annual_benchmark_percent?: number;
   notifications_enabled?: boolean;
   notify_renewals?: boolean;
   notify_trials?: boolean;

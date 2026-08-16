@@ -164,7 +164,8 @@ export interface AnnualArbitrageCandidate {
  */
 export function getAnnualArbitrageCandidates(
   subscriptions: Subscription[],
-  minAnnualSavingsThreshold: number = 15
+  minAnnualSavingsThreshold: number = 15,
+  benchmarkPercent: number = 16.7
 ): AnnualArbitrageCandidate[] {
   const activeMonthly = subscriptions.filter(
     (s) =>
@@ -176,16 +177,24 @@ export function getAnnualArbitrageCandidates(
       s.amount >= 5
   );
 
+  const safeBenchmark =
+    typeof benchmarkPercent === 'number' && benchmarkPercent > 0 && benchmarkPercent < 100
+      ? benchmarkPercent
+      : 16.7;
+
   const candidates: AnnualArbitrageCandidate[] = [];
 
   for (const sub of activeMonthly) {
     const monthlyCost = sub.amount;
     const yearlyAtMonthlyRate = Math.round(monthlyCost * 12 * 100) / 100;
 
-    // Standard benchmark: ~16.7% annual discount (2 months free / pay for 10 months)
+    // Benchmark discount (default: ~16.7% annual discount / 2 months free equivalent)
     // or explicit monthly alternative if configured
-    let projectedAnnualCost = Math.round(monthlyCost * 10 * 100) / 100;
-    let savingsPercent = 17;
+    let projectedAnnualCost =
+      safeBenchmark === 16.7
+        ? Math.round(monthlyCost * 10 * 100) / 100
+        : Math.round(monthlyCost * 12 * ((100 - safeBenchmark) / 100) * 100) / 100;
+    let savingsPercent = Math.round(safeBenchmark);
 
     if (
       typeof sub.monthly_alternative_price === 'number' &&
@@ -210,11 +219,11 @@ export function getAnnualArbitrageCandidates(
         savingsPercent,
         confidence: isEssential ? 'high' : 'medium',
         eligibilityRule: isEssential
-          ? 'Rule: Declared Essential value rating with active monthly billing >= $5/mo'
-          : 'Rule: Declared Useful value rating with active monthly billing >= $5/mo',
+          ? `Rule: Declared Essential value rating with active monthly billing >= $5/mo (${safeBenchmark}% benchmark)`
+          : `Rule: Declared Useful value rating with active monthly billing >= $5/mo (${safeBenchmark}% benchmark)`,
         whyExplanation: isEssential
-          ? `You marked ${sub.name} as Essential. Because you plan to keep this service long-term, converting from monthly to annual typically saves ~15–20%.`
-          : `Active service with useful rating. Annual billing provides immediate recurring savings for ongoing tools.`,
+          ? `You marked ${sub.name} as Essential. Because you plan to keep this service long-term, converting from monthly to annual typically saves ~${savingsPercent}%.`
+          : `Active service with useful rating. Annual billing provides immediate recurring savings (~${savingsPercent}% benchmark).`,
       });
     }
   }

@@ -23,6 +23,7 @@ interface AnnualArbitrageBatchModalProps {
   isOpen: boolean;
   candidates: AnnualArbitrageCandidate[];
   targetCurrency?: string;
+  benchmarkPercent?: number;
   onClose: () => void;
 }
 
@@ -30,6 +31,7 @@ export function AnnualArbitrageBatchModal({
   isOpen,
   candidates: initialCandidates,
   targetCurrency = 'USD',
+  benchmarkPercent = 16.7,
   onClose,
 }: AnnualArbitrageBatchModalProps) {
   const { updateSubscription } = useSubscriptions();
@@ -136,7 +138,7 @@ export function AnnualArbitrageBatchModal({
             <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <p className="text-[11px] leading-relaxed">
               <strong className="font-semibold text-foreground">Heuristic Rate Comparison: </strong>
-              Savings are calculated from standard annual plan benchmarks (2 months free / ~17% discount) or your recorded rates. Sift does not alter external provider accounts; verify pricing details on the provider portal before switching.
+              Savings are estimated using your configured {benchmarkPercent}% annual discount benchmark or your recorded plan rates. Sift does not alter external provider accounts; verify pricing details on the provider portal before switching.
             </p>
           </div>
         </div>

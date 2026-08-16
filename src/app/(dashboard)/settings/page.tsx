@@ -52,6 +52,13 @@ const REMINDER_OFFSET_OPTIONS = [
   { days: 0, label: 'On renewal day' },
 ];
 
+const ANNUAL_BENCHMARK_OPTIONS = [
+  { value: 10, label: '10% — Conservative (~1 mo free)' },
+  { value: 15, label: '15% — Standard SaaS discount' },
+  { value: 16.7, label: '16.7% — Default (2 mos free)' },
+  { value: 20, label: '20% — Aggressive (~2.4 mos free)' },
+];
+
 export default function SettingsPage() {
   const { resolvedTheme } = useTheme();
   const { user, signOut, isConfigured } = useAuth();
@@ -87,6 +94,9 @@ export default function SettingsPage() {
 
   const [currency, setCurrency] = useState(profile?.currency_preference || 'USD');
   const [name, setName] = useState(profile?.full_name || '');
+  const [annualBenchmark, setAnnualBenchmark] = useState<number>(
+    profile?.annual_benchmark_percent || 16.7
+  );
   const [selectedOffsets, setSelectedOffsets] = useState<number[]>(
     profile?.default_reminder_days || [7, 3, 1]
   );
@@ -116,6 +126,7 @@ export default function SettingsPage() {
       await updateProfile({
         currency_preference: currency,
         full_name: name,
+        annual_benchmark_percent: Number(annualBenchmark),
         default_reminder_days: selectedOffsets,
         notifications_enabled: notificationsEnabled,
         notify_renewals: notifyRenewals,
@@ -606,6 +617,46 @@ export default function SettingsPage() {
                     {exchangeRates.rates[currency] || 1.0} {currency}
                   </strong>
                 </span>
+              </div>
+            </div>
+
+            {/* Annual Discount Benchmark Preference */}
+            <div className="space-y-2 pt-3 border-t border-border">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <label className="text-xs font-semibold text-foreground">
+                    Expected Annual Discount Benchmark
+                  </label>
+                </div>
+                <Badge variant="outline" size="sm" className="font-mono text-[10px]">
+                  {annualBenchmark}% Benchmark
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Used to calculate projected annual plan savings when evaluating whether stable monthly subscriptions would benefit from converting to an annual billing cycle.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                {ANNUAL_BENCHMARK_OPTIONS.map((opt) => {
+                  const isSelected = annualBenchmark === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setAnnualBenchmark(opt.value)}
+                      className={cn(
+                        'p-2.5 rounded-lg border text-xs text-left transition-all cursor-pointer flex items-center justify-between gap-2',
+                        isSelected
+                          ? 'border-primary bg-primary/10 text-primary font-semibold'
+                          : 'border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface/80'
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected ? <Check className="w-3.5 h-3.5 text-primary shrink-0" /> : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

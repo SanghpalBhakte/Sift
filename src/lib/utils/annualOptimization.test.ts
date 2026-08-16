@@ -270,4 +270,28 @@ describe('getAnnualArbitrageCandidates', () => {
     expect(candidates[0].projectedAnnualSavings).toBe(60);
     expect(candidates[0].savingsPercent).toBe(25);
   });
+
+  it('adjusts projected savings correctly when a custom benchmark percentage is provided', () => {
+    // $20/mo = $240/yr run-rate
+    const sub: Subscription = {
+      ...baseMonthlySub,
+      id: 'bench-1',
+      name: 'Pro Tool',
+      amount: 20,
+    };
+
+    // 10% benchmark: $240 * 0.90 = $216/yr -> $24 savings
+    const cand10 = getAnnualArbitrageCandidates([sub], 15, 10);
+    expect(cand10).toHaveLength(1);
+    expect(cand10[0].projectedAnnualCost).toBe(216);
+    expect(cand10[0].projectedAnnualSavings).toBe(24);
+    expect(cand10[0].savingsPercent).toBe(10);
+
+    // 20% benchmark: $240 * 0.80 = $192/yr -> $48 savings
+    const cand20 = getAnnualArbitrageCandidates([sub], 15, 20);
+    expect(cand20).toHaveLength(1);
+    expect(cand20[0].projectedAnnualCost).toBe(192);
+    expect(cand20[0].projectedAnnualSavings).toBe(48);
+    expect(cand20[0].savingsPercent).toBe(20);
+  });
 });
