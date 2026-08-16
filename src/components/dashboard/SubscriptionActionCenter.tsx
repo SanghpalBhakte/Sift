@@ -95,6 +95,11 @@ export function SubscriptionActionCenter() {
     }
   };
 
+  // Check history depth for price-hike trends
+  const subsWithHistory = subscriptions.filter(
+    (s) => s.status === 'active' && typeof s.previous_amount === 'number' && s.previous_amount > 0
+  );
+
   // If no active subscriptions tracked, return null (dashboard empty state handles it)
   if (totalActiveCount === 0) {
     return null;
@@ -119,8 +124,10 @@ export function SubscriptionActionCenter() {
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
-                All {totalActiveCount} active subscriptions are in good standing. No upcoming trial conversions,
-                unreviewed price hikes, pending annual renewals, or overlapping service clusters were detected.
+                All {totalActiveCount} active subscriptions are in good standing based on your recorded ledger entries and declared value ratings.
+                {subsWithHistory.length === 0
+                  ? ' Price-hike monitoring is in baseline mode; Sift will automatically detect price trends when a second statement or price edit is recorded.'
+                  : ` No price increases detected across ${subsWithHistory.length} recorded history comparisons.`}
               </p>
             </div>
           </div>
@@ -377,8 +384,8 @@ export function SubscriptionActionCenter() {
           <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <p className="text-[11px] leading-relaxed">
             <strong className="font-semibold text-foreground">Client-Side & Privacy-First: </strong>
-            Sift does not track external app logins, browser activity, or background screen usage. Utilization insights
-            come directly from your declared value ratings, and price-increase reviews rely strictly on observable recorded billing history.
+            Sift does not monitor external app logins, browser activity, or live merchant plan feeds. Downgrade suggestions
+            and utilization insights rely on visible pricing tiers and your declared value ratings, while price-hike alerts require recorded statement history.
           </p>
         </div>
       </Card>

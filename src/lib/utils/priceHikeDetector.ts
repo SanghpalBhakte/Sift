@@ -39,7 +39,7 @@ export function getCancellationMatchedAlternative(
     case 'too_expensive':
       return {
         title: 'Check Plan Tiers or Annual Discount',
-        description: `Many services offer lower usage tiers, annual pricing discounts, or paused billing before complete cancellation.`,
+        description: `Based on standard pricing models, many services offer lower tiers or annual discounts. Sift does not track internal plan-limit changes, so verify feature requirements on ${subscription.name}'s portal before changing plans.`,
         recommendedAction: 'downgrade_review',
         actionButtonLabel: 'Review / Edit Plan',
         secondaryOptionLabel: 'Set Reminder Before Renewal',
