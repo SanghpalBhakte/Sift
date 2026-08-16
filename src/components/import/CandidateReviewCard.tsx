@@ -47,7 +47,7 @@ export function CandidateReviewCard({
       );
     }
     return (
-      <Badge variant="outline" size="sm" className="gap-1 text-[hsl(var(--warning))]">
+      <Badge variant="outline" size="sm" className="gap-1 text-warning">
         <AlertCircle className="w-2.5 h-2.5" /> Verify Recurrence
       </Badge>
     );
@@ -58,8 +58,8 @@ export function CandidateReviewCard({
       className={cn(
         'rounded-xl border transition-all shadow-xs',
         candidate.selected
-          ? 'border-[hsl(var(--primary))] bg-[hsl(var(--card))] ring-1 ring-[hsl(var(--primary)/0.2)]'
-          : 'border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.35)] opacity-65 hover:opacity-90'
+          ? 'border-primary bg-card ring-1 ring-primary/20'
+          : 'border-border bg-surface/35 opacity-65 hover:opacity-90'
       )}
     >
       <div className="p-4 sm:p-5 space-y-3">
@@ -72,7 +72,7 @@ export function CandidateReviewCard({
               id={`candidate-checkbox-${candidate.id}`}
               checked={candidate.selected}
               onChange={() => onToggleSelect(candidate.id)}
-              className="w-4 h-4 rounded text-[hsl(var(--primary))] border-[hsl(var(--border))] accent-[hsl(var(--primary))] mt-1 cursor-pointer shrink-0"
+              className="w-4 h-4 rounded text-primary border-border accent-primary mt-1 cursor-pointer shrink-0"
             />
 
             <div className="space-y-1 min-w-0">
@@ -88,7 +88,7 @@ export function CandidateReviewCard({
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="p-1 text-xs text-[hsl(var(--primary))] font-semibold hover:underline cursor-pointer"
+                    className="p-1 text-xs text-primary font-semibold hover:underline cursor-pointer"
                   >
                     Done
                   </button>
@@ -98,28 +98,28 @@ export function CandidateReviewCard({
                   <h3
                     onClick={() => setIsEditing(true)}
                     title="Click to edit name"
-                    className="text-base font-bold text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] cursor-pointer truncate"
+                    className="text-base font-bold text-foreground hover:text-primary cursor-pointer truncate"
                   >
                     {candidate.merchantName}
                   </h3>
                   {getConfidenceBadge()}
 
                   {!candidate.selected ? (
-                    <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] italic">
+                    <span className="text-[11px] font-medium text-muted-foreground italic">
                       (Excluded from import)
                     </span>
                   ) : null}
 
                   {hasDescriptorDrift ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[hsl(var(--surface))] border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
-                      <Layers className="w-2.5 h-2.5 text-[hsl(var(--primary))]" />
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface border border-border text-muted-foreground">
+                      <Layers className="w-2.5 h-2.5 text-primary" />
                       Grouped {uniqueDescriptors.size} variants
                     </span>
                   ) : null}
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-xs text-[hsl(var(--muted-foreground))] flex-wrap">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                 <span>
                   {candidate.transactionCount} matched charge
                   {candidate.transactionCount === 1 ? '' : 's'}
@@ -134,10 +134,10 @@ export function CandidateReviewCard({
 
           {/* Amount & Cadence */}
           <div className="text-right shrink-0">
-            <div className="text-base sm:text-lg font-bold text-[hsl(var(--foreground))] font-mono">
+            <div className="text-base sm:text-lg font-bold text-foreground font-mono">
               {formatCurrency(candidate.amount, candidate.currency)}
             </div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))] capitalize">
+            <div className="text-xs text-muted-foreground capitalize">
               {candidate.billingCycle}
             </div>
           </div>
@@ -145,10 +145,10 @@ export function CandidateReviewCard({
 
         {/* Configurations Row (Category, Cadence, Value Rating) */}
         {candidate.selected ? (
-          <div className="pt-2 border-t border-[hsl(var(--border))] grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="pt-2 border-t border-border grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {/* Category Selector */}
             <div>
-              <label className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1">
+              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
                 Category
               </label>
               <select
@@ -156,7 +156,7 @@ export function CandidateReviewCard({
                 onChange={(e) =>
                   onUpdateCandidate(candidate.id, { suggestedCategoryId: e.target.value || null })
                 }
-                className="w-full h-8 px-2 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                className="sift-input w-full h-8 px-2 py-1 text-xs"
               >
                 <option value="">General & Other</option>
                 {categories.map((c) => (
@@ -169,7 +169,7 @@ export function CandidateReviewCard({
 
             {/* Billing Cycle */}
             <div>
-              <label className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1">
+              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
                 Cadence
               </label>
               <select
@@ -179,7 +179,7 @@ export function CandidateReviewCard({
                     billingCycle: e.target.value as RecurringCandidate['billingCycle'],
                   })
                 }
-                className="w-full h-8 px-2 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                className="sift-input w-full h-8 px-2 py-1 text-xs"
               >
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
@@ -189,7 +189,7 @@ export function CandidateReviewCard({
 
             {/* Value Rating */}
             <div>
-              <label className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1">
+              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
                 Value Tier
               </label>
               <select
@@ -199,7 +199,7 @@ export function CandidateReviewCard({
                     valueRating: e.target.value as ValueRating,
                   })
                 }
-                className="w-full h-8 px-2 text-xs rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                className="sift-input w-full h-8 px-2 py-1 text-xs"
               >
                 <option value="essential">Essential</option>
                 <option value="useful">Useful</option>
@@ -215,7 +215,7 @@ export function CandidateReviewCard({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1 font-medium transition-colors cursor-pointer"
+            className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 font-medium transition-colors cursor-pointer"
           >
             {isExpanded ? (
               <>
@@ -229,21 +229,21 @@ export function CandidateReviewCard({
           </button>
 
           {isExpanded ? (
-            <div className="mt-2 p-2.5 rounded-lg bg-[hsl(var(--surface)/0.6)] border border-[hsl(var(--border))] space-y-1.5 text-xs">
-              <div className="text-[11px] font-semibold text-[hsl(var(--muted-foreground))] pb-1 border-b border-[hsl(var(--border))]">
+            <div className="mt-2 p-2.5 rounded-lg bg-surface/60 border border-border space-y-1.5 text-xs">
+              <div className="text-[11px] font-semibold text-muted-foreground pb-1 border-b border-border">
                 Matched Statement Charges:
               </div>
               <div className="space-y-1 max-h-36 overflow-y-auto">
                 {candidate.matchedTransactions.map((tx, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between text-[11px] text-[hsl(var(--muted-foreground))]"
+                    className="flex items-center justify-between text-[11px] text-muted-foreground"
                   >
                     <span className="font-mono">{formatDate(tx.date)}</span>
-                    <span className="truncate max-w-[200px] text-[hsl(var(--foreground))] font-mono text-[10px]">
+                    <span className="truncate max-w-[200px] text-foreground font-mono text-[10px]">
                       {tx.rawDescription}
                     </span>
-                    <span className="font-mono font-semibold text-[hsl(var(--foreground))]">
+                    <span className="font-mono font-semibold text-foreground">
                       {formatCurrency(tx.amount, candidate.currency)}
                     </span>
                   </div>

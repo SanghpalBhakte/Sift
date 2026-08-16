@@ -2,11 +2,9 @@
 
 import React from 'react';
 import { AccountGroup } from '@/lib/utils/multiAccountDetector';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { Select } from '../ui/Select';
-import { CreditCard, Layers, ArrowRight, Check, CheckCircle2, CheckCheck, Coins } from 'lucide-react';
+import { CreditCard, Layers, ArrowRight, CheckCircle2, CheckCheck, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'INR', 'JPY', 'AUD', 'CHF', 'SGD', 'NZD', 'BRL', 'MXN'];
@@ -47,7 +45,7 @@ export function AccountGroupSelector({
     <div className="space-y-6 max-w-2xl mx-auto animate-in fade-in duration-200">
       <div className="space-y-1 text-center sm:text-left">
         <div className="flex items-center gap-2 flex-wrap mb-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] border border-[hsl(var(--primary)/0.2)]">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
             <Layers className="w-3.5 h-3.5" />
             Multi-Account Statement Session
           </div>
@@ -58,12 +56,12 @@ export function AccountGroupSelector({
           ) : null}
         </div>
 
-        <h2 className="text-lg sm:text-xl font-bold text-[hsl(var(--foreground))] tracking-tight">
+        <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
           {allCompleted ? 'All Account Batches Processed' : 'Select Account Batch to Import'}
         </h2>
-        <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-lg">
+        <p className="text-xs text-muted-foreground max-w-lg">
           We found {groups.length} distinct sub-accounts in the{' '}
-          <strong className="font-mono text-[hsl(var(--foreground))]">{accountColumn}</strong>{' '}
+          <strong className="font-mono text-foreground">{accountColumn}</strong>{' '}
           column. You can confirm or override the currency per account batch.
         </p>
       </div>
@@ -76,8 +74,8 @@ export function AccountGroupSelector({
             className={cn(
               'p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs',
               selectedGroupKey === 'ALL'
-                ? 'border-[hsl(var(--primary))] bg-[hsl(var(--card))] ring-1 ring-[hsl(var(--primary)/0.2)]'
-                : 'border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.5)] hover:bg-[hsl(var(--surface))]'
+                ? 'border-primary bg-card ring-1 ring-primary/20'
+                : 'border-border bg-surface/50 hover:bg-surface'
             )}
           >
             <div className="flex items-center gap-3">
@@ -85,17 +83,17 @@ export function AccountGroupSelector({
                 className={cn(
                   'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
                   selectedGroupKey === 'ALL'
-                    ? 'bg-[hsl(var(--primary))] text-white'
-                    : 'bg-[hsl(var(--surface))] text-[hsl(var(--muted-foreground))]'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-surface text-muted-foreground'
                 )}
               >
                 <Layers className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-sm font-bold text-[hsl(var(--foreground))]">
+                <div className="text-sm font-bold text-foreground">
                   All Accounts Combined
                 </div>
-                <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                <div className="text-xs text-muted-foreground">
                   Scan all {groups.length} sub-accounts together ({totalRows} total transactions)
                 </div>
               </div>
@@ -106,7 +104,7 @@ export function AccountGroupSelector({
                 {totalRows} txs
               </Badge>
               {selectedGroupKey === 'ALL' ? (
-                <CheckCircle2 className="w-5 h-5 text-[hsl(var(--primary))]" />
+                <CheckCircle2 className="w-5 h-5 text-primary" />
               ) : null}
             </div>
           </div>
@@ -129,10 +127,10 @@ export function AccountGroupSelector({
               className={cn(
                 'p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs',
                 isCompleted
-                  ? 'border-[hsl(var(--success)/0.3)] bg-[hsl(var(--success-subtle)/0.3)] opacity-85 cursor-default'
+                  ? 'border-success/30 bg-success-subtle/30 opacity-85 cursor-default'
                   : isSelected
-                  ? 'border-[hsl(var(--primary))] bg-[hsl(var(--card))] ring-1 ring-[hsl(var(--primary)/0.2)] cursor-pointer'
-                  : 'border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.5)] hover:bg-[hsl(var(--surface))] cursor-pointer'
+                  ? 'border-primary bg-card ring-1 ring-primary/20 cursor-pointer'
+                  : 'border-border bg-surface/50 hover:bg-surface cursor-pointer'
               )}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -140,16 +138,16 @@ export function AccountGroupSelector({
                   className={cn(
                     'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
                     isCompleted
-                      ? 'bg-[hsl(var(--success))] text-white'
+                      ? 'bg-success text-success-foreground'
                       : isSelected
-                      ? 'bg-[hsl(var(--primary))] text-white'
-                      : 'bg-[hsl(var(--surface))] text-[hsl(var(--muted-foreground))]'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-surface text-muted-foreground'
                   )}
                 >
                   {isCompleted ? <CheckCheck className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-[hsl(var(--foreground))] truncate flex items-center gap-2">
+                  <div className="text-sm font-bold text-foreground truncate flex items-center gap-2">
                     <span>{group.label}</span>
                     {isCompleted ? (
                       <Badge variant="success" size="sm">
@@ -161,24 +159,24 @@ export function AccountGroupSelector({
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs text-[hsl(var(--muted-foreground))] font-mono truncate">
+                  <div className="text-xs text-muted-foreground font-mono truncate">
                     ID: {group.accountKey} · {group.rowCount} transactions
                   </div>
                 </div>
               </div>
 
               {/* Currency Selector & Badge */}
-              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[hsl(var(--border))]">
+              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
                 {!isCompleted && onUpdateGroupCurrency ? (
                   <div
                     className="flex items-center gap-1.5"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Coins className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
+                    <Coins className="w-3.5 h-3.5 text-muted-foreground" />
                     <select
                       value={currentCurr}
                       onChange={(e) => onUpdateGroupCurrency(group.accountKey, e.target.value)}
-                      className="text-xs font-semibold font-mono bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-md px-2 py-1 text-[hsl(var(--foreground))] cursor-pointer hover:border-[hsl(var(--primary))]"
+                      className="sift-input text-xs font-semibold font-mono py-1 px-2 h-7 w-auto cursor-pointer"
                     >
                       {POPULAR_CURRENCIES.map((c) => (
                         <option key={c} value={c}>
@@ -194,7 +192,7 @@ export function AccountGroupSelector({
                 )}
 
                 {isSelected && !isCompleted ? (
-                  <CheckCircle2 className="w-5 h-5 text-[hsl(var(--primary))] shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
                 ) : null}
               </div>
             </div>
@@ -203,7 +201,7 @@ export function AccountGroupSelector({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-[hsl(var(--border))]">
+      <div className="flex items-center justify-between pt-4 border-t border-border">
         <Button type="button" variant="ghost" size="sm" onClick={onBack}>
           {completedCount > 0 ? 'Restart Session' : 'Upload Different File'}
         </Button>

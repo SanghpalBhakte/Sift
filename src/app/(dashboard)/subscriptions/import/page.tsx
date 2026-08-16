@@ -41,6 +41,7 @@ import {
   Layers,
   Coins,
 } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 type ImportStep = 'upload' | 'account_select' | 'map' | 'review' | 'success';
 type ReviewFilter = 'all' | 'selected' | 'unselected' | 'flagged';
@@ -164,90 +165,81 @@ export default function StatementImportPage() {
     startAccountBatch(selectedGroupKey);
   };
 
-  const handleUpdateGroupCurrency = (groupKey: string, newCurr: string) => {
+  const handleUpdateGroupCurrency = (groupKey: string, curr: string) => {
     setGroupCurrencies((prev) => ({
       ...prev,
-      [groupKey]: newCurr,
+      [groupKey]: curr,
     }));
   };
 
-  // Step 1C: PDF Statement Loaded
+  // Step 1C: PDF File Loaded
   const handlePdfLoaded = async (file: File) => {
     setUploadError(null);
-    setIsProcessingPdf(true);
     setFileName(file.name);
     setFileType('pdf');
-    setCompletedGroupKeys([]);
-    setSessionImportedTotal(0);
+    setIsProcessingPdf(true);
 
     try {
       const result = await parsePdfStatement(file);
 
-      if (!result.success) {
+      if (!result.success || result.transactions.length === 0) {
         setUploadError(
           result.error ||
-            'Could not extract transactions from this PDF. Please try exporting a standard CSV from your bank.'
+            'Could not extract transactions from this PDF. Please ensure it is a digital text statement rather than a scanned image.'
         );
         setIsProcessingPdf(false);
         return;
       }
 
       setNormalizedTransactions(result.transactions);
-      const detected = detectRecurringCandidates(result.transactions, categories, profileCurrency);
+
+      const detected = detectRecurringCandidates(result.transactions, categories);
       setCandidates(detected);
       setStep('review');
     } catch (err: any) {
-      console.error('PDF parsing error:', err);
-      setUploadError(`Failed to process PDF statement: ${err.message}`);
+      setUploadError(err.message || 'Failed to process PDF statement.');
     } finally {
       setIsProcessingPdf(false);
     }
   };
 
-  // Step 2: Columns Confirmed (for CSV)
+  // Step 2: Mapping Confirmed (CSV)
   const handleConfirmMapping = (
     confirmedMapping: CsvColumnMapping,
     customBankName?: string,
-    saveAsCustomRule?: boolean
+    saveAsRule: boolean = false
   ) => {
     setColumnMapping(confirmedMapping);
-    if (customBankName) {
-      setBankName(customBankName);
-    }
-    saveConfirmedMapping(csvHeaders, confirmedMapping, customBankName, fileName);
+    const finalBankName = customBankName || bankName || 'Custom Statement Format';
+    setBankName(finalBankName);
 
-    // If user opted to save this unrecognized format as an auto-rule
-    if (saveAsCustomRule && customBankName && customBankName !== 'Custom Statement Format') {
-      const mappedKeywords = [
-        confirmedMapping.dateColumn,
-        confirmedMapping.descriptionColumn,
-        confirmedMapping.amountColumn || confirmedMapping.debitColumn,
-      ]
-        .filter(Boolean)
-        .map((k) => (k as string).toLowerCase().trim());
+    saveConfirmedMapping(csvHeaders, confirmedMapping, finalBankName, fileName);
+
+    if (saveAsRule && customBankName && customBankName !== 'Custom Statement Format') {
+      const keywords: string[] = [];
+      if (confirmedMapping.dateColumn) keywords.push(confirmedMapping.dateColumn);
+      if (confirmedMapping.descriptionColumn) keywords.push(confirmedMapping.descriptionColumn);
+      if (confirmedMapping.amountColumn) keywords.push(confirmedMapping.amountColumn);
 
       saveCustomBankRule({
-        bankName: customBankName.trim(),
-        filePattern: fileName ? fileName.replace(/\.[^/.]+$/, '').toLowerCase() : undefined,
-        headerKeywords: Array.from(new Set(mappedKeywords)),
+        bankName: customBankName,
+        headerKeywords: keywords,
         isEnabled: true,
       });
     }
 
-    const currentBatchCurrency =
-      selectedGroupKey !== 'ALL'
-        ? groupCurrencies[selectedGroupKey] || profileCurrency
-        : profileCurrency;
-
-    const normalized = normalizeTransactions(filteredCsvRows, confirmedMapping);
+    const normalized = normalizeTransactions(
+      filteredCsvRows,
+      confirmedMapping
+    );
     setNormalizedTransactions(normalized);
 
-    const detected = detectRecurringCandidates(normalized, categories, currentBatchCurrency);
+    const detected = detectRecurringCandidates(normalized, categories);
     setCandidates(detected);
     setStep('review');
   };
 
-  // Step 3: Candidate Selection
+  // Step 3: Candidate Selection Controls
   const toggleCandidateSelect = (id: string) => {
     setCandidates((prev) =>
       prev.map((c) => (c.id === id ? { ...c, selected: !c.selected } : c))
@@ -264,43 +256,38 @@ export default function StatementImportPage() {
     setCandidates((prev) => prev.map((c) => ({ ...c, selected: select })));
   };
 
-  // Execute Batch Import
+  // Step 4: Import Execution
   const handleExecuteImport = async () => {
-    const selectedCandidates = candidates.filter((c) => c.selected);
-    if (selectedCandidates.length === 0) {
-      alert('Please select at least one subscription candidate to import.');
-      return;
-    }
+    const selected = candidates.filter((c) => c.selected);
+    if (selected.length === 0) return;
 
     setIsImporting(true);
-    let count = 0;
-
-    const accountContext =
-      selectedGroupKey !== 'ALL' && accountColumn
-        ? ` (${accountColumn}: ${selectedGroupKey})`
-        : '';
-
     try {
-      for (const candidate of selectedCandidates) {
+      for (const item of selected) {
+        const nextDate = item.lastDate
+          ? new Date(new Date(item.lastDate).getTime() + 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split('T')[0]
+          : new Date().toISOString().split('T')[0];
+
         await addSubscription({
-          name: candidate.merchantName,
-          amount: candidate.amount,
-          currency: candidate.currency,
-          billing_cycle: candidate.billingCycle,
+          name: item.merchantName,
+          amount: item.amount,
+          currency: item.currency,
+          billing_cycle: item.billingCycle,
           status: 'active',
-          category_id: candidate.suggestedCategoryId,
-          start_date: candidate.firstDate,
-          next_renewal_date: candidate.estimatedNextRenewal,
+          category_id: item.suggestedCategoryId,
+          start_date: item.firstDate || new Date().toISOString().split('T')[0],
+          next_renewal_date: nextDate,
           is_trial: false,
+          trial_end_date: null,
           reminder_offsets: profile?.default_reminder_days || [7, 3, 1],
-          value_rating: candidate.valueRating,
-          notes: `Imported from ${bankName || fileType.toUpperCase()}: ${fileName}${accountContext} (${candidate.transactionCount} charges)`,
+          value_rating: item.valueRating,
         });
-        count++;
       }
 
-      setImportedBatchCount(count);
-      setSessionImportedTotal((prev) => prev + count);
+      setImportedBatchCount(selected.length);
+      setSessionImportedTotal((prev) => prev + selected.length);
 
       if (selectedGroupKey !== 'ALL') {
         setCompletedGroupKeys((prev) =>
@@ -310,76 +297,69 @@ export default function StatementImportPage() {
 
       setStep('success');
     } catch (err: any) {
-      console.error('Error importing subscriptions:', err);
       alert(`Import error: ${err.message}`);
     } finally {
       setIsImporting(false);
     }
   };
 
-  // Consecutive Batch Navigation
+  // Next account batch continuation
   const remainingGroups = accountGroups.filter(
     (g) => !completedGroupKeys.includes(g.accountKey) && g.accountKey !== selectedGroupKey
   );
   const nextPendingGroup = remainingGroups[0];
 
   const handleProceedToNextAccount = () => {
-    if (nextPendingGroup) {
-      startAccountBatch(nextPendingGroup.accountKey);
-    } else {
-      setStep('account_select');
-    }
+    if (!nextPendingGroup) return;
+    startAccountBatch(nextPendingGroup.accountKey);
   };
 
+  // Selection metrics
   const selectedCount = candidates.filter((c) => c.selected).length;
-  const unselectedCount = candidates.length - selectedCount;
-  const flaggedCount = candidates.filter((c) => c.confidence === 'low' || c.transactionCount === 1).length;
-
+  const unselectedCount = candidates.filter((c) => !c.selected).length;
+  const flaggedCount = candidates.filter((c) => c.confidence === 'low').length;
   const selectedMonthlyTotal = candidates
     .filter((c) => c.selected)
-    .reduce((acc, c) => {
-      if (c.billingCycle === 'yearly') return acc + c.amount / 12;
-      if (c.billingCycle === 'quarterly') return acc + c.amount / 3;
-      return acc + c.amount;
-    }, 0);
+    .reduce((acc, c) => acc + c.amount, 0);
 
+  // Filtered candidate list
   const filteredCandidates = candidates.filter((c) => {
     if (reviewFilter === 'selected') return c.selected;
     if (reviewFilter === 'unselected') return !c.selected;
-    if (reviewFilter === 'flagged') return c.confidence === 'low' || c.transactionCount === 1;
+    if (reviewFilter === 'flagged') return c.confidence === 'low';
     return true;
   });
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 pb-2 border-b border-[hsl(var(--border))]">
+      <div className="flex items-center justify-between gap-4 pb-2 border-b border-border">
         <div className="flex items-center gap-3">
           <Link
             href="/subscriptions"
-            className="p-1.5 rounded-lg text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
               Import Statement (CSV & PDF)
             </h1>
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            <p className="text-xs text-muted-foreground">
               Detect recurring subscriptions from bank, card, or digital PDF statements
             </p>
           </div>
         </div>
 
         {/* Step Indicator */}
-        <div className="hidden sm:flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] font-mono">
-          <span className={step === 'upload' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+          <span className={step === 'upload' ? 'text-primary font-bold' : ''}>
             1. Upload
           </span>
           {step === 'account_select' || accountGroups.length > 1 ? (
             <>
               <span>→</span>
-              <span className={step === 'account_select' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
+              <span className={step === 'account_select' ? 'text-primary font-bold' : ''}>
                 Account
               </span>
             </>
@@ -387,13 +367,13 @@ export default function StatementImportPage() {
           <span>→</span>
           {fileType === 'csv' ? (
             <>
-              <span className={step === 'map' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
+              <span className={step === 'map' ? 'text-primary font-bold' : ''}>
                 Map
               </span>
               <span>→</span>
             </>
           ) : null}
-          <span className={step === 'review' ? 'text-[hsl(var(--primary))] font-bold' : ''}>
+          <span className={step === 'review' ? 'text-primary font-bold' : ''}>
             Preview
           </span>
         </div>
@@ -401,7 +381,7 @@ export default function StatementImportPage() {
 
       {/* Upload Error Banner */}
       {uploadError ? (
-        <div className="p-4 rounded-xl bg-[hsl(var(--danger-subtle))] border border-[hsl(var(--danger)/0.3)] text-xs text-[hsl(var(--danger))] flex items-start gap-2.5">
+        <div className="p-4 rounded-xl bg-danger-subtle border border-danger/30 text-xs text-danger flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <div className="font-semibold">Statement Extraction Notice</div>
@@ -454,25 +434,25 @@ export default function StatementImportPage() {
       {step === 'review' ? (
         <div className="space-y-6">
           {/* Summary KPI Bar */}
-          <div className="p-4 sm:p-5 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[hsl(var(--border))]">
+          <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
               <div>
-                <div className="text-sm font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+                <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   {fileType === 'pdf' ? (
-                    <FileType className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <FileType className="w-4 h-4 text-primary" />
                   ) : null}
                   <span>
                     {candidates.length} Discovered Recurring Service{candidates.length === 1 ? '' : 's'}
                   </span>
                   <Badge variant="outline" size="sm" className="font-mono flex items-center gap-1">
-                    <Coins className="w-3 h-3 text-[hsl(var(--primary))]" /> {activeBatchCurrency}
+                    <Coins className="w-3 h-3 text-primary" /> {activeBatchCurrency}
                   </Badge>
                 </div>
-                <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                <div className="text-xs text-muted-foreground mt-0.5">
                   Scanned {normalizedTransactions.length} statement transactions from{' '}
                   <span className="font-mono">{fileName}</span>
                   {selectedGroupKey !== 'ALL' && accountColumn ? (
-                    <span className="text-[hsl(var(--primary))] font-semibold ml-1">
+                    <span className="text-primary font-semibold ml-1">
                       (Account: {selectedGroupKey})
                     </span>
                   ) : null}
@@ -480,11 +460,11 @@ export default function StatementImportPage() {
               </div>
 
               <div className="text-left sm:text-right">
-                <div className="text-sm sm:text-base font-bold text-[hsl(var(--foreground))]">
+                <div className="text-sm sm:text-base font-bold text-foreground">
                   +<AnimatedCurrency value={selectedMonthlyTotal} currency={activeBatchCurrency} />
-                  <span className="text-xs font-normal text-[hsl(var(--muted-foreground))]">/mo</span>
+                  <span className="text-xs font-normal text-muted-foreground">/mo</span>
                 </div>
-                <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                <div className="text-xs text-muted-foreground">
                   {selectedCount} of {candidates.length} selected to save
                 </div>
               </div>
@@ -492,37 +472,40 @@ export default function StatementImportPage() {
 
             {/* Quick Filter Tabs */}
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[hsl(var(--surface))] border border-[hsl(var(--border))] text-xs">
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface border border-border text-xs">
                 <button
                   type="button"
                   onClick={() => setReviewFilter('all')}
-                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                  className={cn(
+                    'px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer',
                     reviewFilter === 'all'
-                      ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs font-semibold'
-                      : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-                  }`}
+                      ? 'bg-card text-foreground shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
                 >
                   All ({candidates.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setReviewFilter('selected')}
-                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                  className={cn(
+                    'px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer',
                     reviewFilter === 'selected'
-                      ? 'bg-[hsl(var(--card))] text-[hsl(var(--primary))] shadow-xs font-semibold'
-                      : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-                  }`}
+                      ? 'bg-card text-primary shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
                 >
                   Selected ({selectedCount})
                 </button>
                 <button
                   type="button"
                   onClick={() => setReviewFilter('unselected')}
-                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                  className={cn(
+                    'px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer',
                     reviewFilter === 'unselected'
-                      ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs font-semibold'
-                      : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-                  }`}
+                      ? 'bg-card text-foreground shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
                 >
                   Excluded ({unselectedCount})
                 </button>
@@ -530,11 +513,12 @@ export default function StatementImportPage() {
                   <button
                     type="button"
                     onClick={() => setReviewFilter('flagged')}
-                    className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                    className={cn(
+                      'px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer',
                       reviewFilter === 'flagged'
-                        ? 'bg-[hsl(var(--card))] text-[hsl(var(--warning))] shadow-xs font-semibold'
-                        : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--warning))]'
-                    }`}
+                        ? 'bg-card text-warning shadow-xs font-semibold'
+                        : 'text-muted-foreground hover:text-warning'
+                    )}
                   >
                     Review Needed ({flaggedCount})
                   </button>
@@ -546,15 +530,15 @@ export default function StatementImportPage() {
                 <button
                   type="button"
                   onClick={() => handleSelectAll(true)}
-                  className="text-[11px] text-[hsl(var(--primary))] hover:underline font-medium cursor-pointer"
+                  className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
                 >
                   Select All
                 </button>
-                <span className="text-[hsl(var(--border))]">·</span>
+                <span className="text-border">·</span>
                 <button
                   type="button"
                   onClick={() => handleSelectAll(false)}
-                  className="text-[11px] text-[hsl(var(--muted-foreground))] hover:underline font-medium cursor-pointer"
+                  className="text-[11px] text-muted-foreground hover:underline font-medium cursor-pointer"
                 >
                   Deselect All
                 </button>
@@ -564,13 +548,13 @@ export default function StatementImportPage() {
 
           {/* Candidates List or Empty State */}
           {candidates.length === 0 ? (
-            <div className="py-12 text-center space-y-3 bg-[hsl(var(--card))] rounded-xl border border-[hsl(var(--border))]">
-              <Inbox className="w-8 h-8 mx-auto text-[hsl(var(--muted-foreground))]" />
+            <div className="py-12 text-center space-y-3 bg-card rounded-xl border border-border">
+              <Inbox className="w-8 h-8 mx-auto text-muted-foreground" />
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                <h3 className="text-sm font-semibold text-foreground">
                   No recurring patterns detected
                 </h3>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                   We could not find repeated recurring charges in this account batch. You can always add
                   subscriptions manually.
                 </p>
@@ -598,7 +582,7 @@ export default function StatementImportPage() {
               ))}
 
               {filteredCandidates.length === 0 ? (
-                <div className="p-8 text-center bg-[hsl(var(--surface)/0.4)] rounded-xl border border-[hsl(var(--border))] text-xs text-[hsl(var(--muted-foreground))]">
+                <div className="p-8 text-center bg-surface/40 rounded-xl border border-border text-xs text-muted-foreground">
                   No candidates match the selected filter.
                 </div>
               ) : null}
@@ -606,7 +590,7 @@ export default function StatementImportPage() {
           )}
 
           {/* Action buttons */}
-          <div className="flex items-center justify-between pt-4 border-t border-[hsl(var(--border))]">
+          <div className="flex items-center justify-between pt-4 border-t border-border">
             <Button
               type="button"
               variant="ghost"
@@ -634,17 +618,17 @@ export default function StatementImportPage() {
       {/* STEP 4: Success */}
       {step === 'success' ? (
         <Card className="text-center py-10 px-4 space-y-5 max-w-lg mx-auto">
-          <div className="w-14 h-14 mx-auto rounded-full bg-[hsl(var(--success-subtle))] flex items-center justify-center text-[hsl(var(--success))] shadow-xs">
+          <div className="w-14 h-14 mx-auto rounded-full bg-success-subtle flex items-center justify-center text-success shadow-xs">
             <CheckCircle2 className="w-7 h-7" />
           </div>
 
           <div className="space-y-1.5">
-            <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
+            <h2 className="text-lg font-bold text-foreground">
               {accountGroups.length > 1 && remainingGroups.length > 0
                 ? 'Account Batch Imported Successfully!'
                 : 'All Subscriptions Imported!'}
             </h2>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] max-w-sm mx-auto">
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               Added <strong>{importedBatchCount} subscription{importedBatchCount === 1 ? '' : 's'}</strong>{' '}
               from {selectedGroupKey !== 'ALL' ? `Account (${selectedGroupKey})` : 'your statement'} to
               the Sift ledger in <strong className="font-mono">{activeBatchCurrency}</strong>.
@@ -660,14 +644,14 @@ export default function StatementImportPage() {
 
           {/* Consecutive Multi-Account Batch Next Action */}
           {accountGroups.length > 1 && remainingGroups.length > 0 && selectedGroupKey !== 'ALL' ? (
-            <div className="p-4 rounded-xl border border-[hsl(var(--primary)/0.2)] bg-[hsl(var(--primary)/0.04)] space-y-3 text-left">
+            <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3 text-left">
               <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[hsl(var(--primary))]" />
-                <span className="text-xs font-bold text-[hsl(var(--foreground))]">
+                <Layers className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold text-foreground">
                   Next Account Ready in This Statement
                 </span>
               </div>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              <p className="text-xs text-muted-foreground">
                 You have <strong>{remainingGroups.length} remaining sub-account{remainingGroups.length === 1 ? '' : 's'}</strong>{' '}
                 in <span className="font-mono">{fileName}</span> ({nextPendingGroup.label} with {nextPendingGroup.rowCount} charges).
               </p>
