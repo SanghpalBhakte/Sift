@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { BackupValidationResult, SiftBackupData } from '@/lib/types';
 import {
@@ -24,6 +24,9 @@ import {
   ChevronUp,
   ExternalLink,
   Plus,
+  FolderPlus,
+  Sparkles,
+  Check,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/dates';
 
@@ -92,6 +95,11 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
   const [createCategoryError, setCreateCategoryError] = useState<string | null>(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState<boolean>(false);
 
+  // Batch Category Creation State
+  const [isBatchPreviewOpen, setIsBatchPreviewOpen] = useState(false);
+  const [isBatchCreating, setIsBatchCreating] = useState(false);
+  const [batchSuccessMessage, setBatchSuccessMessage] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -102,6 +110,8 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     setIsDetailsExpanded(false);
     setCreatingCategoryFor(null);
     setCreateCategoryError(null);
+    setIsBatchPreviewOpen(false);
+    setBatchSuccessMessage(null);
     onClose();
   };
 
@@ -188,10 +198,97 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     }
   };
 
+  const batchPreviewItems = useMemo(() => {
+    if (!validation?.data?.profile?.category_annual_benchmarks) return [];
+    const report = remapCategoryBenchmarkOverrides(
+      validation.data.profile.category_annual_benchmarks || {},
+      validation.data.categories || [],
+      categories
+    );
+
+    return report.unmatched.map((un) => {
+      const backupCat = validation.data?.categories?.find(
+        (c) => c.id === un.sourceKey || c.slug === un.sourceSlug
+      );
+      const name = (backupCat?.name || un.sourceName || un.sourceSlug || 'Category').trim();
+      const slug = (
+        backupCat?.slug ||
+        un.sourceSlug ||
+        name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+      )
+        .trim()
+        .toLowerCase();
+      const color = backupCat?.color || '#6366f1';
+      const icon = backupCat?.icon || 'folder';
+      const hasNameConflict = categories.some(
+        (c) => c.name.trim().toLowerCase() === name.toLowerCase()
+      );
+      const hasSlugConflict = categories.some(
+        (c) => c.slug && c.slug.trim().toLowerCase() === slug
+      );
+      const isAlreadyRemapped = Boolean(
+        manualRemappings[un.sourceKey] && manualRemappings[un.sourceKey] !== 'skip'
+      );
+
+      return {
+        sourceKey: un.sourceKey,
+        name,
+        slug,
+        color,
+        icon,
+        configuredBenchmark: un.configuredBenchmark,
+        hasConflict: hasNameConflict || hasSlugConflict,
+        conflictReason: hasNameConflict
+          ? `Name "${name}" already exists`
+          : hasSlugConflict
+          ? `Slug "${slug}" already exists`
+          : null,
+        isAlreadyRemapped,
+      };
+    });
+  }, [validation, categories, manualRemappings]);
+
+  const creatableBatchItems = useMemo(() => {
+    return batchPreviewItems.filter((i) => !i.hasConflict && !i.isAlreadyRemapped);
+  }, [batchPreviewItems]);
+
+  const handleExecuteBatchCreate = async () => {
+    if (creatableBatchItems.length === 0) return;
+    setIsBatchCreating(true);
+    try {
+      const newMappings: Record<string, string> = { ...manualRemappings };
+      let count = 0;
+      for (const item of creatableBatchItems) {
+        const created = await addCategory({
+          name: item.name,
+          slug: item.slug,
+          color: item.color,
+          icon: item.icon,
+        });
+        newMappings[item.sourceKey] = created.id;
+        count++;
+      }
+      setManualRemappings(newMappings);
+      setIsBatchPreviewOpen(false);
+      setBatchSuccessMessage(
+        `Created ${count} missing ${count === 1 ? 'category' : 'categories'} and mapped ${count === 1 ? 'its' : 'their'} benchmark ${count === 1 ? 'override' : 'overrides'}.`
+      );
+    } catch (err: any) {
+      setError(err.message || 'Failed to create categories in batch.');
+    } finally {
+      setIsBatchCreating(false);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     setManualRemappings({});
     setRestoreResult(null);
+    setIsBatchPreviewOpen(false);
+    setBatchSuccessMessage(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -881,10 +978,136 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
 
                         {/* Unmatched List */}
                         {rep.unmatched.length > 0 ? (
-                          <div className="space-y-2 pt-1">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                              Unmatched Categories ({rep.unmatched.length})
-                            </span>
+                          <div className="space-y-2.5 pt-1">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                                Unmatched Categories ({rep.unmatched.length})
+                              </span>
+                              {creatableBatchItems.length > 0 && !isBatchPreviewOpen ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsBatchPreviewOpen(true)}
+                                  className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer py-0.5"
+                                >
+                                  <FolderPlus className="w-3.5 h-3.5" />
+                                  <span>Create All Missing ({creatableBatchItems.length})</span>
+                                </button>
+                              ) : null}
+                            </div>
+
+                            {/* Batch Success Message */}
+                            {batchSuccessMessage ? (
+                              <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in duration-200">
+                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>{batchSuccessMessage}</span>
+                              </div>
+                            ) : null}
+
+                            {/* Batch Preview & Confirmation Card */}
+                            {isBatchPreviewOpen ? (
+                              <div className="p-3.5 rounded-xl border border-primary/40 bg-card space-y-3 shadow-xs animate-in fade-in zoom-in-95 duration-150">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="space-y-0.5">
+                                    <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
+                                      <FolderPlus className="w-4 h-4 text-primary" />
+                                      <span>Create All Missing Categories ({creatableBatchItems.length})</span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                      Create {creatableBatchItems.length} workspace categories from imported metadata to restore their discount benchmark overrides.
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsBatchPreviewOpen(false)}
+                                    className="text-muted-foreground hover:text-foreground p-1 text-xs cursor-pointer"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                {/* Preview Itemized Rows */}
+                                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-0.5">
+                                  {batchPreviewItems.map((item) => (
+                                    <div
+                                      key={item.sourceKey}
+                                      className={`p-2 rounded-lg border text-xs flex items-center justify-between gap-2 ${
+                                        item.hasConflict
+                                          ? 'border-warning/30 bg-warning/5 opacity-75'
+                                          : item.isAlreadyRemapped
+                                          ? 'border-border/60 bg-surface/30 opacity-75'
+                                          : 'border-border bg-surface/60'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span
+                                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                                          style={{ backgroundColor: item.color }}
+                                        />
+                                        <div className="truncate">
+                                          <span className="font-semibold text-foreground">{item.name}</span>
+                                          <span className="text-[10px] text-muted-foreground font-mono ml-1.5">
+                                            ({item.slug})
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        <Badge variant="outline" size="sm" className="font-mono text-[10px]">
+                                          {item.configuredBenchmark}%
+                                        </Badge>
+                                        {item.hasConflict ? (
+                                          <Badge variant="danger" size="sm" className="text-[9px]">
+                                            Conflict: {item.conflictReason}
+                                          </Badge>
+                                        ) : item.isAlreadyRemapped ? (
+                                          <Badge variant="muted" size="sm" className="text-[9px]">
+                                            Remapped
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="primary" size="sm" className="text-[9px]">
+                                            Will Create
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <div className="p-2 rounded-lg bg-surface/60 border border-border/60 text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                                  <span>
+                                    Imported colors & icons will be preserved. You can customize them anytime in Settings.
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsBatchPreviewOpen(false)}
+                                    className="h-7 text-xs px-2.5"
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="primary"
+                                    size="sm"
+                                    isLoading={isBatchCreating}
+                                    disabled={creatableBatchItems.length === 0}
+                                    onClick={handleExecuteBatchCreate}
+                                    className="h-7 text-xs px-3 gap-1.5"
+                                  >
+                                    <FolderPlus className="w-3.5 h-3.5" />
+                                    <span>
+                                      Create {creatableBatchItems.length} Categor{creatableBatchItems.length === 1 ? 'y' : 'ies'} & Map
+                                    </span>
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : null}
+
                             {rep.unmatched.map((un) => {
                               const currentSelection = manualRemappings[un.sourceKey] || 'skip';
                               const suggestion = findCategorySuggestion(un.sourceName || un.sourceSlug || '', categories);
