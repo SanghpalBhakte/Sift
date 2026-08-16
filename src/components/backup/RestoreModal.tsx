@@ -332,10 +332,27 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
 
       // Restore Subscriptions
       for (const subData of backup.subscriptions) {
-        // Match category by slug or name if possible
-        const matchedCategory = categories.find(
-          (c) => (subData as any).category_slug === c.slug || subData.name.toLowerCase().includes(c.name.toLowerCase())
+        const subSlug = (subData as any).category_slug?.trim().toLowerCase();
+
+        // Deterministic category resolution hierarchy:
+        // 1. Manual remapping / batch-created category ID from interactive recovery
+        const backupCat = (backup.categories || []).find(
+          (c) => c.slug?.trim().toLowerCase() === subSlug
         );
+        const remappedId = backupCat ? manualRemappings[backupCat.id] : undefined;
+
+        // 2. Deterministic match in current workspace:
+        //    a) Re-mapped ID
+        //    b) Primary slug match
+        //    c) Historical slug alias match
+        const matchedCategory = categories.find((c) => {
+          if (remappedId && c.id === remappedId) return true;
+          if (subSlug && c.slug && c.slug.trim().toLowerCase() === subSlug) return true;
+          if (subSlug && c.slug_aliases?.some((alias) => alias.trim().toLowerCase() === subSlug)) {
+            return true;
+          }
+          return false;
+        });
 
         await addSubscription({
           name: subData.name,

@@ -293,13 +293,18 @@ export interface CsvColumnMapping {
 // Data Export & Backup Models
 // -----------------------------------------------------------------------------
 
+export interface ExportedSubscription
+  extends Omit<Subscription, 'id' | 'user_id' | 'created_at' | 'updated_at'> {
+  category_slug?: string;
+}
+
 export interface SiftBackupData {
   version: '1.0';
   app: 'Sift';
   exported_at: string;
   user_email: string;
   profile: Partial<Profile>;
-  subscriptions: Omit<Subscription, 'id' | 'user_id' | 'created_at' | 'updated_at'>[];
+  subscriptions: ExportedSubscription[];
   categories: Category[];
   payment_methods: PaymentMethod[];
 }

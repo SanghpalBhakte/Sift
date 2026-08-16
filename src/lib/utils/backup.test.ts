@@ -82,6 +82,31 @@ describe('Backup & Export Manifest Engine', () => {
     expect(backup.categories).toHaveLength(1);
   });
 
+  it('captures category_slug snapshot on exported subscriptions by resolving category_id against categories', () => {
+    const subsWithCategory: Subscription[] = [
+      {
+        ...mockSubscriptions[0],
+        category_id: 'cat-dev',
+      },
+      {
+        ...mockSubscriptions[0],
+        id: 'sub-2',
+        name: 'Uncategorized Service',
+        category_id: null,
+      },
+    ];
+
+    const backup = generateFullBackupJson({
+      userEmail: 'alex@sift.studio',
+      profile: mockProfile,
+      subscriptions: subsWithCategory,
+      categories: mockCategories,
+    });
+
+    expect(backup.subscriptions[0].category_slug).toBe('dev');
+    expect(backup.subscriptions[1].category_slug).toBeUndefined();
+  });
+
   it('validates JSON backups containing benchmark configuration correctly', () => {
     const backup = generateFullBackupJson({
       userEmail: 'alex@sift.studio',
