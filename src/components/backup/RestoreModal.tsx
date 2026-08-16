@@ -23,6 +23,7 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Plus,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/dates';
 
@@ -63,8 +64,14 @@ export interface RestoreCompletionSummary {
 }
 
 export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) {
-  const { subscriptions, categories, addSubscription, deleteSubscription, updateProfile } =
-    useSubscriptions();
+  const {
+    subscriptions,
+    categories,
+    addSubscription,
+    addCategory,
+    deleteSubscription,
+    updateProfile,
+  } = useSubscriptions();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [validation, setValidation] = useState<BackupValidationResult | null>(null);
@@ -76,6 +83,15 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
   const [isRestoring, setIsRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Inline Category Creation State
+  const [creatingCategoryFor, setCreatingCategoryFor] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState<string>('');
+  const [newCategorySlug, setNewCategorySlug] = useState<string>('');
+  const [newCategoryColor, setNewCategoryColor] = useState<string>('#6366f1');
+  const [newCategoryIcon, setNewCategoryIcon] = useState<string>('folder');
+  const [createCategoryError, setCreateCategoryError] = useState<string | null>(null);
+  const [isCreatingCategory, setIsCreatingCategory] = useState<boolean>(false);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -84,7 +100,84 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     setFileName('');
     setManualRemappings({});
     setIsDetailsExpanded(false);
+    setCreatingCategoryFor(null);
+    setCreateCategoryError(null);
     onClose();
+  };
+
+  const handleStartCreateCategory = (unmatched: {
+    sourceKey: string;
+    sourceName?: string;
+    sourceSlug?: string;
+  }) => {
+    const backupCat = validation?.data?.categories?.find(
+      (c) => c.id === unmatched.sourceKey || c.slug === unmatched.sourceSlug
+    );
+    const initialName = backupCat?.name || unmatched.sourceName || unmatched.sourceSlug || '';
+    const initialSlug =
+      backupCat?.slug ||
+      unmatched.sourceSlug ||
+      initialName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+    setCreatingCategoryFor(unmatched.sourceKey);
+    setNewCategoryName(initialName);
+    setNewCategorySlug(initialSlug);
+    setNewCategoryColor(backupCat?.color || '#6366f1');
+    setNewCategoryIcon(backupCat?.icon || 'folder');
+    setCreateCategoryError(null);
+  };
+
+  const handleConfirmCreateCategory = async (sourceKey: string) => {
+    if (!newCategoryName.trim()) {
+      setCreateCategoryError('Category name cannot be blank.');
+      return;
+    }
+
+    const cleanSlug =
+      newCategorySlug.trim().toLowerCase() ||
+      newCategoryName
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+    const nameCollides = categories.some(
+      (c) => c.name.trim().toLowerCase() === newCategoryName.trim().toLowerCase()
+    );
+    const slugCollides = categories.some(
+      (c) => c.slug && c.slug.trim().toLowerCase() === cleanSlug
+    );
+
+    if (nameCollides || slugCollides) {
+      setCreateCategoryError('A category with this name or slug already exists in your workspace.');
+      return;
+    }
+
+    setIsCreatingCategory(true);
+    setCreateCategoryError(null);
+
+    try {
+      const created = await addCategory({
+        name: newCategoryName.trim(),
+        slug: cleanSlug,
+        color: newCategoryColor,
+        icon: newCategoryIcon,
+      });
+
+      // Automatically map the unmatched item to the newly created category
+      setManualRemappings((prev) => ({
+        ...prev,
+        [sourceKey]: created.id,
+      }));
+      setCreatingCategoryFor(null);
+    } catch (err: any) {
+      setCreateCategoryError(err.message || 'Failed to create category.');
+    } finally {
+      setIsCreatingCategory(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -827,6 +920,90 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                                       </optgroup>
                                     </select>
                                   </div>
+
+                                  {/* Inline Category Creation Section */}
+                                  {creatingCategoryFor === un.sourceKey ? (
+                                    <div className="p-3 rounded-lg border border-primary/40 bg-card space-y-2.5 mt-2 animate-in fade-in zoom-in-95 duration-150">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-semibold text-foreground text-[11px] flex items-center gap-1.5">
+                                          <Plus className="w-3.5 h-3.5 text-primary" />
+                                          Create Category in Workspace
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setCreatingCategoryFor(null);
+                                            setCreateCategoryError(null);
+                                          }}
+                                          className="text-muted-foreground hover:text-foreground text-[10px] cursor-pointer"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+
+                                      {createCategoryError ? (
+                                        <div className="p-2 rounded bg-danger-subtle border border-danger/30 text-danger text-[10px] flex items-center gap-1.5">
+                                          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                          <span>{createCategoryError}</span>
+                                        </div>
+                                      ) : null}
+
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div>
+                                          <label className="text-[10px] font-medium text-muted-foreground block mb-0.5">
+                                            Category Name
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={newCategoryName}
+                                            onChange={(e) => setNewCategoryName(e.target.value)}
+                                            placeholder="e.g. Media & Streaming"
+                                            className="w-full h-7 px-2 text-xs rounded border border-border bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-medium text-muted-foreground block mb-0.5">
+                                            Category Slug
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={newCategorySlug}
+                                            onChange={(e) => setNewCategorySlug(e.target.value)}
+                                            placeholder="e.g. media-streaming"
+                                            className="w-full h-7 px-2 text-xs rounded border border-border bg-surface text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                                        <div className="text-[10px] text-muted-foreground">
+                                          Will create category & map {un.configuredBenchmark}% benchmark override.
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="primary"
+                                          size="sm"
+                                          isLoading={isCreatingCategory}
+                                          onClick={() => handleConfirmCreateCategory(un.sourceKey)}
+                                          className="h-6 text-[10px] px-2.5 gap-1 shrink-0"
+                                        >
+                                          <Plus className="w-3 h-3" />
+                                          Create & Map
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="pt-0.5 flex justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartCreateCategory(un)}
+                                        className="text-[10px] font-medium text-primary hover:underline flex items-center gap-1 cursor-pointer py-0.5"
+                                      >
+                                        <Plus className="w-3 h-3" />
+                                        <span>Create &quot;{un.sourceName || un.sourceSlug || 'Category'}&quot; inline</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}

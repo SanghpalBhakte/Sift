@@ -28,6 +28,7 @@ interface SubscriptionContextType {
   stats: DashboardStats;
   setFilters: React.Dispatch<React.SetStateAction<SubscriptionFilters>>;
   addSubscription: (data: SubscriptionFormData) => Promise<Subscription>;
+  addCategory: (data: { name: string; slug?: string; color?: string; icon?: string }) => Promise<Category>;
   updateSubscription: (id: string, data: Partial<SubscriptionFormData>) => Promise<Subscription>;
   deleteSubscription: (id: string) => Promise<void>;
   toggleStatus: (id: string, currentStatus: string) => Promise<void>;
@@ -112,6 +113,17 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return created;
   };
 
+  const addCategory = async (data: {
+    name: string;
+    slug?: string;
+    color?: string;
+    icon?: string;
+  }): Promise<Category> => {
+    const created = await subscriptionService.createCategory(data);
+    await loadAll();
+    return created;
+  };
+
   const updateSubscription = async (
     id: string,
     data: Partial<SubscriptionFormData>
@@ -167,6 +179,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         stats,
         setFilters,
         addSubscription,
+        addCategory,
         updateSubscription,
         deleteSubscription,
         toggleStatus,

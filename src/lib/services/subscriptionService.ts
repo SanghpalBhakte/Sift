@@ -353,6 +353,60 @@ class SubscriptionService {
     return this.getLocalData(STORAGE_KEYS.CATEGORIES, mockCategories);
   }
 
+  async createCategory(categoryData: {
+    name: string;
+    slug?: string;
+    color?: string;
+    icon?: string;
+  }): Promise<Category> {
+    const slug =
+      categoryData.slug?.trim().toLowerCase() ||
+      categoryData.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+    const newCat: Category = {
+      id:
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `cat-${Date.now()}`,
+      name: categoryData.name.trim(),
+      slug,
+      color: categoryData.color || '#6366f1',
+      icon: categoryData.icon || 'folder',
+      created_at: new Date().toISOString(),
+    };
+
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        const { data, error } = await (supabase.from('categories') as any)
+          .insert({
+            id: newCat.id,
+            name: newCat.name,
+            slug: newCat.slug,
+            color: newCat.color,
+            icon: newCat.icon,
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          return data as Category;
+        }
+      } catch (err) {
+        console.warn('Failed to insert category into Supabase, using local storage fallback:', err);
+      }
+    }
+
+    const all = this.getLocalData(STORAGE_KEYS.CATEGORIES, mockCategories);
+    const updated = [...all, newCat];
+    this.setLocalData(STORAGE_KEYS.CATEGORIES, updated);
+    return newCat;
+  }
+
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const supabase = createClient();
     if (supabase) {
