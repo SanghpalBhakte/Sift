@@ -41,7 +41,7 @@ function LoginForm() {
         setIsSubmitting(false);
         return;
       }
-      const res = await signInWithPassword(email, password);
+      const res = await signInWithPassword(email, password, next);
       if (res.error) {
         setError(res.error);
         setIsSubmitting(false);
@@ -141,18 +141,33 @@ function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                autoFocus
               />
 
               {authMode === 'password' ? (
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
+                <>
+                  <Input
+                    label="Password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <div className="flex justify-end -mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('otp');
+                        setError(null);
+                      }}
+                      className="text-[11px] text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                    >
+                      Forgot password? Sign in with magic link
+                    </button>
+                  </div>
+                </>
               ) : null}
 
               <Button

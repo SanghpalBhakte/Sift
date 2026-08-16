@@ -10,7 +10,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isConfigured: boolean;
-  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithPassword: (email: string, password: string, redirectTo?: string) => Promise<{ error: string | null }>;
   signUpWithPassword: (
     email: string,
     password: string,
@@ -83,7 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithPassword = async (
     email: string,
-    password: string
+    password: string,
+    redirectTo: string = '/'
   ): Promise<{ error: string | null }> => {
     if (!isConfigured) {
       return { error: 'Supabase is not configured.' };
@@ -103,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(data.user);
     setSession(data.session);
-    router.push('/');
+    router.push(redirectTo);
     router.refresh();
     return { error: null };
   };
