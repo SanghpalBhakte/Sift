@@ -15,6 +15,8 @@ import { Button } from '../ui/Button';
 import { AnimatedCurrency } from '../ui/AnimatedCurrency';
 import { CancellationReviewModal } from '../subscriptions/CancellationReviewModal';
 import { PriceHikeReviewModal } from '../subscriptions/PriceHikeReviewModal';
+import { AnnualArbitrageBatchModal } from '../insights/AnnualArbitrageBatchModal';
+import { getAnnualArbitrageCandidates } from '@/lib/utils/annualOptimization';
 import { formatCurrency } from '@/lib/utils/currency';
 import {
   ShieldAlert,
@@ -44,8 +46,15 @@ export function SubscriptionActionCenter() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [selectedSubForCancel, setSelectedSubForCancel] = useState<Subscription | null>(null);
   const [selectedSubForPriceHike, setSelectedSubForPriceHike] = useState<Subscription | null>(null);
+  const [isArbitrageModalOpen, setIsArbitrageModalOpen] = useState(false);
 
   const targetCurrency = displayCurrency || 'USD';
+  const arbitrageCandidates = getAnnualArbitrageCandidates(subscriptions);
+  const totalArbitrageSavings = arbitrageCandidates.reduce(
+    (acc, c) => acc + c.projectedAnnualSavings,
+    0
+  );
+
   const summary = generateSubscriptionHealthActions(
     subscriptions,
     categories,
@@ -265,8 +274,43 @@ export function SubscriptionActionCenter() {
           </div>
         </CardHeader>
 
+        {/* Optional 1-Click Annual Arbitrage Grouped Review Banner */}
+        {arbitrageCandidates.length >= 2 && (activeTab === 'all' || activeTab === 'info') ? (
+          <div className="mx-4 sm:mx-6 mt-4 p-3.5 sm:p-4 rounded-xl border border-primary/25 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5 shadow-xs">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-xs sm:text-sm font-bold text-foreground">
+                    Annual Arbitrage: {arbitrageCandidates.length} Candidates Identified
+                  </h4>
+                  <Badge variant="success" size="sm" className="gap-1 font-mono text-[10px]">
+                    <TrendingDown className="w-3 h-3" />
+                    Save ~{formatCurrency(totalArbitrageSavings, targetCurrency)}/yr
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  High-value monthly subscriptions that could save ~15–20% on annual billing. Review the group without auto-converting.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsArbitrageModalOpen(true)}
+              className="text-xs font-semibold shrink-0 gap-1.5 self-start sm:self-center shadow-xs cursor-pointer"
+            >
+              Review All ({arbitrageCandidates.length}) <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        ) : null}
+
         {/* Action Cards List */}
-        <CardContent className="p-0 divide-y divide-border">
+        <CardContent className="p-0 divide-y divide-border mt-3">
           {filteredItems.map((action) => {
             const correspondingSub = subscriptions.find((s) => s.id === action.subscriptionId);
 
@@ -406,6 +450,14 @@ export function SubscriptionActionCenter() {
           setSelectedSubForPriceHike(null);
           setSelectedSubForCancel(sub);
         }}
+      />
+
+      {/* Annual Arbitrage Grouped Batch Review Modal */}
+      <AnnualArbitrageBatchModal
+        isOpen={isArbitrageModalOpen}
+        candidates={arbitrageCandidates}
+        targetCurrency={targetCurrency}
+        onClose={() => setIsArbitrageModalOpen(false)}
       />
     </>
   );

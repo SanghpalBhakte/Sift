@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeAnnualSavings,
   calculateAnnualComparison,
+  getAnnualArbitrageCandidates,
 } from './annualOptimization';
 import { Subscription } from '../types';
 
@@ -174,5 +175,99 @@ describe('calculateAnnualComparison (Subscription integration)', () => {
 
     const comparison = calculateAnnualComparison(farSub, 30);
     expect(comparison.isWithinReviewWindow).toBe(false);
+  });
+});
+
+describe('getAnnualArbitrageCandidates', () => {
+  const baseMonthlySub: Subscription = {
+    id: 'monthly-1',
+    user_id: 'user-1',
+    name: 'GitHub Copilot',
+    amount: 10,
+    currency: 'USD',
+    billing_cycle: 'monthly',
+    status: 'active',
+    start_date: '2025-01-01',
+    next_renewal_date: '2025-02-01',
+    is_trial: false,
+    reminder_offsets: [3],
+    value_rating: 'essential',
+    monthly_amount: 10,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  it('identifies eligible essential and useful monthly subscriptions with projected savings >= $15/yr', () => {
+    const subs: Subscription[] = [
+      baseMonthlySub, // $10/mo = $120/yr vs $100/yr projected -> $20 savings -> ELIGIBLE
+      {
+        ...baseMonthlySub,
+        id: 'monthly-2',
+        name: 'Figma Professional',
+        amount: 15,
+        value_rating: 'useful',
+      }, // $15/mo = $180/yr vs $150/yr projected -> $30 savings -> ELIGIBLE
+      {
+        ...baseMonthlySub,
+        id: 'monthly-3',
+        name: 'Cheap Tool',
+        amount: 4, // < $5 -> INELIGIBLE
+      },
+      {
+        ...baseMonthlySub,
+        id: 'monthly-4',
+        name: 'Cancel Candidate',
+        amount: 25,
+        value_rating: 'cancel_candidate', // INELIGIBLE
+      },
+      {
+        ...baseMonthlySub,
+        id: 'monthly-5',
+        name: 'Rarely Used Tool',
+        amount: 30,
+        value_rating: 'rarely_used', // INELIGIBLE
+      },
+      {
+        ...baseMonthlySub,
+        id: 'monthly-6',
+        name: 'Trial Tool',
+        amount: 20,
+        is_trial: true, // INELIGIBLE
+      },
+      {
+        ...baseMonthlySub,
+        id: 'yearly-1',
+        name: 'Already Annual',
+        amount: 120,
+        billing_cycle: 'yearly', // INELIGIBLE
+      },
+    ];
+
+    const candidates = getAnnualArbitrageCandidates(subs, 15);
+
+    expect(candidates).toHaveLength(2);
+    expect(candidates[0].subscription.id).toBe('monthly-2'); // Higher savings ($30) first
+    expect(candidates[0].projectedAnnualSavings).toBe(30);
+    expect(candidates[0].confidence).toBe('medium');
+
+    expect(candidates[1].subscription.id).toBe('monthly-1'); // $20 savings
+    expect(candidates[1].projectedAnnualSavings).toBe(20);
+    expect(candidates[1].confidence).toBe('high');
+  });
+
+  it('respects explicit monthly_alternative_price if user recorded custom comparison', () => {
+    const customSub: Subscription = {
+      ...baseMonthlySub,
+      id: 'custom-1',
+      name: 'Custom SaaS',
+      amount: 20, // $20/mo = $240/yr
+      monthly_alternative_price: 15, // $15/mo equivalent on annual ($180/yr) -> $60 savings
+    };
+
+    const candidates = getAnnualArbitrageCandidates([customSub]);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].projectedAnnualCost).toBe(180);
+    expect(candidates[0].projectedAnnualSavings).toBe(60);
+    expect(candidates[0].savingsPercent).toBe(25);
   });
 });
