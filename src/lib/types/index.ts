@@ -35,6 +35,7 @@ export interface Category {
   user_id?: string | null;
   name: string;
   slug: string;
+  slug_aliases?: string[];
   color: string;
   icon: string;
   created_at: string;

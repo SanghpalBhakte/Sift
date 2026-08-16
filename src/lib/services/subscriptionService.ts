@@ -407,6 +407,60 @@ class SubscriptionService {
     return newCat;
   }
 
+  async updateCategory(
+    id: string,
+    updates: Partial<{ name: string; slug: string; color: string; icon: string }>
+  ): Promise<Category> {
+    const categories = await this.getCategories();
+    const existing = categories.find((c) => c.id === id);
+    if (!existing) throw new Error('Category not found');
+
+    const newSlug = updates.slug
+      ? updates.slug.trim().toLowerCase()
+      : updates.name
+        ? updates.name
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '')
+        : existing.slug;
+
+    // If slug is changing, preserve old slug in slug_aliases without duplicates
+    const existingAliases = existing.slug_aliases || [];
+    const updatedAliases = [...existingAliases];
+    if (existing.slug && existing.slug !== newSlug && !updatedAliases.includes(existing.slug)) {
+      updatedAliases.push(existing.slug);
+    }
+
+    const updatedCat: Category = {
+      ...existing,
+      ...updates,
+      slug: newSlug,
+      slug_aliases: updatedAliases,
+    };
+
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        await (supabase.from('categories') as any)
+          .update({
+            name: updatedCat.name,
+            slug: updatedCat.slug,
+            color: updatedCat.color,
+            icon: updatedCat.icon,
+          })
+          .eq('id', id);
+      } catch (err) {
+        console.warn('Failed to update category in Supabase, using local storage fallback:', err);
+      }
+    }
+
+    const all = this.getLocalData(STORAGE_KEYS.CATEGORIES, mockCategories);
+    const updatedList = all.map((c) => (c.id === id ? updatedCat : c));
+    this.setLocalData(STORAGE_KEYS.CATEGORIES, updatedList);
+    return updatedCat;
+  }
+
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const supabase = createClient();
     if (supabase) {

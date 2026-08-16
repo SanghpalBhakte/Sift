@@ -29,6 +29,7 @@ interface SubscriptionContextType {
   setFilters: React.Dispatch<React.SetStateAction<SubscriptionFilters>>;
   addSubscription: (data: SubscriptionFormData) => Promise<Subscription>;
   addCategory: (data: { name: string; slug?: string; color?: string; icon?: string }) => Promise<Category>;
+  updateCategory: (id: string, data: Partial<{ name: string; slug: string; color: string; icon: string }>) => Promise<Category>;
   updateSubscription: (id: string, data: Partial<SubscriptionFormData>) => Promise<Subscription>;
   deleteSubscription: (id: string) => Promise<void>;
   toggleStatus: (id: string, currentStatus: string) => Promise<void>;
@@ -124,6 +125,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return created;
   };
 
+  const updateCategory = async (
+    id: string,
+    data: Partial<{ name: string; slug: string; color: string; icon: string }>
+  ): Promise<Category> => {
+    const updated = await subscriptionService.updateCategory(id, data);
+    await loadAll();
+    return updated;
+  };
+
   const updateSubscription = async (
     id: string,
     data: Partial<SubscriptionFormData>
@@ -180,6 +190,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setFilters,
         addSubscription,
         addCategory,
+        updateCategory,
         updateSubscription,
         deleteSubscription,
         toggleStatus,

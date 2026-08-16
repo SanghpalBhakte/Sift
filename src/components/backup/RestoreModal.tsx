@@ -362,6 +362,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
               statusLabel: 'Matched by Slug',
               details: `Automatically matched via unique slug to "${slugMatches[0].name}"`,
             });
+            continue;
           } else if (slugMatches.length > 1) {
             skippedCollisionCount++;
             outcomeItems.push({
@@ -372,6 +373,35 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
               status: 'collision',
               statusLabel: 'Skipped: Collision',
               details: `Ambiguous match with ${slugMatches.length} local categories (${slugMatches.map((c) => `"${c.name}"`).join(', ')})`,
+            });
+            continue;
+          }
+
+          // Alias match check for renamed categories
+          const aliasMatches = categories.filter((c) =>
+            c.slug_aliases?.some((a) => a.trim().toLowerCase() === sourceSlug)
+          );
+
+          if (aliasMatches.length === 1) {
+            outcomeItems.push({
+              key,
+              name: sourceName || aliasMatches[0].name,
+              slug: sourceSlug,
+              benchmark: value,
+              status: 'slug',
+              statusLabel: 'Matched by Slug Alias',
+              details: `Automatically matched via historical slug alias to "${aliasMatches[0].name}"`,
+            });
+          } else if (aliasMatches.length > 1) {
+            skippedCollisionCount++;
+            outcomeItems.push({
+              key,
+              name: sourceName || sourceSlug,
+              slug: sourceSlug,
+              benchmark: value,
+              status: 'collision',
+              statusLabel: 'Skipped: Alias Collision',
+              details: `Ambiguous historical alias match across ${aliasMatches.length} local categories (${aliasMatches.map((c) => `"${c.name}"`).join(', ')})`,
             });
           } else {
             skippedUnmatchedCount++;

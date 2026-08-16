@@ -254,6 +254,78 @@ describe('Backup & Export Manifest Engine', () => {
         'dest-1': 10,
       });
     });
+
+    it('matches renamed categories using historical slug_aliases when UUID and current slug differ', () => {
+      const destCategoriesWithAliases: Category[] = [
+        {
+          id: 'dest-renamed-1',
+          name: 'Developer Tools & Cloud',
+          slug: 'dev-tools-cloud', // renamed from 'software-dev'
+          slug_aliases: ['software-dev', 'coding-tools'],
+          color: '#10b981',
+          icon: 'terminal',
+          created_at: '',
+        },
+      ];
+
+      const backupBenchmarks = {
+        'src-uuid-1': 12, // Slug: software-dev
+      };
+
+      const report = remapCategoryBenchmarkOverrides(
+        backupBenchmarks,
+        sourceBackupCategories,
+        destCategoriesWithAliases
+      );
+
+      expect(report.matchedByUuid).toBe(0);
+      expect(report.matchedBySlug).toBe(1);
+      expect(report.matchedByAlias).toBe(1);
+      expect(report.skippedAmbiguous).toBe(0);
+      expect(report.remappedBenchmarks).toEqual({
+        'dest-renamed-1': 12,
+      });
+    });
+
+    it('safely skips without guessing if historical slug aliases collide across multiple categories', () => {
+      const destCategoriesWithConflictingAliases: Category[] = [
+        {
+          id: 'cat-a',
+          name: 'Cloud Services',
+          slug: 'cloud-services',
+          slug_aliases: ['software-dev'],
+          color: '#10b981',
+          icon: 'server',
+          created_at: '',
+        },
+        {
+          id: 'cat-b',
+          name: 'Developer Tools',
+          slug: 'developer-tools',
+          slug_aliases: ['software-dev'],
+          color: '#3b82f6',
+          icon: 'terminal',
+          created_at: '',
+        },
+      ];
+
+      const backupBenchmarks = {
+        'src-uuid-1': 10, // Slug: software-dev (matches aliases of both cat-a and cat-b)
+      };
+
+      const report = remapCategoryBenchmarkOverrides(
+        backupBenchmarks,
+        sourceBackupCategories,
+        destCategoriesWithConflictingAliases
+      );
+
+      expect(report.matchedBySlug).toBe(0);
+      expect(report.skippedAmbiguous).toBe(1);
+      expect(report.collisions).toHaveLength(1);
+      expect(report.collisions[0].sourceSlug).toBe('software-dev');
+      expect(report.collisions[0].conflictingCategories).toHaveLength(2);
+      expect(report.remappedBenchmarks).toEqual({});
+    });
   });
 
   describe('Advisory Category Similarity Suggestions', () => {

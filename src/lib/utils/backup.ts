@@ -60,6 +60,7 @@ export function generateFullBackupJson(params: {
       id: c.id,
       name: c.name,
       slug: c.slug,
+      slug_aliases: c.slug_aliases || [],
       color: c.color,
       icon: c.icon,
       created_at: c.created_at,
@@ -235,6 +236,7 @@ export interface CategoryBenchmarkRestoreReport {
   remappedBenchmarks: Record<string, number>;
   matchedByUuid: number;
   matchedBySlug: number;
+  matchedByAlias: number;
   skippedAmbiguous: number;
   skippedMissing: number;
   collisions: CategoryBenchmarkCollision[];
@@ -244,8 +246,9 @@ export interface CategoryBenchmarkRestoreReport {
 /**
  * Maps backup category benchmark overrides to the active workspace categories.
  * Primary: Match by exact Category UUID.
- * Fallback: Match by Category Slug when UUID differs across database instances.
- * Safety: Ambiguous matches (multiple categories with identical slugs) are skipped without guessing.
+ * Fallback Tier 1: Match by Category Primary Slug when UUID differs across database instances.
+ * Fallback Tier 2: Match by Category Historical Slug Aliases (preserves renamed categories across environments).
+ * Safety: Ambiguous matches (multiple categories with identical slugs or aliases) are skipped without guessing.
  */
 export function remapCategoryBenchmarkOverrides(
   backupBenchmarks: Record<string, number> = {},
@@ -257,6 +260,7 @@ export function remapCategoryBenchmarkOverrides(
   const unmatched: CategoryBenchmarkUnmatched[] = [];
   let matchedByUuid = 0;
   let matchedBySlug = 0;
+  let matchedByAlias = 0;
   let skippedAmbiguous = 0;
   let skippedMissing = 0;
 
@@ -265,6 +269,7 @@ export function remapCategoryBenchmarkOverrides(
       remappedBenchmarks,
       matchedByUuid,
       matchedBySlug,
+      matchedByAlias,
       skippedAmbiguous,
       skippedMissing,
       collisions,
@@ -292,7 +297,9 @@ export function remapCategoryBenchmarkOverrides(
       if (backupCat.slug) {
         sourceSlug = backupCat.slug.trim().toLowerCase();
       }
-    } else if (currentCategories.some((c) => c.slug?.trim().toLowerCase() === key.trim().toLowerCase())) {
+    } else if (
+      currentCategories.some((c) => c.slug?.trim().toLowerCase() === key.trim().toLowerCase())
+    ) {
       sourceSlug = key.trim().toLowerCase();
     }
 
@@ -306,17 +313,18 @@ export function remapCategoryBenchmarkOverrides(
       continue;
     }
 
-    // Search for matching categories by slug in active categories
+    // Tier 1 fallback: Search for matching categories by primary slug in active categories
     const slugMatches = currentCategories.filter(
       (c) => c.slug && c.slug.trim().toLowerCase() === sourceSlug
     );
 
     if (slugMatches.length === 1) {
-      // Unique deterministic slug match
+      // Unique deterministic primary slug match
       remappedBenchmarks[slugMatches[0].id] = value;
       matchedBySlug++;
+      continue;
     } else if (slugMatches.length > 1) {
-      // Ambiguous collision - safe skip without guessing
+      // Ambiguous primary slug collision - safe skip without guessing
       skippedAmbiguous++;
       collisions.push({
         sourceKey: key,
@@ -329,8 +337,35 @@ export function remapCategoryBenchmarkOverrides(
           slug: c.slug,
         })),
       });
+      continue;
+    }
+
+    // Tier 2 fallback: Search for matching categories by historical slug aliases
+    const aliasMatches = currentCategories.filter((c) =>
+      c.slug_aliases?.some((alias) => alias.trim().toLowerCase() === sourceSlug)
+    );
+
+    if (aliasMatches.length === 1) {
+      // Unique deterministic alias match for renamed categories
+      remappedBenchmarks[aliasMatches[0].id] = value;
+      matchedBySlug++;
+      matchedByAlias++;
+    } else if (aliasMatches.length > 1) {
+      // Ambiguous alias collision across multiple categories
+      skippedAmbiguous++;
+      collisions.push({
+        sourceKey: key,
+        sourceSlug,
+        sourceName: sourceName || sourceSlug,
+        configuredBenchmark: value,
+        conflictingCategories: aliasMatches.map((c) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+        })),
+      });
     } else {
-      // No active category matching this slug
+      // No active category matching this primary slug or historical aliases
       skippedMissing++;
       unmatched.push({
         sourceKey: key,
@@ -345,6 +380,7 @@ export function remapCategoryBenchmarkOverrides(
     remappedBenchmarks,
     matchedByUuid,
     matchedBySlug,
+    matchedByAlias,
     skippedAmbiguous,
     skippedMissing,
     collisions,
