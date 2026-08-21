@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, CreditCard, PieChart, Settings } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 
@@ -11,10 +11,11 @@ export function MobileNav() {
   const pathname = usePathname();
   const { stats } = useSubscriptions();
 
+  // 3 crisp, single-word tabs for clean mobile navigation
   const navItems = [
     {
       href: '/',
-      label: 'Overview',
+      label: 'Home',
       icon: LayoutDashboard,
       active: pathname === '/',
     },
@@ -24,12 +25,6 @@ export function MobileNav() {
       icon: CreditCard,
       active: pathname.startsWith('/subscriptions') && pathname !== '/subscriptions/new',
       badge: stats.upcomingRenewalsCount > 0 ? stats.upcomingRenewalsCount : undefined,
-    },
-    {
-      href: '/insights',
-      label: 'Insights',
-      icon: PieChart,
-      active: pathname === '/insights',
     },
     {
       href: '/settings',
@@ -42,7 +37,7 @@ export function MobileNav() {
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/92 backdrop-blur-lg border-t border-border px-2 py-2">
       <nav
-        className="flex items-center justify-around max-w-md mx-auto"
+        className="flex items-center justify-around max-w-sm mx-auto"
         aria-label="Mobile navigation"
       >
         {navItems.map((item) => {
@@ -53,7 +48,7 @@ export function MobileNav() {
               href={item.href}
               aria-current={item.active ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center justify-center py-1 px-3 rounded-xl text-[10px] font-medium transition-colors relative min-w-[3.5rem]',
+                'flex flex-col items-center justify-center py-1 px-4 rounded-xl text-[10px] font-medium transition-colors relative min-w-[4rem]',
                 item.active
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -70,7 +65,6 @@ export function MobileNav() {
                   </span>
                 ) : null}
               </div>
-              {/* Active dot indicator */}
               {item.active ? (
                 <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary" />
               ) : null}

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { Header } from './Header';
 import { MobileNav } from './MobileNav';
 import { DesktopSidebar } from './DesktopSidebar';
@@ -25,6 +27,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <MobileNav />
+
+      {/* Accessible Mobile Floating Action Button (FAB) */}
+      <Link
+        href="/subscriptions/new"
+        className="md:hidden fixed bottom-18 right-4 z-40 w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:opacity-90 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+        aria-label="Add Subscription"
+      >
+        <Plus className="w-5 h-5" aria-hidden="true" />
+      </Link>
 
       {/* Global Quick Add Subscription Modal (keyboard shortcut "N") */}
       <AddSubscriptionModal

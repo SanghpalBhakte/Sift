@@ -60,6 +60,78 @@ export function SubscriptionCard({
       )
     : null;
 
+  // Streamlined Compact Card (for fast dashboard scanning - Logo/Name/Cost/Renewal)
+  if (compact) {
+    return (
+      <Link
+        href={`/subscriptions/${subscription.id}/edit`}
+        className={cn(
+          'sift-card p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:border-primary/50 transition-all block group',
+          subscription.status === 'paused' && 'opacity-60',
+          subscription.status === 'canceled' && 'opacity-50 border-dashed'
+        )}
+      >
+        {/* Left: Icon Badge & Name & Next Billing Date */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-transform group-hover:scale-105"
+            style={{
+              backgroundColor: subscription.category?.color
+                ? `${subscription.category.color}20`
+                : 'hsl(var(--surface-muted))',
+              color: subscription.category?.color || 'hsl(var(--primary))',
+            }}
+          >
+            {subscription.name.charAt(0).toUpperCase()}
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate block">
+                {subscription.name}
+              </span>
+              {subscription.is_trial ? (
+                <span className="inline-block px-1.5 py-0.2 bg-warning/15 text-warning rounded text-[9px] font-medium shrink-0">
+                  Trial
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+              <Calendar className="w-3 h-3 opacity-60 shrink-0" aria-hidden="true" />
+              <span className="truncate">
+                {formatDate(subscription.next_renewal_date)}
+              </span>
+              {subscription.category ? (
+                <>
+                  <span className="opacity-40">·</span>
+                  <span className="truncate hidden xs:inline">{subscription.category.name}</span>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Cost & Cycle */}
+        <div className="text-right shrink-0">
+          <div className="text-xs sm:text-sm font-semibold tracking-tight text-foreground tabular-nums">
+            {formatCurrency(subscription.amount, subscription.currency)}
+            <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
+              {formatCycle(subscription.billing_cycle, subscription.custom_interval_days)}
+            </span>
+          </div>
+
+          {countdown.urgent || countdown.warning ? (
+            <span className="text-[10px] text-warning font-medium block">
+              {countdown.label}
+            </span>
+          ) : null}
+        </div>
+      </Link>
+    );
+  }
+
+  // Full Management Card (for /subscriptions list)
   return (
     <>
       <div
