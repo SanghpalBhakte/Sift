@@ -11,6 +11,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  secrets-check:
+    name: Required Secrets Present
+    runs-on: ubuntu-latest
+    # Only run on push to main (PRs from forks won't have secrets)
+    if: github.event_name == 'push'
+    steps:
+      - name: Verify required GitHub secrets are set
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+        run: |
+          MISSING=()
+          [ -z "$SUPABASE_URL" ]       && MISSING+=("NEXT_PUBLIC_SUPABASE_URL")
+          [ -z "$SUPABASE_ANON_KEY" ]  && MISSING+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+          [ -z "$VAPID_PUBLIC_KEY" ]   && MISSING+=("NEXT_PUBLIC_VAPID_PUBLIC_KEY")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "❌ Missing required GitHub Secrets: ${MISSING[*]}"
+            echo "   Add them at: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "✅ All required secrets are present."
+
   quality:
     name: Lint, Typecheck & Tests
     runs-on: ubuntu-latest
@@ -43,7 +66,6 @@ jobs:
     needs: quality
 
     env:
-      # Dummy values so Next.js env validation passes at build time
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
       NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'placeholder-vapid-key' }}

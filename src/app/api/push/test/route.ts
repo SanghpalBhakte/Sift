@@ -13,17 +13,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Supabase credentials not configured' }, { status: 500 });
     }
 
+    // Require authenticated Bearer token — no anonymous or profile-fallback access
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.slice(7);
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Get current user
-    const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').limit(1);
-    const userId = profiles?.[0]?.id;
+    // Verify token against Supabase Auth — getUser() is the authoritative check
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
 
-    if (!userId) {
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Confirm profile exists for this authenticated user only
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile) {
       return NextResponse.json({ error: 'No user profile found' }, { status: 404 });
     }
 
-    const result = await sendWebPushToUser(userId, {
+    const result = await sendWebPushToUser(user.id, {
       title: 'Sift · Test Notification',
       body: 'Quiet renewal and trial alerts are active on this browser.',
       url: '/settings',

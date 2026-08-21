@@ -18,13 +18,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, mode: 'local' });
     }
 
+    // Require authenticated Bearer token
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.slice(7);
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Delete push subscription for this endpoint
+    // Verify token — getUser() is the authoritative Supabase auth check
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Delete only the subscription that belongs to this authenticated user
+    // The user_id = user.id clause prevents any cross-user endpoint deletion
     const { error } = await supabase
       .from('push_subscriptions')
       .delete()
-      .eq('endpoint', endpoint);
+      .eq('endpoint', endpoint)
+      .eq('user_id', user.id);
 
     if (error) {
       console.warn('Error removing push subscription:', error);

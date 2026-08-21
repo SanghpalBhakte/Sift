@@ -19,40 +19,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, mode: 'local' });
     }
 
+    // Require authenticated Bearer token — remove insecure profile-row fallback
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.slice(7);
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Get authorization token from request header
-    const authHeader = req.headers.get('authorization');
-    let userId: string | null = null;
+    // Verify token — getUser() performs a network check against Supabase Auth
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
 
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const {
-        data: { user },
-      } = await supabase.auth.getUser(token);
-      if (user) {
-        userId = user.id;
-      }
-    }
-
-    // Fallback: If not passed via Bearer, look for most recent profile or single user
-    if (!userId) {
-      const { data: profiles } = await supabase.from('profiles').select('id').limit(1);
-      if (profiles && profiles.length > 0) {
-        userId = profiles[0].id;
-      }
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized or no active user profile found' }, { status: 401 });
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userAgent = req.headers.get('user-agent') || 'Browser Web Push';
 
-    // Upsert push subscription
+    // Upsert push subscription — scoped strictly to authenticated user
     const { error } = await supabase.from('push_subscriptions').upsert(
       {
-        user_id: userId,
+        user_id: user.id,
         endpoint,
         p256dh,
         auth,
