@@ -1,12 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useAuth } from '@/context/AuthContext';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { AlertsBanner } from '@/components/reminders/AlertsBanner';
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
+import { WelcomeScreen } from '@/components/dashboard/WelcomeScreen';
+import { RestoreModal } from '@/components/backup/RestoreModal';
 import { SubscriptionActionCenter } from '@/components/dashboard/SubscriptionActionCenter';
 import { UpcomingRenewals } from '@/components/subscriptions/UpcomingRenewals';
 import { CategoryBreakdown } from '@/components/insights/CategoryBreakdown';
@@ -19,8 +21,6 @@ import {
   CreditCard,
   Sparkles,
   ArrowRight,
-  Inbox,
-  UploadCloud,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
@@ -39,6 +39,8 @@ export default function DashboardPage() {
     deleteSubscription,
     populateStarterTemplates,
   } = useSubscriptions();
+
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active');
   const recentSubscriptions = [...subscriptions]
@@ -74,64 +76,17 @@ export default function DashboardPage() {
     );
   }
 
-  // First-run empty state
+  // First-run minimal welcome screen
   if (subscriptions.length === 0) {
     return (
-      <div className="space-y-6 max-w-2xl mx-auto py-4 sm:py-6">
-        <div className="text-center space-y-2 pb-2">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Welcome to Sift{user?.email ? `, ${user.email.split('@')[0]}` : ''}
-          </h1>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-            Your calm, personal ledger for recurring subscriptions, free trials, and quiet renewal alerts.
-          </p>
-        </div>
-
-        <OnboardingChecklist />
-
-        {/* Primary Action Card */}
-        <div className="sift-card p-6 sm:p-8 text-center space-y-5 border-dashed">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-surface flex items-center justify-center text-primary shadow-xs">
-            <Inbox className="w-6 h-6" aria-hidden="true" />
-          </div>
-
-          <div className="space-y-1.5">
-            <h3 className="text-base font-semibold text-foreground">
-              No subscriptions tracked yet
-            </h3>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              Add one service to see your monthly run-rate, or import a bank statement to find recurring charges automatically.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
-            <Link href="/subscriptions/new" className="w-full sm:w-auto">
-              <Button variant="primary" size="md" className="w-full sm:w-auto gap-1.5 shadow-xs">
-                <Plus className="w-4 h-4" aria-hidden="true" />
-                Add First Subscription
-              </Button>
-            </Link>
-
-            <Link href="/subscriptions/import" className="w-full sm:w-auto">
-              <Button variant="outline" size="md" className="w-full sm:w-auto gap-1.5">
-                <UploadCloud className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                Import Statement
-              </Button>
-            </Link>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="md"
-              onClick={() => populateStarterTemplates()}
-              className="w-full sm:w-auto gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-              Load Sample Data
-            </Button>
-          </div>
-        </div>
-      </div>
+      <>
+        <WelcomeScreen onRestoreClick={() => setIsRestoreModalOpen(true)} />
+        <RestoreModal
+          isOpen={isRestoreModalOpen}
+          onClose={() => setIsRestoreModalOpen(false)}
+          onSuccess={() => setIsRestoreModalOpen(false)}
+        />
+      </>
     );
   }
 
