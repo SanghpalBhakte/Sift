@@ -36,6 +36,7 @@ interface SubscriptionContextType {
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   populateStarterTemplates: () => Promise<void>;
   resetToSampleData: () => Promise<void>;
+  clearAllData: () => Promise<void>;
   refreshExchangeRates: (force?: boolean) => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -171,6 +172,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     await loadAll();
   };
 
+  const handleClearAllData = async (): Promise<void> => {
+    await subscriptionService.clearAllData();
+    await loadAll();
+  };
+
   const stats = useMemo(() => {
     return calculateDashboardStats(subscriptions, displayCurrency, exchangeRates.rates);
   }, [subscriptions, displayCurrency, exchangeRates.rates]);
@@ -197,6 +203,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         updateProfile: handleUpdateProfile,
         populateStarterTemplates: handlePopulateStarterTemplates,
         resetToSampleData: handleResetToSampleData,
+        clearAllData: handleClearAllData,
         refreshExchangeRates: loadExchangeRates,
         refresh: loadAll,
       }}

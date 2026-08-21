@@ -4,12 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
-import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Select } from '@/components/ui/Select';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
@@ -25,22 +23,23 @@ import { CustomBankRulesManager } from '@/components/settings/CustomBankRulesMan
 import {
   Palette,
   Database,
-  User,
-  Check,
-  LogOut,
-  Sparkles,
   Download,
   FileSpreadsheet,
   Bell,
   Info,
   ShieldCheck,
-  Mail,
   Zap,
   RefreshCw,
   Archive,
-  Globe,
-  Smartphone,
   CheckCircle2,
+  Trash2,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Heart,
+  Sliders,
+  Sparkles,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/dates';
 import { cn } from '@/lib/utils/cn';
@@ -61,15 +60,14 @@ const ANNUAL_BENCHMARK_OPTIONS = [
 
 export default function SettingsPage() {
   const { resolvedTheme } = useTheme();
-  const { user, signOut, isConfigured } = useAuth();
   const {
     subscriptions,
     categories,
     profile,
-    exchangeRates,
     updateProfile,
     populateStarterTemplates,
     refreshExchangeRates,
+    clearAllData,
     refresh,
   } = useSubscriptions();
 
@@ -84,16 +82,18 @@ export default function SettingsPage() {
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [restoreSuccess, setRestoreSuccess] = useState(false);
-  const [ratesSyncSuccess, setRatesSyncSuccess] = useState(false);
-  const [isSyncingRates, setIsSyncingRates] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
-  const [emailDispatchStatus, setEmailDispatchStatus] = useState<string | null>(null);
-  const [pushActionStatus, setPushActionStatus] = useState<string | null>(null);
-  const [isDispatching, setIsDispatching] = useState(false);
-  const [isPushLoading, setIsPushLoading] = useState(false);
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
+  const [isSyncingRates, setIsSyncingRates] = useState(false);
+  const [ratesSyncSuccess, setRatesSyncSuccess] = useState(false);
+  const [pushActionStatus, setPushActionStatus] = useState<string | null>(null);
+  const [isPushLoading, setIsPushLoading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Settings form state
   const [currency, setCurrency] = useState(profile?.currency_preference || 'USD');
-  const [name, setName] = useState(profile?.full_name || '');
   const [annualBenchmark, setAnnualBenchmark] = useState<number>(
     profile?.annual_benchmark_percent || 16.7
   );
@@ -118,6 +118,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const handleHash = () => {
       if (typeof window !== 'undefined' && window.location.hash === '#category-benchmarks') {
+        setShowAdvanced(true);
         setHighlightBenchmarks(true);
         const el = document.getElementById('category-benchmarks');
         if (el) {
@@ -147,13 +148,12 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
+  const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
       await updateProfile({
         currency_preference: currency,
-        full_name: name,
         annual_benchmark_percent: Number(annualBenchmark),
         category_annual_benchmarks: categoryBenchmarks,
         default_reminder_days: selectedOffsets,
@@ -232,794 +232,500 @@ export default function SettingsPage() {
     }
   };
 
-  const handleTriggerEmailDispatch = async () => {
-    setIsDispatching(true);
-    setEmailDispatchStatus(null);
-    try {
-      const res = await fetch('/api/reminders/dispatch', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setEmailDispatchStatus(
-          `Evaluated ${data.results.totalDueAlerts} due alert(s): ${data.results.sent} email(s) sent, ${data.results.pushSent || 0} push alert(s) dispatched, ${data.results.skipped} deduplicated.`
-        );
-      } else {
-        setEmailDispatchStatus(`Dispatch status: ${data.error || 'Check server configuration.'}`);
-      }
-    } catch (err: any) {
-      setEmailDispatchStatus(`Dispatch failed: ${err.message}`);
-    } finally {
-      setIsDispatching(false);
-    }
-  };
-
-  // Export Subscriptions as Full JSON Backup
   const handleExportJSON = () => {
     const backup = generateFullBackupJson({
-      userEmail: user?.email,
+      userEmail: 'local-user@sift.app',
       profile,
       subscriptions,
       categories,
     });
+    const jsonStr = JSON.stringify(backup, null, 2);
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadFile(
-      JSON.stringify(backup, null, 2),
-      `sift-backup-${dateStr}.json`,
-      'application/json'
-    );
+    downloadFile(jsonStr, `sift-backup-${dateStr}.json`, 'application/json');
   };
 
-  // Export Subscriptions as CSV
   const handleExportCSV = () => {
-    const csvContent = generateSubscriptionsCsv(subscriptions);
+    const csvStr = generateSubscriptionsCsv(subscriptions);
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadFile(csvContent, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
+    downloadFile(csvStr, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
   };
 
-  // Export Complete Backup Package (JSON + CSV + README)
   const handleExportPackage = () => {
     const backup = generateFullBackupJson({
-      userEmail: user?.email,
+      userEmail: 'local-user@sift.app',
       profile,
       subscriptions,
       categories,
     });
+    const csvStr = generateSubscriptionsCsv(subscriptions);
+    const readmeStr = generateBackupReadme(backup);
     const dateStr = new Date().toISOString().split('T')[0];
 
-    downloadFile(
-      JSON.stringify(backup, null, 2),
-      `sift-backup-${dateStr}.json`,
-      'application/json'
-    );
-
-    const csvContent = generateSubscriptionsCsv(subscriptions);
+    downloadFile(JSON.stringify(backup, null, 2), `sift-backup-${dateStr}.json`, 'application/json');
     setTimeout(() => {
-      downloadFile(csvContent, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
+      downloadFile(csvStr, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
     }, 200);
-
-    const readme = generateBackupReadme(backup);
     setTimeout(() => {
-      downloadFile(readme, `sift-manifest-${dateStr}.txt`, 'text/plain');
+      downloadFile(readmeStr, `README-sift-backup-${dateStr}.txt`, 'text/plain');
     }, 400);
   };
 
+  const handleDeleteAllData = async () => {
+    setIsDeletingAll(true);
+    try {
+      await clearAllData();
+      setIsDeleteAllModalOpen(false);
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Failed to delete all data:', err);
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-xl mx-auto pb-16">
       {/* Header */}
       <div className="pb-2 border-b border-border">
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-          Settings & Preferences
+          Settings
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Workspace personalization, multi-currency display, browser push & email reminders, and open data
-          backup
+          Manage currency preferences, appearance, backups, and privacy.
         </p>
       </div>
 
+      {/* Save Success Alert */}
       {savedSuccess ? (
-        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2">
-          <Check className="w-4 h-4" /> Preferences saved successfully.
+        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2 animate-in fade-in duration-150">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>Settings saved successfully.</span>
         </div>
       ) : null}
 
+      {/* Restore Success Alert */}
       {restoreSuccess ? (
-        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2">
-          <Check className="w-4 h-4" /> Workspace backup restored successfully.
+        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2 animate-in fade-in duration-150">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>Backup restored successfully. Your ledger has been updated.</span>
         </div>
       ) : null}
 
-      {ratesSyncSuccess ? (
-        <div className="p-3 text-xs bg-success-subtle border border-success/30 text-success rounded-lg flex items-center gap-2">
-          <Check className="w-4 h-4" /> Latest exchange rates synchronized successfully.
-        </div>
-      ) : null}
-
-      {/* 1. Appearance & Theme */}
+      {/* ========================================================================= */}
+      {/* 1. GENERAL SECTION (Currency & Notifications) */}
+      {/* ========================================================================= */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <Palette className="w-4 h-4 text-primary" />
-            <CardTitle>Appearance & Theme</CardTitle>
+            <Sliders className="w-4 h-4 text-primary" />
+            <CardTitle>General</CardTitle>
           </div>
-          <Badge variant="primary" size="sm">
-            {resolvedTheme === 'paper-ledger' ? 'Paper Ledger' : 'Night Shelf'}
-          </Badge>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Sift is crafted around two calm identities: <strong className="text-foreground">Paper Ledger</strong> (warm stationery light mode) and <strong className="text-foreground">Night Shelf</strong> (low-glare oiled slate dark mode).
-          </p>
+        <CardContent className="space-y-5 pt-0">
+          <form onSubmit={handleSaveGeneral} className="space-y-5">
+            {/* Currency Selector */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-foreground">
+                Display Currency
+              </label>
+              <Select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                helperText="All recurring subscription totals will be converted to this currency."
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} ({c.symbol}) — {c.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
-          <div className="pt-1">
-            <ThemeToggle showLabels />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 2. Notifications & Multi-Channel Reminder Dispatch */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-primary" />
-            <CardTitle>Renewal Alerts & Dispatch Channels</CardTitle>
-          </div>
-          <Badge variant="success" size="sm">
-            Channels Active
-          </Badge>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Quiet, transactional notifications sent before scheduled renewal debits or
-            when free trials convert.
-          </p>
-
-          {/* Web Push Notification Section */}
-          <div className="p-3.5 rounded-xl border border-border bg-surface/50 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-primary" />
-                  Browser Web Push Alerts
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  {isPushSupported ? (
-                    isPushSubscribed ? (
-                      <span className="text-success font-medium flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Active on this browser
-                      </span>
-                    ) : (
-                      'Opt in to receive native browser push reminders'
-                    )
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Web Push is not supported on this browser (requires HTTPS/PWA)
-                    </span>
-                  )}
+            {/* Notification Controls */}
+            <div className="space-y-3 pt-3 border-t border-border/60">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-foreground block">
+                    Renewal & Trial Alerts
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Get quiet advance reminders before cards are charged.
+                  </span>
                 </div>
               </div>
 
+              <div className="space-y-2.5 pt-1">
+                <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notifyRenewals}
+                    onChange={(e) => setNotifyRenewals(e.target.checked)}
+                    className="w-4 h-4 rounded text-primary border-border accent-primary"
+                  />
+                  <span>Alert on upcoming recurring renewals</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notifyTrials}
+                    onChange={(e) => setNotifyTrials(e.target.checked)}
+                    className="w-4 h-4 rounded text-primary border-border accent-primary"
+                  />
+                  <span>Alert before free trial periods expire</span>
+                </label>
+              </div>
+
+              {/* Reminder Offset Chips */}
+              <div className="space-y-1.5 pt-2">
+                <label className="text-[11px] font-medium text-muted-foreground block">
+                  Advance Reminder Days
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {REMINDER_OFFSET_OPTIONS.map((opt) => {
+                    const isSelected = selectedOffsets.includes(opt.days);
+                    return (
+                      <button
+                        key={opt.days}
+                        type="button"
+                        onClick={() => toggleOffset(opt.days)}
+                        className={cn(
+                          'px-2.5 py-1 rounded-md border text-xs font-medium transition-all cursor-pointer',
+                          isSelected
+                            ? 'border-primary bg-primary/10 text-primary font-semibold'
+                            : 'border-border bg-surface text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Web Push Notification Toggle */}
               {isPushSupported ? (
-                <div className="flex items-center gap-2">
-                  {isPushSubscribed ? (
+                <div className="p-3 rounded-xl bg-surface/50 border border-border space-y-2 pt-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-foreground">
+                      Device Push Notifications
+                    </span>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant={isPushSubscribed ? 'outline' : 'primary'}
                       size="sm"
-                      onClick={handleTestPush}
+                      onClick={handleTogglePush}
                       isLoading={isPushLoading}
-                      className="text-xs text-primary"
+                      className="text-xs h-7 px-2.5"
                     >
-                      Test Push
+                      {isPushSubscribed ? 'Disable Push' : 'Enable Push'}
                     </Button>
-                  ) : null}
-
-                  <Button
-                    type="button"
-                    variant={isPushSubscribed ? 'outline' : 'primary'}
-                    size="sm"
-                    onClick={handleTogglePush}
-                    isLoading={isPushLoading}
-                    className="text-xs shrink-0"
-                  >
-                    {isPushSubscribed ? 'Disable Push' : 'Enable Web Push'}
-                  </Button>
+                  </div>
+                  {pushActionStatus && (
+                    <p className="text-[11px] text-primary">{pushActionStatus}</p>
+                  )}
                 </div>
               ) : null}
             </div>
 
-            {pushActionStatus ? (
-              <div className="p-2.5 rounded-lg bg-card border border-border text-[11px] text-foreground">
-                {pushActionStatus}
-              </div>
-            ) : null}
+            {/* Demoted Advanced Settings Collapsible */}
+            <div className="pt-2 border-t border-border/60">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="w-full py-1 text-xs font-medium text-muted-foreground hover:text-foreground flex items-center justify-between transition-colors cursor-pointer"
+              >
+                <span>Advanced power settings (Benchmarks, Rules, Sync)</span>
+                {showAdvanced ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+
+              {showAdvanced ? (
+                <div className="space-y-4 pt-3 text-xs animate-in fade-in duration-150">
+                  {/* Default Annual Benchmark */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-foreground">
+                      Annual Plan Savings Benchmark
+                    </label>
+                    <Select
+                      value={String(annualBenchmark)}
+                      onChange={(e) => setAnnualBenchmark(Number(e.target.value))}
+                    >
+                      {ANNUAL_BENCHMARK_OPTIONS.map((b) => (
+                        <option key={b.value} value={String(b.value)}>
+                          {b.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  {/* Category Benchmarks Table */}
+                  <div
+                    id="category-benchmarks"
+                    className={cn(
+                      'space-y-2 p-3 rounded-lg border transition-all',
+                      highlightBenchmarks
+                        ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                        : 'border-border bg-surface/30'
+                    )}
+                  >
+                    <span className="font-medium text-foreground block">
+                      Category Benchmark Overrides
+                    </span>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {categories.map((c) => (
+                        <div key={c.id} className="flex items-center justify-between gap-2">
+                          <span className="text-muted-foreground truncate">{c.name}</span>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            placeholder={`${annualBenchmark}%`}
+                            value={categoryBenchmarks[c.id] ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value ? Number(e.target.value) : undefined;
+                              setCategoryBenchmarks((prev) => {
+                                const next = { ...prev };
+                                if (val === undefined) delete next[c.id];
+                                else next[c.id] = val;
+                                return next;
+                              });
+                            }}
+                            className="sift-input w-20 text-xs py-1 px-2 text-right"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Exchange Rates Sync */}
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface/40 border border-border">
+                    <span className="text-muted-foreground">Manual Exchange Rates Sync</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSyncRates}
+                      isLoading={isSyncingRates}
+                      className="text-xs h-7 px-2"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Sync
+                    </Button>
+                  </div>
+
+                  {/* Bank Rules */}
+                  <CustomBankRulesManager />
+                </div>
+              ) : null}
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end pt-1">
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                isLoading={isSaving}
+                className="text-xs font-semibold shadow-xs"
+              >
+                Save General Settings
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* ========================================================================= */}
+      {/* 2. APPEARANCE SECTION */}
+      {/* ========================================================================= */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Palette className="w-4 h-4 text-primary" />
+            <CardTitle>Appearance</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          <div className="flex items-center justify-between text-xs">
+            <div>
+              <span className="font-semibold text-foreground block">Theme Mode</span>
+              <span className="text-muted-foreground text-[11px]">
+                Toggle between calm Paper Ledger (light) and Night Shelf (dark).
+              </span>
+            </div>
+            <ThemeToggle />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ========================================================================= */}
+      {/* 3. DATA SECTION (Export, Import, Prominent Restore, Delete All Data) */}
+      {/* ========================================================================= */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-primary" />
+            <CardTitle>Data & Portability</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-0 text-xs">
+          <p className="text-muted-foreground leading-relaxed">
+            Your ledger data is client-side and fully portable. Export open backups at any time or restore a previous snapshot safely.
+          </p>
+
+          {/* Prominent Trust Restore Hero Box */}
+          <div className="p-4 rounded-xl bg-primary/5 border border-primary/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="font-semibold text-foreground block flex items-center gap-1.5">
+                <RefreshCw className="w-4 h-4 text-primary" />
+                Restore From Backup
+              </span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Safely restore or merge a <code className="font-mono bg-surface px-1 py-0.2 rounded">sift-backup-*.json</code> file.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsRestoreModalOpen(true)}
+              className="text-xs font-semibold shadow-xs shrink-0 gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Restore Backup
+            </Button>
           </div>
 
-          {/* Email Dispatch & Test Trigger */}
-          <div className="p-3.5 rounded-xl border border-border bg-surface/50 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-primary" />
-                  Resend Transactional Email
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Scheduled dispatch to <span className="font-mono font-semibold text-foreground">{user?.email || profile?.email || 'your email'}</span>
-                </div>
-              </div>
+          {/* Export Action Buttons */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[11px] font-medium text-muted-foreground block">
+              Export Records
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportJSON}
+                className="gap-1.5 text-xs justify-center"
+              >
+                <Download className="w-3.5 h-3.5 text-primary" />
+                Full JSON
+              </Button>
 
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleTriggerEmailDispatch}
-                isLoading={isDispatching}
-                className="gap-1.5 text-xs shrink-0"
+                onClick={handleExportCSV}
+                className="gap-1.5 text-xs justify-center"
               >
-                <Zap className="w-3 h-3 text-primary" />
-                Test Dispatch Now
+                <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
+                CSV Table
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportPackage}
+                className="gap-1.5 text-xs justify-center"
+              >
+                <Archive className="w-3.5 h-3.5 text-primary" />
+                Backup Bundle
               </Button>
             </div>
-
-            {emailDispatchStatus ? (
-              <div className="p-2.5 rounded-lg bg-card border border-border text-[11px] text-foreground">
-                {emailDispatchStatus}
-              </div>
-            ) : null}
           </div>
 
-          {/* Alert Type Toggles */}
-          <div className="space-y-3 pt-1">
-            <label className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card cursor-pointer hover:bg-surface/50 transition-colors">
-              <div className="space-y-0.5 pr-2">
-                <div className="text-xs font-medium text-foreground">
-                  Master In-App & Remote Alerts
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Enable or silence all automated reminder emails, push alerts, and dashboard banners
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={notificationsEnabled}
-                onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                className="w-4 h-4 rounded text-primary border-border accent-primary cursor-pointer"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card cursor-pointer hover:bg-surface/50 transition-colors">
-              <div className="space-y-0.5 pr-2">
-                <div className="text-xs font-medium text-foreground">
-                  Upcoming Renewal Alerts
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Warn before regular monthly, quarterly, and annual subscription charges
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={notifyRenewals}
-                onChange={(e) => setNotifyRenewals(e.target.checked)}
-                disabled={!notificationsEnabled}
-                className="w-4 h-4 rounded text-primary border-border accent-primary cursor-pointer disabled:opacity-50"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card cursor-pointer hover:bg-surface/50 transition-colors">
-              <div className="space-y-0.5 pr-2">
-                <div className="text-xs font-medium text-foreground">
-                  Free Trial Expiration Alerts
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Urgent alerts before trial services convert to paid subscriptions
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={notifyTrials}
-                onChange={(e) => setNotifyTrials(e.target.checked)}
-                disabled={!notificationsEnabled}
-                className="w-4 h-4 rounded text-primary border-border accent-primary cursor-pointer disabled:opacity-50"
-              />
-            </label>
-          </div>
-
-          {/* Reminder Offset Chips */}
-          <div className="space-y-2 pt-2">
-            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              Default Renewal Alert Offsets
-            </label>
-            <p className="text-[11px] text-muted-foreground">
-              Alert triggers will generate at these intervals before charge dates:
-            </p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-              {REMINDER_OFFSET_OPTIONS.map(({ days, label }) => {
-                const isSelected = selectedOffsets.includes(days);
-                return (
-                  <button
-                    key={days}
-                    type="button"
-                    onClick={() => toggleOffset(days)}
-                    className={cn(
-                      'p-2.5 rounded-lg border text-xs font-medium text-center transition-all cursor-pointer',
-                      isSelected
-                        ? 'border-primary bg-primary/10 text-primary font-semibold'
-                        : 'border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface/80'
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 3. Workspace & Multi-Currency Preferences */}
-      <form onSubmit={handleSaveProfile}>
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-primary" />
-              <CardTitle>Workspace & Display Currency</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Full Name / Display Name"
-                placeholder="Alex Mercer"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-
-              <Input
-                label="Primary Email"
-                type="email"
-                placeholder="alex@sift.studio"
-                value={user?.email || profile?.email || ''}
-                disabled
-                helperText="Primary workspace identity"
-              />
-            </div>
-
-            <Select
-              label="Primary Display Currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              helperText="All recurring subscription run-rates and dashboard totals will be converted and shown in this currency."
-            >
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.code} — {c.name} ({c.symbol})
-                </option>
-              ))}
-            </Select>
-
-            {/* Exchange Rates Status & Sync Card */}
-            <div className="p-3.5 rounded-xl border border-border bg-surface/50 space-y-2.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-primary" />
-                    Exchange Rate Engine
-                    {ratesSyncSuccess ? (
-                      <Badge variant="success" size="sm">
-                        Updated
-                      </Badge>
-                    ) : exchangeRates.isStale ? (
-                      <Badge variant="warning" size="sm">
-                        Cached (Offline Safe)
-                      </Badge>
-                    ) : (
-                      <Badge variant="success" size="sm">
-                        Live & Active
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {exchangeRates.source} · Last sync {formatDate(exchangeRates.updatedAt)} (auto-refreshes on reconnect)
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSyncRates}
-                  isLoading={isSyncingRates}
-                  className="gap-1 text-xs shrink-0"
-                >
-                  <RefreshCw className="w-3 h-3 text-primary" />
-                  Sync Rates
-                </Button>
-              </div>
-
-              <div className="text-[11px] text-muted-foreground flex items-center gap-3 pt-1 border-t border-border">
-                <span>
-                  Base: <strong className="text-foreground">USD</strong>
-                </span>
-                <span>·</span>
-                <span>
-                  Current Rate: 1 USD ≈{' '}
-                  <strong className="text-foreground font-mono">
-                    {exchangeRates.rates[currency] || 1.0} {currency}
-                  </strong>
-                </span>
-              </div>
-            </div>
-
-            {/* Annual Discount Benchmark Preference */}
-            <div className="space-y-2 pt-3 border-t border-border">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <label className="text-xs font-semibold text-foreground">
-                    Expected Annual Discount Benchmark
-                  </label>
-                </div>
-                <Badge variant="outline" size="sm" className="font-mono text-[10px]">
-                  {annualBenchmark}% Benchmark
-                </Badge>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Used to calculate projected annual plan savings when evaluating whether stable monthly subscriptions would benefit from converting to an annual billing cycle.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                {ANNUAL_BENCHMARK_OPTIONS.map((opt) => {
-                  const isSelected = annualBenchmark === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setAnnualBenchmark(opt.value)}
-                      className={cn(
-                        'p-2.5 rounded-lg border text-xs text-left transition-all cursor-pointer flex items-center justify-between gap-2',
-                        isSelected
-                          ? 'border-primary bg-primary/10 text-primary font-semibold'
-                          : 'border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface/80'
-                      )}
-                    >
-                      <span>{opt.label}</span>
-                      {isSelected ? <Check className="w-3.5 h-3.5 text-primary shrink-0" /> : null}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Optional Per-Category Overrides */}
-              {categories.length > 0 ? (
-                <div
-                  id="category-benchmarks"
-                  className={cn(
-                    'space-y-2 pt-3 border-t border-border/70 scroll-mt-6 rounded-xl p-3 -mx-3 transition-colors duration-700 ease-out motion-reduce:transition-none',
-                    highlightBenchmarks
-                      ? 'bg-primary/[0.05] ring-1 ring-primary/40 shadow-xs'
-                      : 'bg-transparent ring-0'
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-semibold text-foreground">
-                        Per-Category Benchmark Overrides (Optional)
-                      </label>
-                      {highlightBenchmarks ? (
-                        <Badge
-                          variant="primary"
-                          size="sm"
-                          className="font-mono text-[10px] animate-in fade-in duration-200 motion-reduce:animate-none"
-                        >
-                          Focused
-                        </Badge>
-                      ) : null}
-                    </div>
-                    {Object.keys(categoryBenchmarks).length > 0 ? (
-                      <Badge variant="primary" size="sm" className="font-mono text-[10px]">
-                        {Object.keys(categoryBenchmarks).length} Active Override
-                        {Object.keys(categoryBenchmarks).length === 1 ? '' : 's'}
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Define custom discount expectations for specific categories (e.g. 10% for Dev Tools or 20% for Streaming). Unconfigured categories inherit the {annualBenchmark}% global benchmark.
-                  </p>
-
-                  <div className="space-y-1.5 pt-1">
-                    {categories.map((cat) => {
-                      const currentOverride = categoryBenchmarks[cat.id];
-                      const isCustom = typeof currentOverride === 'number';
-
-                      return (
-                        <div
-                          key={cat.id}
-                          className="p-2.5 rounded-lg border border-border bg-surface/40 flex items-center justify-between gap-3 text-xs"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span
-                              className="w-2.5 h-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: cat.color }}
-                            />
-                            <span className="font-medium text-foreground truncate">
-                              {cat.name}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            <select
-                              value={isCustom ? String(currentOverride) : 'default'}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === 'default') {
-                                  const next = { ...categoryBenchmarks };
-                                  delete next[cat.id];
-                                  setCategoryBenchmarks(next);
-                                } else {
-                                  setCategoryBenchmarks({
-                                    ...categoryBenchmarks,
-                                    [cat.id]: parseFloat(val),
-                                  });
-                                }
-                              }}
-                              className="h-7 px-2 text-xs rounded-md border border-border bg-card text-foreground font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
-                            >
-                              <option value="default">Default ({annualBenchmark}%)</option>
-                              <option value="10">10% — Conservative</option>
-                              <option value="15">15% — Standard</option>
-                              <option value="16.7">16.7% — 2 mos free</option>
-                              <option value="20">20% — Aggressive</option>
-                            </select>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <Button type="submit" variant="primary" size="sm" isLoading={isSaving}>
-                Save All Preferences
+          {/* Statement Import Link */}
+          <div className="pt-2 flex items-center justify-between border-t border-border/60">
+            <span className="text-muted-foreground">Bank Statement Import</span>
+            <Link href="/subscriptions/import">
+              <Button variant="outline" size="sm" className="text-xs gap-1">
+                Open Importer <ExternalLink className="w-3 h-3" />
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </form>
-
-      {/* 4. Data Ownership, Export & Restore */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Download className="w-4 h-4 text-primary" />
-            <CardTitle>Data Ownership & Backup</CardTitle>
-          </div>
-          <Badge variant="outline" size="sm">
-            {subscriptions.length} tracked records
-          </Badge>
-        </CardHeader>
-        <CardContent className="space-y-4 text-xs">
-          <p className="text-muted-foreground leading-relaxed">
-            Your data belongs to you. You can export complete account backups in open JSON and CSV
-            formats, or restore a previous backup to another device at any time.
-          </p>
-
-          {/* Export Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportCSV}
-              className="gap-1.5 text-xs justify-start"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
-              Spreadsheet (CSV)
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportJSON}
-              className="gap-1.5 text-xs justify-start"
-            >
-              <Download className="w-3.5 h-3.5 text-primary" />
-              Full Backup (JSON)
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportPackage}
-              className="gap-1.5 text-xs justify-start"
-            >
-              <Archive className="w-3.5 h-3.5 text-primary" />
-              Backup Package
-            </Button>
+            </Link>
           </div>
 
-          {/* Restore & Sample Data Actions */}
-          <div className="pt-4 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Danger Zone: Delete All Data */}
+          <div className="pt-4 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="font-semibold text-foreground flex items-center gap-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-primary" />
-                Restore From Backup
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                Import a <code className="font-mono bg-surface-muted px-1 py-0.5 rounded">sift-backup-*.json</code> file to restore records
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => setIsRestoreModalOpen(true)}
-                className="gap-1.5 text-xs"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Restore Backup
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.removeItem('sift_onboarding_dismissed_v1');
-                    window.location.href = '/';
-                  }
-                }}
-                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                Reset Guide
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  clearSavedStatementMappings();
-                  alert('Remembered bank statement column mappings have been reset.');
-                }}
-                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Clear Formats
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => populateStarterTemplates()}
-                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                Load Samples
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 5. Custom Bank Statement Recognition Rules */}
-      <CustomBankRulesManager />
-
-      {/* 6. Account & Security Session */}
-      {user ? (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              <CardTitle>Account & Session</CardTitle>
-            </div>
-            <Badge variant="success" size="sm">
-              Signed In
-            </Badge>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Authenticated Email</span>
-              <span className="font-semibold text-foreground font-mono">
-                {user.email}
+              <span className="font-semibold text-danger block flex items-center gap-1.5">
+                <Trash2 className="w-3.5 h-3.5 text-danger" />
+                Delete All Data
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                Permanently erase all local subscriptions, categories, and preferences.
               </span>
             </div>
 
-            <div className="pt-2 border-t border-border flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                End current active session
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => signOut()}
-                className="text-xs text-danger hover:bg-danger-subtle gap-1.5"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                Sign Out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {/* 7. Cloud Sync & System Status */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-primary" />
-            <CardTitle>Database & Cloud Sync</CardTitle>
-          </div>
-          <Badge variant={isConfigured ? 'success' : 'default'} size="sm">
-            {isConfigured ? 'Supabase Connected' : 'Local Mode'}
-          </Badge>
-        </CardHeader>
-        <CardContent className="space-y-2 text-xs text-muted-foreground">
-          {isConfigured ? (
-            <p>
-              Sift is securely connected to PostgreSQL with Row Level Security (RLS) isolating all
-              records to your authenticated account.
-            </p>
-          ) : (
-            <p>
-              Sift is operating in <strong className="text-foreground">Local Storage Mode</strong>. Supabase credentials can be
-              set in <code className="px-1.5 py-0.5 rounded bg-surface font-mono text-[11px]">.env.local</code>.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 7.5 Privacy & Data Architecture */}
-      <Card className="border-border bg-surface/30">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            <CardTitle>Privacy & Data Ownership</CardTitle>
-          </div>
-          <Link href="/privacy">
-            <Button variant="outline" size="sm" className="text-xs gap-1">
-              Read Policy <Info className="w-3 h-3" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsDeleteAllModalOpen(true)}
+              className="text-xs text-danger hover:bg-danger-subtle shrink-0"
+            >
+              Delete All Data
             </Button>
-          </Link>
-        </CardHeader>
-        <CardContent className="space-y-2 text-xs text-muted-foreground leading-relaxed">
-          <p>
-            Sift is client-side and privacy-first. We do not track external app logins, browser history, or bank passwords.
-            Imports are processed locally on your device.
-          </p>
-          <div className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground flex-wrap">
-            <span>• No third-party ad tracking</span>
-            <span>• Open JSON & CSV export</span>
-            <span>• Instant deletion anytime</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* 8. About Sift */}
-      <Card className="bg-surface/40">
-        <CardHeader>
+      {/* ========================================================================= */}
+      {/* 4. ABOUT SECTION */}
+      {/* ========================================================================= */}
+      <Card className="bg-surface/30">
+        <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Info className="w-4 h-4 text-primary" />
             <CardTitle>About Sift</CardTitle>
           </div>
-          <span className="text-[11px] font-mono text-muted-foreground">v0.1.0</span>
+          <span className="text-[11px] font-mono text-muted-foreground">v0.1.0 · PWA Ready</span>
         </CardHeader>
-        <CardContent className="space-y-2 text-xs text-muted-foreground leading-relaxed">
-          <p>
-            Sift is a calm, minimal, mobile-first recurring payments workspace built for clarity,
-            financial peace of mind, and zero surprise billings.
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            Supports Progressive Web App (PWA) installation directly from your browser menu.
-          </p>
+        <CardContent className="space-y-3.5 pt-0 text-xs text-muted-foreground leading-relaxed">
+          {/* Privacy Note */}
+          <div className="p-3 rounded-lg bg-surface/60 border border-border/60 space-y-1">
+            <span className="font-semibold text-foreground flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+              Privacy-First & Local-First
+            </span>
+            <p className="text-[11px]">
+              Sift operates privately without third-party ad tracking, data brokers, or bank credential collection. Your ledger belongs entirely to you.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <Link
+              href="/privacy"
+              className="font-medium text-primary hover:underline flex items-center gap-1"
+            >
+              Privacy Policy <ExternalLink className="w-3 h-3" />
+            </Link>
+            <span className="text-[11px] text-muted-foreground">Build 2026.08</span>
+          </div>
+
+          {/* Rate Sift / Feedback (Secondary placement at bottom) */}
+          <div className="pt-3 border-t border-border/50 flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Heart className="w-3 h-3 text-primary/70" />
+              Enjoying Sift?
+            </span>
+            <a
+              href="https://github.com/SanghpalBhakte/Sift"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground hover:underline"
+            >
+              Star on GitHub / Feedback
+            </a>
+          </div>
         </CardContent>
       </Card>
 
@@ -1033,6 +739,46 @@ export default function SettingsPage() {
           setTimeout(() => setRestoreSuccess(false), 4000);
         }}
       />
+
+      {/* Delete All Data Strong Confirmation Dialog */}
+      {isDeleteAllModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-100">
+          <div className="sift-card max-w-sm w-full p-5 space-y-4 shadow-xl border-danger/30">
+            <div className="flex items-center gap-2.5 text-danger font-semibold text-sm">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>Delete All Data?</span>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This will permanently erase all <strong>{subscriptions.length} subscriptions</strong>, custom categories, and saved settings from your device. This action cannot be reversed.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeleteAllModalOpen(false)}
+                disabled={isDeletingAll}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleDeleteAllData}
+                isLoading={isDeletingAll}
+                className="text-xs bg-danger hover:bg-danger/90 border-transparent text-danger-foreground font-semibold"
+              >
+                Erase Everything
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -604,6 +604,31 @@ class SubscriptionService {
     localStorage.removeItem(STORAGE_KEYS.PROFILE);
   }
 
+  // Clear all local records and purge database records for current user
+  async clearAllData(): Promise<void> {
+    const supabase = createClient();
+    if (supabase) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        await supabase.from('subscriptions').delete().eq('user_id', user.id);
+        await supabase.from('categories').delete().eq('user_id', user.id);
+        await supabase.from('payment_methods').delete().eq('user_id', user.id);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTIONS);
+      localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+      localStorage.removeItem(STORAGE_KEYS.PAYMENT_METHODS);
+      localStorage.removeItem(STORAGE_KEYS.PROFILE);
+      localStorage.removeItem('sift_statement_column_mappings_v1');
+      localStorage.removeItem('sift_onboarding_dismissed_v1');
+    }
+  }
+
   // Dashboard calculations summary
   async getDashboardSummary(): Promise<DashboardStats> {
     const subs = await this.getSubscriptions();
