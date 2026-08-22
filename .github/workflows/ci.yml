@@ -28,15 +28,25 @@ jobs:
           [ -z "$SUPABASE_ANON_KEY" ]  && MISSING+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
           [ -z "$VAPID_PUBLIC_KEY" ]   && MISSING+=("NEXT_PUBLIC_VAPID_PUBLIC_KEY")
           if [ ${#MISSING[@]} -gt 0 ]; then
-            echo "❌ Missing required GitHub Secrets: ${MISSING[*]}"
+            echo "⚠️  Warning: Missing GitHub Secrets: ${MISSING[*]}"
             echo "   Add them at: Settings → Secrets and variables → Actions"
-            exit 1
+            echo "   Deployments will still succeed with Vercel's own env vars,"
+            echo "   but the secrets-check job advisory will remain until they are added."
+          else
+            echo "✅ All required secrets are present."
           fi
-          echo "✅ All required secrets are present."
+          # Never block CI — secrets are advisory only (Vercel manages production env vars)
+          exit 0
 
   quality:
     name: Lint, Typecheck & Tests
     runs-on: ubuntu-latest
+
+    env:
+      # Stub values so tsc --noEmit and next lint do not crash on missing env
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'placeholder-vapid-key' }}
 
     steps:
       - name: Checkout Code
