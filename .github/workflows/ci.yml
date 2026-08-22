@@ -19,34 +19,37 @@ jobs:
     steps:
       - name: Verify required GitHub secrets are set
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+          # Public / client-side
+          SUPABASE_URL:        ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY:   ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          VAPID_PUBLIC_KEY:    ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+          # Server-side
+          SERVICE_ROLE_KEY:    ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VAPID_PRIVATE_KEY:   ${{ secrets.VAPID_PRIVATE_KEY }}
+          RESEND_API_KEY:      ${{ secrets.RESEND_API_KEY }}
+          CRON_SECRET:         ${{ secrets.CRON_SECRET }}
         run: |
           MISSING=()
-          [ -z "$SUPABASE_URL" ]       && MISSING+=("NEXT_PUBLIC_SUPABASE_URL")
-          [ -z "$SUPABASE_ANON_KEY" ]  && MISSING+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-          [ -z "$VAPID_PUBLIC_KEY" ]   && MISSING+=("NEXT_PUBLIC_VAPID_PUBLIC_KEY")
+          [ -z "$SUPABASE_URL" ]      && MISSING+=("NEXT_PUBLIC_SUPABASE_URL")
+          [ -z "$SUPABASE_ANON_KEY" ] && MISSING+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+          [ -z "$VAPID_PUBLIC_KEY" ]  && MISSING+=("NEXT_PUBLIC_VAPID_PUBLIC_KEY")
+          [ -z "$SERVICE_ROLE_KEY" ]  && MISSING+=("SUPABASE_SERVICE_ROLE_KEY")
+          [ -z "$VAPID_PRIVATE_KEY" ] && MISSING+=("VAPID_PRIVATE_KEY")
+          [ -z "$RESEND_API_KEY" ]    && MISSING+=("RESEND_API_KEY")
+          [ -z "$CRON_SECRET" ]       && MISSING+=("CRON_SECRET")
           if [ ${#MISSING[@]} -gt 0 ]; then
-            echo "⚠️  Warning: Missing GitHub Secrets: ${MISSING[*]}"
+            echo "⚠️  Missing GitHub Secrets: ${MISSING[*]}"
             echo "   Add them at: Settings → Secrets and variables → Actions"
-            echo "   Deployments will still succeed with Vercel's own env vars,"
-            echo "   but the secrets-check job advisory will remain until they are added."
+            echo "   Deployments will still succeed with Vercel's own env vars."
           else
-            echo "✅ All required secrets are present."
+            echo "✅ All 7 required secrets are present."
           fi
-          # Never block CI — secrets are advisory only (Vercel manages production env vars)
+          # Advisory only — never block CI (Vercel manages production env vars)
           exit 0
 
   quality:
     name: Lint, Typecheck & Tests
     runs-on: ubuntu-latest
-
-    env:
-      # Stub values so tsc --noEmit and next lint do not crash on missing env
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
-      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'placeholder-vapid-key' }}
 
     steps:
       - name: Checkout Code
@@ -60,6 +63,32 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
+
+      # Provide stub env vars for typecheck/lint/test.
+      # NOTE: ${{ secrets.X || 'fallback' }} does NOT work in env: blocks —
+      # secrets resolve to "" (empty string) when unset, so || never fires.
+      # Writing to $GITHUB_ENV is the correct cross-platform approach.
+      - name: Set CI env defaults
+        run: |
+          # Public vars — use real secret if available, else a safe placeholder
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> $GITHUB_ENV
+          [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] && echo "NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co" >> $GITHUB_ENV || true
+
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ] && echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key" >> $GITHUB_ENV || true
+
+          echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}" >> $GITHUB_ENV
+          [ -z "${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}" ] && echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=placeholder-vapid-public" >> $GITHUB_ENV || true
+
+          echo "NEXT_PUBLIC_APP_URL=https://placeholder.app" >> $GITHUB_ENV
+
+          # Server vars — stubs only; never used at runtime in CI
+          echo "SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role" >> $GITHUB_ENV
+          echo "VAPID_PRIVATE_KEY=placeholder-vapid-private" >> $GITHUB_ENV
+          echo "RESEND_API_KEY=placeholder-resend-key" >> $GITHUB_ENV
+          echo "CRON_SECRET=placeholder-cron-secret" >> $GITHUB_ENV
+          echo "RESEND_FROM_EMAIL=ci@placeholder.app" >> $GITHUB_ENV
+          echo "VAPID_SUBJECT=mailto:ci@placeholder.app" >> $GITHUB_ENV
 
       - name: Run TypeScript Check
         run: npm run typecheck
@@ -75,11 +104,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
 
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
-      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'placeholder-vapid-key' }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -92,6 +116,26 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
+
+      - name: Set CI env defaults
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> $GITHUB_ENV
+          [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] && echo "NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co" >> $GITHUB_ENV || true
+
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ] && echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key" >> $GITHUB_ENV || true
+
+          echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}" >> $GITHUB_ENV
+          [ -z "${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}" ] && echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=placeholder-vapid-public" >> $GITHUB_ENV || true
+
+          echo "NEXT_PUBLIC_APP_URL=https://placeholder.app" >> $GITHUB_ENV
+
+          echo "SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role" >> $GITHUB_ENV
+          echo "VAPID_PRIVATE_KEY=placeholder-vapid-private" >> $GITHUB_ENV
+          echo "RESEND_API_KEY=placeholder-resend-key" >> $GITHUB_ENV
+          echo "CRON_SECRET=placeholder-cron-secret" >> $GITHUB_ENV
+          echo "RESEND_FROM_EMAIL=ci@placeholder.app" >> $GITHUB_ENV
+          echo "VAPID_SUBJECT=mailto:ci@placeholder.app" >> $GITHUB_ENV
 
       - name: Build
         run: npm run build
