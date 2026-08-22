@@ -77,29 +77,50 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const loadAll = useCallback(async () => {
-    setIsLoading(true);
+  const loadAll = useCallback(async (isInitial = false) => {
+    // Only show skeleton if we have no data at all
+    if (isInitial && subscriptions.length === 0) {
+      setIsLoading(true);
+    }
     try {
-      const [subs, cats, pms, prof] = await Promise.all([
+      // Fetch all independent data sources in parallel (0 waterfalls)
+      const [subs, cats, pms, prof, rates] = await Promise.all([
         subscriptionService.getSubscriptions(),
         subscriptionService.getCategories(),
         subscriptionService.getPaymentMethods(),
         subscriptionService.getProfile(),
+        exchangeRateService.getExchangeRates(),
       ]);
       setSubscriptions(subs);
       setCategories(cats);
       setPaymentMethods(pms);
       setProfile(prof);
-      await loadExchangeRates();
+      setExchangeRates(rates);
     } catch (err) {
       console.error('Error loading subscription data:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [loadExchangeRates]);
+  }, [subscriptions.length]);
+
+  const userId = user?.id;
 
   useEffect(() => {
-    loadAll();
+    // Seed from local storage immediately on client mount if available
+    try {
+      const cachedSubs = localStorage.getItem('sift_subscriptions_v1');
+      if (cachedSubs) {
+        const parsed = JSON.parse(cachedSubs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSubscriptions(parsed);
+          setIsLoading(false);
+        }
+      }
+    } catch {
+      // Continue with regular load
+    }
+
+    loadAll(true);
 
     // Background reconnect sync for exchange rates
     const cleanup = exchangeRateService.initReconnectSync((updatedRates) => {
@@ -107,7 +128,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     });
 
     return () => cleanup();
-  }, [loadAll, user]);
+  }, [loadAll, userId]);
 
   const addSubscription = async (data: SubscriptionFormData): Promise<Subscription> => {
     const created = await subscriptionService.createSubscription(data);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient, isSupabaseConfigured } from '@/utils/supabase/client';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -14,7 +14,15 @@ interface AuthGateProps {
 export function AuthGate({ children }: AuthGateProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
+
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    if (typeof window !== 'undefined' && !isSupabaseConfigured()) {
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -37,7 +45,7 @@ export function AuthGate({ children }: AuthGateProps) {
         } = await supabase.auth.getSession();
 
         if (!session) {
-          const safeNext = getSafeNext(pathname);
+          const safeNext = getSafeNext(pathnameRef.current);
           router.replace(`/login?next=${encodeURIComponent(safeNext)}`);
           return;
         }
@@ -54,7 +62,7 @@ export function AuthGate({ children }: AuthGateProps) {
           aalData.currentLevel === 'aal1' &&
           aalData.nextLevel === 'aal2'
         ) {
-          const safeNext = getSafeNext(pathname);
+          const safeNext = getSafeNext(pathnameRef.current);
           router.replace(`/mfa/challenge?next=${encodeURIComponent(safeNext)}`);
           return;
         }
@@ -76,7 +84,7 @@ export function AuthGate({ children }: AuthGateProps) {
     return () => {
       isMounted = false;
     };
-  }, [pathname, router]);
+  }, [router]);
 
   if (!isAuthorized) {
     return (

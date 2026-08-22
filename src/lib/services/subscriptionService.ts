@@ -45,6 +45,22 @@ class SubscriptionService {
     }
   }
 
+  private async getAuthUser(supabase: ReturnType<typeof createClient>) {
+    if (!supabase) return null;
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) return session.user;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user;
+    } catch {
+      return null;
+    }
+  }
+
   // --- Subscriptions ---
 
   async getSubscriptions(filters?: SubscriptionFilters): Promise<Subscription[]> {
@@ -53,9 +69,7 @@ class SubscriptionService {
 
     if (supabase) {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await this.getAuthUser(supabase);
 
         if (user) {
           let query = (supabase.from('subscriptions') as any)
@@ -90,17 +104,6 @@ class SubscriptionService {
       // Local demo / unconfigured mode: start with clean empty ledger for authentic first-run experience
       items = this.getLocalData(STORAGE_KEYS.SUBSCRIPTIONS, []);
     }
-
-    // Attach categories & payment methods if needed
-    const categories = await this.getCategories();
-    const paymentMethods = await this.getPaymentMethods();
-
-    items = items.map((sub) => ({
-      ...sub,
-      category: sub.category || categories.find((c) => c.id === sub.category_id),
-      payment_method:
-        sub.payment_method || paymentMethods.find((p) => p.id === sub.payment_method_id),
-    }));
 
     // Apply in-memory search
     if (filters?.search && filters.search.trim() !== '') {
@@ -188,9 +191,7 @@ class SubscriptionService {
     let userId = defaultProfile.id;
 
     if (supabase) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await this.getAuthUser(supabase);
 
       if (user) {
         userId = user.id;
@@ -466,9 +467,7 @@ class SubscriptionService {
     const supabase = createClient();
     if (supabase) {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await this.getAuthUser(supabase);
 
         if (user) {
           const { data, error } = await (supabase.from('payment_methods') as any)
@@ -492,9 +491,7 @@ class SubscriptionService {
     const supabase = createClient();
     if (supabase) {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await this.getAuthUser(supabase);
 
         if (user) {
           const { data, error } = await (supabase.from('profiles') as any)
@@ -536,9 +533,7 @@ class SubscriptionService {
     const supabase = createClient();
     if (supabase) {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await this.getAuthUser(supabase);
 
         if (user) {
           await (supabase.from('profiles') as any).upsert({
@@ -564,9 +559,7 @@ class SubscriptionService {
   async populateStarterTemplates(): Promise<void> {
     const supabase = createClient();
     if (supabase) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await this.getAuthUser(supabase);
 
       if (user) {
         for (const sub of mockSubscriptions.slice(0, 4)) {
@@ -608,9 +601,7 @@ class SubscriptionService {
   async clearAllData(): Promise<void> {
     const supabase = createClient();
     if (supabase) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await this.getAuthUser(supabase);
 
       if (user) {
         await supabase.from('subscriptions').delete().eq('user_id', user.id);
