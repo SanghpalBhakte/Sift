@@ -17,12 +17,7 @@ export function AuthGate({ children }: AuthGateProps) {
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
 
-  const [isAuthorized, setIsAuthorized] = useState(() => {
-    if (typeof window !== 'undefined' && !isSupabaseConfigured()) {
-      return true;
-    }
-    return false;
-  });
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   useEffect(() => {
     let isMounted = true;

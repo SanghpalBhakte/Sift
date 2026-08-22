@@ -80,30 +80,41 @@ export default function DashboardPage() {
   // Streaming skeleton loading state matching exact layout dimensions
   if (isLoading) {
     return (
-      <div className="space-y-5 max-w-xl mx-auto pb-12 animate-in fade-in duration-150">
+      <div className="space-y-5 max-w-xl mx-auto pb-12 animate-in fade-in duration-100">
         {/* Hero Spend Card Skeleton */}
-        <div className="sweep-card p-5 sm:p-6 space-y-4 min-h-[148px]">
-          <div className="flex items-center justify-between">
-            <div className="h-3.5 w-24 bg-surface-muted rounded-md animate-pulse" />
-            <div className="h-7 w-32 bg-surface-muted rounded-lg animate-pulse" />
-          </div>
-          <div className="h-9 w-48 bg-surface-muted rounded-md animate-pulse" />
-          <div className="h-3.5 w-60 bg-surface-muted rounded-md animate-pulse" />
-        </div>
+        <div
+          className="skeleton sweep-card p-5 sm:p-6 space-y-4"
+          style={{
+            minHeight: '148px',
+            borderRadius: '16px',
+            marginBottom: '1.25rem',
+          }}
+        />
 
         {/* Category Filter Chips Skeleton */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-          <div className="h-7 w-12 bg-surface-muted rounded-full shrink-0 animate-pulse" />
-          <div className="h-7 w-20 bg-surface-muted rounded-full shrink-0 animate-pulse" />
-          <div className="h-7 w-24 bg-surface-muted rounded-full shrink-0 animate-pulse" />
-          <div className="h-7 w-28 bg-surface-muted rounded-full shrink-0 animate-pulse" />
+          {[48, 80, 96, 112].map((w, i) => (
+            <div
+              key={i}
+              className="skeleton rounded-full shrink-0"
+              style={{ width: `${w}px`, height: '28px' }}
+            />
+          ))}
         </div>
 
         {/* Subscription Cards Skeleton */}
         <div className="space-y-2.5 pt-1">
-          <SubscriptionCardSkeleton />
-          <SubscriptionCardSkeleton />
-          <SubscriptionCardSkeleton />
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="skeleton sweep-card"
+              style={{
+                height: '72px',
+                borderRadius: '12px',
+                marginBottom: '0.625rem',
+              }}
+            />
+          ))}
         </div>
       </div>
     );
