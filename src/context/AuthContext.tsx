@@ -80,23 +80,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
+      // 1. Read cached local session immediately (0ms network roundtrip)
       const {
         data: { session: currentSession },
       } = await supabase.auth.getSession();
 
-      setUser(currentUser);
-      setSession(currentSession);
-
       if (currentSession) {
+        setSession(currentSession);
+        setUser(currentSession.user ?? null);
+        setIsLoading(false);
         await checkAAL(currentSession);
+      } else {
+        setUser(null);
+        setSession(null);
+        setIsLoading(false);
       }
     } catch (err) {
-      console.error('Error fetching auth user:', err);
-    } finally {
+      console.error('Error fetching auth session:', err);
       setIsLoading(false);
     }
   }, [isConfigured, checkAAL]);
