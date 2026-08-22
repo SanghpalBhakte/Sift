@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Select } from '@/components/ui/Select';
@@ -18,17 +20,14 @@ import {
   downloadFile,
 } from '@/lib/utils/backup';
 import { RestoreModal } from '@/components/backup/RestoreModal';
-import { clearSavedStatementMappings } from '@/lib/utils/statementMappingMemory';
 import { CustomBankRulesManager } from '@/components/settings/CustomBankRulesManager';
 import {
   Palette,
   Database,
   Download,
   FileSpreadsheet,
-  Bell,
   Info,
   ShieldCheck,
-  Zap,
   RefreshCw,
   Archive,
   CheckCircle2,
@@ -39,9 +38,10 @@ import {
   ExternalLink,
   Heart,
   Sliders,
-  Sparkles,
+  LogOut,
+  KeyRound,
+  Lock,
 } from 'lucide-react';
-import { formatDate } from '@/lib/utils/dates';
 import { cn } from '@/lib/utils/cn';
 
 const REMINDER_OFFSET_OPTIONS = [
@@ -54,12 +54,13 @@ const REMINDER_OFFSET_OPTIONS = [
 const ANNUAL_BENCHMARK_OPTIONS = [
   { value: 10, label: '10% — Conservative (~1 mo free)' },
   { value: 15, label: '15% — Standard SaaS discount' },
-  { value: 16.7, label: '16.7% — Default (2 mos free)' },
+  { value: 16.7, label: '16.7% — Default (2 COMPLIMENTARY months)' },
   { value: 20, label: '20% — Aggressive (~2.4 mos free)' },
 ];
 
 export default function SettingsPage() {
   const { resolvedTheme } = useTheme();
+  const { user, isConfigured, signOut, unenrollMFA } = useAuth();
   const {
     subscriptions,
     categories,
@@ -92,6 +93,11 @@ export default function SettingsPage() {
   const [isPushLoading, setIsPushLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  // 2FA TOTP Factors State
+  const [totpFactor, setTotpFactor] = useState<any | null>(null);
+  const [isMfaLoading, setIsMfaLoading] = useState(false);
+  const [mfaStatusMessage, setMfaStatusMessage] = useState<string | null>(null);
+
   // Settings form state
   const [currency, setCurrency] = useState(profile?.currency_preference || 'USD');
   const [annualBenchmark, setAnnualBenchmark] = useState<number>(
@@ -114,6 +120,23 @@ export default function SettingsPage() {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [highlightBenchmarks, setHighlightBenchmarks] = useState(false);
+
+  const loadMfaFactors = React.useCallback(async () => {
+    if (!user || !isConfigured) return;
+    const supabase = createClient();
+    if (!supabase) return;
+    try {
+      const { data } = await supabase.auth.mfa.listFactors();
+      const totp = data?.totp?.[0];
+      setTotpFactor(totp || null);
+    } catch (err) {
+      console.error('Error loading MFA factors:', err);
+    }
+  }, [user, isConfigured]);
+
+  useEffect(() => {
+    loadMfaFactors();
+  }, [loadMfaFactors]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -202,20 +225,24 @@ export default function SettingsPage() {
     }
   };
 
-  const handleTestPush = async () => {
-    setIsPushLoading(true);
-    setPushActionStatus(null);
+  const handleDisableMFA = async () => {
+    if (!totpFactor?.id) return;
+    if (!confirm('Are you sure you want to disable Two-Factor Authentication?')) return;
+
+    setIsMfaLoading(true);
+    setMfaStatusMessage(null);
     try {
-      const res = await sendTestPushNotification();
-      if (res.success) {
-        setPushActionStatus('Test push notification sent! Check your notification center.');
+      const res = await unenrollMFA(totpFactor.id);
+      if (res.error) {
+        setMfaStatusMessage(`Error: ${res.error}`);
       } else {
-        setPushActionStatus(res.error || 'Failed to trigger test push.');
+        setTotpFactor(null);
+        setMfaStatusMessage('Two-Factor Authentication disabled.');
       }
     } catch (err: any) {
-      setPushActionStatus(err.message || 'Error triggering push.');
+      setMfaStatusMessage(err?.message || 'Failed to remove 2FA.');
     } finally {
-      setIsPushLoading(false);
+      setIsMfaLoading(false);
     }
   };
 
@@ -234,7 +261,7 @@ export default function SettingsPage() {
 
   const handleExportJSON = () => {
     const backup = generateFullBackupJson({
-      userEmail: 'local-user@sift.app',
+      userEmail: user?.email || 'local-user@sift.app',
       profile,
       subscriptions,
       categories,
@@ -252,7 +279,7 @@ export default function SettingsPage() {
 
   const handleExportPackage = () => {
     const backup = generateFullBackupJson({
-      userEmail: 'local-user@sift.app',
+      userEmail: user?.email || 'local-user@sift.app',
       profile,
       subscriptions,
       categories,
@@ -291,7 +318,7 @@ export default function SettingsPage() {
           Settings
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Manage currency preferences, appearance, backups, and privacy.
+          Manage currency preferences, security, backups, and appearance.
         </p>
       </div>
 
@@ -541,7 +568,90 @@ export default function SettingsPage() {
       </Card>
 
       {/* ========================================================================= */}
-      {/* 2. APPEARANCE SECTION */}
+      {/* 2. ACCOUNT & SECURITY (MFA / 2FA) */}
+      {/* ========================================================================= */}
+      {user ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              <CardTitle>Account & Security</CardTitle>
+            </div>
+            <Badge variant="success" size="sm">
+              Signed In
+            </Badge>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-0 text-xs">
+            <div className="flex items-center justify-between border-b border-border/50 pb-2">
+              <span className="text-muted-foreground">Authenticated Account</span>
+              <span className="font-mono font-medium text-foreground">{user.email}</span>
+            </div>
+
+            {/* Two-Factor Authentication Box */}
+            <div className="p-3.5 rounded-xl bg-surface/60 border border-border space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-primary" />
+                  <span className="font-semibold text-foreground">
+                    Two-Factor Authentication (TOTP)
+                  </span>
+                </div>
+                <Badge variant={totpFactor ? 'success' : 'outline'} size="sm">
+                  {totpFactor ? '2FA Enabled' : 'Not Active'}
+                </Badge>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Add an extra layer of protection requiring a 6-digit code from your authenticator app on every sign-in.
+              </p>
+
+              {mfaStatusMessage ? (
+                <p className="text-[11px] text-primary font-medium">{mfaStatusMessage}</p>
+              ) : null}
+
+              <div className="pt-1 flex items-center justify-end gap-2">
+                {totpFactor ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDisableMFA}
+                    isLoading={isMfaLoading}
+                    className="text-xs text-danger hover:bg-danger-subtle h-8"
+                  >
+                    Disable 2FA
+                  </Button>
+                ) : (
+                  <Link href="/mfa-enroll">
+                    <Button variant="primary" size="sm" className="text-xs h-8 gap-1.5 shadow-xs">
+                      <Lock className="w-3.5 h-3.5" />
+                      Set Up 2FA
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Sign Out Action */}
+            <div className="pt-2 border-t border-border flex items-center justify-between">
+              <span className="text-muted-foreground">Active authentication session</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut()}
+                className="text-xs text-danger hover:bg-danger-subtle gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* ========================================================================= */}
+      {/* 3. APPEARANCE SECTION */}
       {/* ========================================================================= */}
       <Card>
         <CardHeader className="pb-3">
@@ -564,7 +674,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* ========================================================================= */}
-      {/* 3. DATA SECTION (Export, Import, Prominent Restore, Delete All Data) */}
+      {/* 4. DATA SECTION (Export, Import, Prominent Restore, Delete All Data) */}
       {/* ========================================================================= */}
       <Card>
         <CardHeader className="pb-3">
@@ -679,7 +789,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* ========================================================================= */}
-      {/* 4. ABOUT SECTION */}
+      {/* 5. ABOUT SECTION */}
       {/* ========================================================================= */}
       <Card className="bg-surface/30">
         <CardHeader className="pb-3">

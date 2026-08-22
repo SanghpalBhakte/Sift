@@ -24,6 +24,12 @@ export async function GET(request: Request) {
     if (supabase) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (!error) {
+        // Check if user requires MFA assurance level 2
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
+          return NextResponse.redirect(`${origin}/mfa-challenge?next=${encodeURIComponent(next)}`);
+        }
+
         return NextResponse.redirect(`${origin}${next}`);
       }
     }
