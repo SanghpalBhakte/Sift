@@ -82,7 +82,10 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className={`${plusJakartaSans.variable} ${fraunces.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
+      <body
+        suppressHydrationWarning
+        className={`${plusJakartaSans.variable} ${fraunces.variable} font-sans antialiased min-h-screen bg-background text-foreground`}
+      >
         <ThemeProvider>
           <AuthProvider>
             <SubscriptionProvider>
