@@ -9,6 +9,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { AlertsSlideOver } from '../reminders/AlertsSlideOver';
 
+import { SweepLogo } from '../brand/SweepLogo';
+
 export function Header() {
   const { user, signOut, isConfigured } = useAuth();
   const { totalAlertsCount, urgentAlertsCount, toggleAlertPanel } = useNotifications();
@@ -20,18 +22,11 @@ export function Header() {
 
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 group" aria-label="Sift home">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm tracking-tight shadow-xs shrink-0">
-                S
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-semibold tracking-tight text-sm text-foreground">
-                  Sift
-                </span>
-              </div>
+            <Link href="/" className="flex items-center gap-2.5 group" aria-label="Sweep home">
+              <SweepLogo size="sm" />
             </Link>
-            <span className="hidden sm:inline-block text-[11px] text-muted-foreground border-l border-border pl-3">
-              Recurring spend workspace
+            <span className="hidden sm:inline-block text-[11px] font-sans text-muted-foreground border-l border-border pl-3 tracking-normal">
+              A calmer view of what renews
             </span>
           </div>
 

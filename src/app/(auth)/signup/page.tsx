@@ -80,8 +80,8 @@ export default function SignUpPage() {
 
   return (
     <AuthShell
-      title="Create your Sift workspace"
-      description="Calm, privacy-first recurring spend management."
+      title="Create your Sweep workspace"
+      description="A calmer way to keep up with what renews."
       icon={<UserPlus className="w-6 h-6" />}
       footer={
         <div className="text-center text-xs text-muted-foreground w-full">

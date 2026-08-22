@@ -151,7 +151,7 @@ export function OnboardingChecklist() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[hsl(var(--primary))]" />
               <CardTitle className="text-sm sm:text-base font-bold">
-                Getting Started with Sift
+                Getting Started with Sweep
               </CardTitle>
               <Badge variant={isAllDone ? 'success' : 'primary'} size="sm">
                 {completedCount} of {steps.length} completed

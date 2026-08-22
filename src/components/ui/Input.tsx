@@ -26,7 +26,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           type={type}
           ref={ref}
           className={cn(
-            'sift-input',
+            'sweep-input',
             error && 'border-danger focus:border-danger',
             className
           )}

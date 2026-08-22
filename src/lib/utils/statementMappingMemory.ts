@@ -26,7 +26,7 @@ export interface CustomBankRule {
 export interface CustomBankRulesExportPayload {
   version: 1;
   exportedAt: string;
-  app: 'Sift';
+  app: 'Sweep' | 'Sift';
   type: 'custom_bank_rules';
   rules: CustomBankRule[];
 }
@@ -272,7 +272,7 @@ export function exportCustomBankRulesJson(): string {
   const payload: CustomBankRulesExportPayload = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    app: 'Sift',
+    app: 'Sweep',
     type: 'custom_bank_rules',
     rules,
   };
@@ -298,7 +298,7 @@ export function validateBankRulesJson(jsonText: string): RuleImportValidationRes
     if (parsed.version !== 1 || parsed.type !== 'custom_bank_rules' || !Array.isArray(parsed.rules)) {
       return {
         valid: false,
-        error: 'Incompatible file schema. Expected a Sift custom bank rules export (version 1).',
+        error: 'Incompatible file schema. Expected a Sweep custom bank rules export (version 1).',
         newCount: 0,
         updateCount: 0,
         identicalCount: 0,

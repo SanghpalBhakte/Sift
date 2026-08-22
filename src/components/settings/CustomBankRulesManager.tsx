@@ -148,7 +148,7 @@ export function CustomBankRulesManager() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sift-custom-bank-rules-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `sweep-custom-bank-rules-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -312,14 +312,14 @@ export function CustomBankRulesManager() {
                     placeholder="Sample filename (e.g. firsttech_export.csv)"
                     value={testFileName}
                     onChange={(e) => setTestFileName(e.target.value)}
-                    className="sift-input text-xs py-1 px-2"
+                    className="sweep-input text-xs py-1 px-2"
                   />
                   <input
                     type="text"
                     placeholder="Sample headers (e.g. trans_date, description, debit, balance)"
                     value={testHeaders}
                     onChange={(e) => setTestHeaders(e.target.value)}
-                    className="sift-input text-xs py-1 px-2"
+                    className="sweep-input text-xs py-1 px-2"
                   />
                 </div>
 
@@ -361,7 +361,7 @@ export function CustomBankRulesManager() {
           {/* Existing Rules List */}
           {rules.length === 0 ? (
             <div className="p-4 rounded-xl border border-dashed border-border text-center text-muted-foreground">
-              No custom bank rules defined. Sift uses built-in fingerprints for major banks
+              No custom bank rules defined. Sweep uses built-in fingerprints for major banks
               automatically.
             </div>
           ) : (
@@ -455,7 +455,7 @@ export function CustomBankRulesManager() {
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Upload a previously exported <code className="font-mono bg-surface-muted px-1 py-0.5 rounded">sift-custom-bank-rules-*.json</code>{' '}
+              Upload a previously exported <code className="font-mono bg-surface-muted px-1 py-0.5 rounded">sweep-custom-bank-rules-*.json</code>{' '}
               backup or paste JSON payload below.
             </p>
 
@@ -482,7 +482,7 @@ export function CustomBankRulesManager() {
                 onChange={(e) => handleJsonTextChange(e.target.value)}
                 placeholder="Or paste JSON payload here..."
                 rows={4}
-                className="sift-input w-full font-mono text-[11px] p-2 resize-none"
+                className="sweep-input w-full font-mono text-[11px] p-2 resize-none"
               />
             </div>
 
@@ -500,7 +500,7 @@ export function CustomBankRulesManager() {
                   {importValidation.valid ? (
                     <>
                       <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span>Valid Sift Bank Rules Package</span>
+                      <span>Valid Sweep Bank Rules Package</span>
                     </>
                   ) : (
                     <>

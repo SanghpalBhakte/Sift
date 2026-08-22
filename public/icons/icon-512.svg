@@ -1,4 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="128" fill="#265F56"/>
-  <path d="M160 176 C160 144 200 128 256 128 C312 128 352 144 352 176 C352 240 160 272 160 336 C160 368 200 384 256 384 C312 384 352 368 352 336" fill="none" stroke="#F8F7F3" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Rich Ink Plum Squircle Background -->
+  <rect width="512" height="512" rx="116" fill="#5B294A"/>
+  
+  <!-- The Receipt Fold Mark in Soft Cream -->
+  <g transform="translate(112, 96) scale(9.0)" fill="none">
+    <!-- Paper Silhouette -->
+    <path
+      d="M6 3.5C4.62 3.5 3.5 4.62 3.5 6V26C3.5 27.38 4.62 28.5 6 28.5H26C27.38 28.5 28.5 27.38 28.5 26V11.5L20.5 3.5H6Z"
+      fill="#FCF9F3"
+      fill-opacity="0.22"
+      stroke="#FCF9F3"
+      stroke-width="2.25"
+      stroke-linejoin="round"
+    />
+    <!-- 45° Corner Fold Notch -->
+    <path
+      d="M20.5 3.5V10.5C20.5 11.05 20.95 11.5 21.5 11.5H28.5"
+      stroke="#FCF9F3"
+      stroke-width="2.25"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <!-- Inner S-Curve -->
+    <path
+      d="M22 14.5C20.2 13 17.2 12.5 14.5 13.2C11.5 14 9.8 16.5 10.2 19C10.8 21.5 14.2 22.6 17.8 23.2C21.5 23.8 23.5 25.2 23 27.2C22.2 29.5 19 30 15.8 29.2C12.8 28.5 10.8 27 9.8 25.5"
+      stroke="#FCF9F3"
+      stroke-width="2.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
 </svg>

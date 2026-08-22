@@ -1,9 +1,9 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <!-- Rich Ink Plum Squircle Background -->
-  <rect width="192" height="192" rx="44" fill="#5B294A"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Maskable full-bleed background -->
+  <rect width="512" height="512" fill="#5B294A"/>
   
-  <!-- The Receipt Fold Mark in Soft Cream -->
-  <g transform="translate(42, 36) scale(3.4)" fill="none">
+  <!-- Safe-zone centered mark (60% scale within 80% safe circle) -->
+  <g transform="translate(160, 145) scale(6.2)" fill="none">
     <!-- Paper Silhouette -->
     <path
       d="M6 3.5C4.62 3.5 3.5 4.62 3.5 6V26C3.5 27.38 4.62 28.5 6 28.5H26C27.38 28.5 28.5 27.38 28.5 26V11.5L20.5 3.5H6Z"

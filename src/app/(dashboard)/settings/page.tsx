@@ -272,25 +272,25 @@ export default function SettingsPage() {
 
   const handleExportJSON = () => {
     const backup = generateFullBackupJson({
-      userEmail: user?.email || 'local-user@sift.app',
+      userEmail: user?.email || 'local-user@sweep.app',
       profile,
       subscriptions,
       categories,
     });
     const jsonStr = JSON.stringify(backup, null, 2);
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadFile(jsonStr, `sift-backup-${dateStr}.json`, 'application/json');
+    downloadFile(jsonStr, `sweep-backup-${dateStr}.json`, 'application/json');
   };
 
   const handleExportCSV = () => {
     const csvStr = generateSubscriptionsCsv(subscriptions);
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadFile(csvStr, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
+    downloadFile(csvStr, `sweep-subscriptions-${dateStr}.csv`, 'text/csv');
   };
 
   const handleExportPackage = () => {
     const backup = generateFullBackupJson({
-      userEmail: user?.email || 'local-user@sift.app',
+      userEmail: user?.email || 'local-user@sweep.app',
       profile,
       subscriptions,
       categories,
@@ -299,12 +299,12 @@ export default function SettingsPage() {
     const readmeStr = generateBackupReadme(backup);
     const dateStr = new Date().toISOString().split('T')[0];
 
-    downloadFile(JSON.stringify(backup, null, 2), `sift-backup-${dateStr}.json`, 'application/json');
+    downloadFile(JSON.stringify(backup, null, 2), `sweep-backup-${dateStr}.json`, 'application/json');
     setTimeout(() => {
-      downloadFile(csvStr, `sift-subscriptions-${dateStr}.csv`, 'text/csv');
+      downloadFile(csvStr, `sweep-subscriptions-${dateStr}.csv`, 'text/csv');
     }, 200);
     setTimeout(() => {
-      downloadFile(readmeStr, `README-sift-backup-${dateStr}.txt`, 'text/plain');
+      downloadFile(readmeStr, `README-sweep-backup-${dateStr}.txt`, 'text/plain');
     }, 400);
   };
 
@@ -325,7 +325,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-xl mx-auto pb-16">
       {/* Header */}
       <div className="pb-2 border-b border-border">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Settings
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -700,7 +700,7 @@ export default function SettingsPage() {
                 Restore From Backup
               </span>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Safely restore or merge a <code className="font-mono bg-surface px-1 py-0.2 rounded">sift-backup-*.json</code> file.
+                Safely restore or merge a <code className="font-mono bg-surface px-1 py-0.2 rounded">sweep-backup-*.json</code> file.
               </p>
             </div>
 
@@ -792,14 +792,12 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* ========================================================================= */}
-      {/* 5. ABOUT SECTION */}
-      {/* ========================================================================= */}
-      <Card className="bg-surface/30">
-        <CardHeader className="pb-3">
+      {/* 9. About Sweep */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div className="flex items-center gap-2">
             <Info className="w-4 h-4 text-primary" />
-            <CardTitle>About Sift</CardTitle>
+            <CardTitle>About Sweep</CardTitle>
           </div>
           <span className="text-[11px] font-mono text-muted-foreground">v0.1.0 · PWA Ready</span>
         </CardHeader>
@@ -811,7 +809,7 @@ export default function SettingsPage() {
               Privacy-First & Local-First
             </span>
             <p className="text-[11px]">
-              Sift operates privately without third-party ad tracking, data brokers, or bank credential collection. Your ledger belongs entirely to you.
+              Sweep operates privately without third-party ad tracking, data brokers, or bank credential collection. Your ledger belongs entirely to you.
             </p>
           </div>
 
@@ -825,11 +823,11 @@ export default function SettingsPage() {
             <span className="text-[11px] text-muted-foreground">Build 2026.08</span>
           </div>
 
-          {/* Rate Sift / Feedback (Secondary placement at bottom) */}
+          {/* Rate Sweep / Feedback */}
           <div className="pt-3 border-t border-border/50 flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground flex items-center gap-1">
               <Heart className="w-3 h-3 text-primary/70" />
-              Enjoying Sift?
+              Enjoying Sweep?
             </span>
             <a
               href="https://github.com/SanghpalBhakte/Sift"
@@ -857,7 +855,7 @@ export default function SettingsPage() {
       {/* Delete All Data Strong Confirmation Dialog */}
       {isDeleteAllModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-100">
-          <div className="sift-card max-w-sm w-full p-5 space-y-4 shadow-xl border-danger/30">
+          <div className="sweep-card max-w-sm w-full p-5 space-y-4 shadow-xl border-danger/30">
             <div className="flex items-center gap-2.5 text-danger font-semibold text-sm">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>Delete All Data?</span>

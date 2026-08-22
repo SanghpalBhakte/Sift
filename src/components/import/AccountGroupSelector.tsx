@@ -176,7 +176,7 @@ export function AccountGroupSelector({
                     <select
                       value={currentCurr}
                       onChange={(e) => onUpdateGroupCurrency(group.accountKey, e.target.value)}
-                      className="sift-input text-xs font-semibold font-mono py-1 px-2 h-7 w-auto cursor-pointer"
+                      className="sweep-input text-xs font-semibold font-mono py-1 px-2 h-7 w-auto cursor-pointer"
                     >
                       {POPULAR_CURRENCIES.map((c) => (
                         <option key={c} value={c}>

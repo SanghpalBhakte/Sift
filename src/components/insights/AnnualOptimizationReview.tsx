@@ -80,7 +80,7 @@ export function AnnualOptimizationReview({
 
       <CardContent className="space-y-3 pt-1">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Arbitrage calculations compare visible annual vs. monthly rate math from your ledger entries. Sift does not monitor live merchant feature quotas or plan limits.
+          Arbitrage calculations compare visible annual vs. monthly rate math from your ledger entries. Sweep does not monitor live merchant feature quotas or plan limits.
         </p>
 
         <div className="divide-y divide-border">

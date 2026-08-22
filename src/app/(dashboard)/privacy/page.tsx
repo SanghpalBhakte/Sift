@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
                 <ArrowLeft className="w-4 h-4" />
               </Button>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               Privacy & Data Policy
             </h1>
             <Badge variant="success" size="sm" className="font-mono text-[10px]">
@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Plain-English explanation of how Sift handles your financial records, recommendation limits, and storage boundaries.
+            Plain-English explanation of how Sweep handles your financial records, recommendation limits, and storage boundaries.
           </p>
         </div>
 
@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
         </Card>
       </div>
 
-      {/* 2. What Sift Collects vs What Sift Does NOT Collect */}
+      {/* 2. What Sweep Collects vs What Sweep Does NOT Collect */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -103,11 +103,11 @@ export default function PrivacyPolicyPage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* What Sift Collects */}
+            {/* What Sweep Collects */}
             <div className="p-3.5 rounded-xl border border-success/30 bg-success-subtle/10 space-y-2.5">
               <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-success" />
-                What Sift Collects (Explicit Data)
+                What Sweep Collects (Explicit Data)
               </div>
               <ul className="space-y-1.5 text-[11px] text-muted-foreground list-disc list-inside leading-relaxed">
                 <li><strong className="text-foreground">Subscription Records:</strong> Name, amount, currency, cadence, renewal dates, optional notes.</li>
@@ -118,11 +118,11 @@ export default function PrivacyPolicyPage() {
               </ul>
             </div>
 
-            {/* What Sift Does NOT Collect */}
+            {/* What Sweep Does NOT Collect */}
             <div className="p-3.5 rounded-xl border border-border bg-surface/50 space-y-2.5">
               <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <EyeOff className="w-4 h-4 text-primary" />
-                What Sift Does NOT Collect (Privacy Boundaries)
+                What Sweep Does NOT Collect (Privacy Boundaries)
               </div>
               <ul className="space-y-1.5 text-[11px] text-muted-foreground list-disc list-inside leading-relaxed">
                 <li><strong className="text-foreground">No Browser History:</strong> We cannot see websites or tabs you visit.</li>
@@ -141,12 +141,12 @@ export default function PrivacyPolicyPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            <CardTitle>How Sift Recommendations Work</CardTitle>
+            <CardTitle>How Sweep Recommendations Work</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-3.5 text-xs text-muted-foreground leading-relaxed pt-1">
           <p>
-            Sift provides an Action Center designed to keep you in control of recurring expenses.
+            Sweep provides an Action Center designed to keep you in control of recurring expenses.
             Our suggestions are transparent and rule-based rather than opaque AI guesses:
           </p>
 
@@ -157,7 +157,7 @@ export default function PrivacyPolicyPage() {
                 <div className="text-xs font-semibold text-foreground">Underutilization & Value Ratings</div>
                 <div className="text-[11px] leading-relaxed">
                   Utilization suggestions come directly from your assigned value tags (<code className="px-1 py-0.5 rounded bg-surface font-mono text-[10px]">rarely_used</code> or <code className="px-1 py-0.5 rounded bg-surface font-mono text-[10px]">cancel_candidate</code>).
-                  Because Sift does not monitor your browser or device activity, value signals reflect your own periodic reviews.
+                  Because Sweep does not monitor your browser or device activity, value signals reflect your own periodic reviews.
                 </div>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-foreground">Price-Hike Detection</div>
                 <div className="text-[11px] leading-relaxed">
-                  Sift can detect price changes only when it has enough historical evidence to compare against. For subscriptions with a single entry, Sift must wait for a later imported statement or a manually edited amount before it can infer a trend. Sift does not use bank OAuth scraping or store bank login credentials.
+                  Sweep can detect price changes only when it has enough historical evidence to compare against. For subscriptions with a single entry, Sweep must wait for a later imported statement or a manually edited amount before it can infer a trend. Sweep does not use bank OAuth scraping or store bank login credentials.
                 </div>
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-foreground">Plan Alternatives & Downgrade Suggestions</div>
                 <div className="text-[11px] leading-relaxed">
-                  Sift does not access merchant admin panels or store provider credentials. As a result, plan and feature quota comparisons are based on user-entered audit ratings, visible pricing tiers, and merchant cancellation links rather than live provider-side intelligence.
+                  Sweep does not access merchant admin panels or store provider credentials. As a result, plan and feature quota comparisons are based on user-entered audit ratings, visible pricing tiers, and merchant cancellation links rather than live provider-side intelligence.
                 </div>
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-foreground">Cancellation Assistance & Merchant Responsibility</div>
                 <div className="text-[11px] leading-relaxed">
-                  Sift also does not store merchant login credentials. Where a subscription must be canceled through a merchant’s website, Sift can help the user track, review, and prepare the cancellation, but the user must complete the final action directly with the merchant.
+                  Sweep also does not store merchant login credentials. Where a subscription must be canceled through a merchant’s website, Sweep can help the user track, review, and prepare the cancellation, but the user must complete the final action directly with the merchant.
                 </div>
               </div>
             </div>

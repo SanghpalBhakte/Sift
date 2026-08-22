@@ -9,8 +9,8 @@ export function Card({ className, interactive, children, ...props }: CardProps) 
   return (
     <div
       className={cn(
-        'sift-card p-4 sm:p-5',
-        interactive && 'sift-card-interactive',
+        'sweep-card p-4 sm:p-5',
+        interactive && 'sweep-card-interactive',
         className
       )}
       {...props}

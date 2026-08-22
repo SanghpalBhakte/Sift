@@ -3,23 +3,23 @@ import { Skeleton, MetricCardSkeleton, SubscriptionCardSkeleton } from '@/compon
 
 export default function DashboardLoading() {
   return (
-    <div className="space-y-6 max-w-xl mx-auto py-2 animate-in fade-in duration-150">
+    <div className="space-y-5 max-w-xl mx-auto pb-12 animate-in fade-in duration-150">
       {/* Hero Spend Card Skeleton */}
-      <div className="p-6 rounded-2xl bg-card border border-border space-y-4">
+      <div className="sweep-card p-5 sm:p-6 space-y-4 min-h-[148px]">
         <div className="flex items-center justify-between">
-          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-3.5 w-24 rounded-md" />
           <Skeleton className="h-7 w-32 rounded-lg" />
         </div>
-        <Skeleton className="h-10 w-44" />
-        <Skeleton className="h-3 w-64" />
+        <Skeleton className="h-9 w-48 rounded-md" />
+        <Skeleton className="h-3.5 w-60 rounded-md" />
       </div>
 
       {/* Category Chips Bar Skeleton */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-        <Skeleton className="h-8 w-14 rounded-md shrink-0" />
-        <Skeleton className="h-8 w-24 rounded-md shrink-0" />
-        <Skeleton className="h-8 w-20 rounded-md shrink-0" />
-        <Skeleton className="h-8 w-28 rounded-md shrink-0" />
+        <Skeleton className="h-7 w-12 rounded-full shrink-0" />
+        <Skeleton className="h-7 w-20 rounded-full shrink-0" />
+        <Skeleton className="h-7 w-24 rounded-full shrink-0" />
+        <Skeleton className="h-7 w-28 rounded-full shrink-0" />
       </div>
 
       {/* Subscription Cards Skeleton List */}

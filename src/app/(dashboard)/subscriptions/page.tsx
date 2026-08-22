@@ -16,10 +16,10 @@ export default function SubscriptionsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[hsl(var(--border))]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+          <h1 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-foreground">
             Subscriptions & Services
           </h1>
-          <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {subscriptions.length} total tracked · Total run-rate{' '}
             <span className="font-semibold text-[hsl(var(--foreground))]">
               {formatCurrency(stats.monthlyTotal, profile?.currency_preference || 'USD')}/mo

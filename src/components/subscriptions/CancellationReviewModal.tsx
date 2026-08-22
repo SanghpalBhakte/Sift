@@ -196,13 +196,13 @@ export function CancellationReviewModal({
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-foreground">
                   {completedAction === 'paused'
-                    ? 'Subscription Paused in Sift'
+                    ? 'Subscription Paused in Sweep'
                     : 'Subscription Marked Canceled'}
                 </h3>
                 <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                   {completedAction === 'paused'
                     ? 'Excluded from active spend run-rate. You can resume anytime.'
-                    : 'Updated your Sift ledger. Remember to also cancel on the merchant portal if active.'}
+                    : 'Updated your Sweep ledger. Remember to also cancel on the merchant portal if active.'}
                 </p>
               </div>
             </div>
@@ -282,7 +282,7 @@ export function CancellationReviewModal({
                 <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                 <div className="space-y-0.5 text-[11px] leading-relaxed">
                   <span className="font-semibold text-foreground">Client-Side & Privacy-First: </span>
-                  Sift updates your personal ledger and stops renewal notifications. Because Sift does not store merchant credentials or track bank logins, remember to also complete cancellation directly on {subscription.name}&apos;s billing portal if you haven&apos;t done so.
+                  Sweep updates your personal ledger and stops renewal notifications. Because Sweep does not store merchant credentials or track bank logins, remember to also complete cancellation directly on {subscription.name}&apos;s billing portal if you haven&apos;t done so.
                 </div>
               </div>
             </>
@@ -324,7 +324,7 @@ export function CancellationReviewModal({
                 onClick={handleConfirmCancelInSift}
                 className="text-xs gap-1 bg-danger hover:bg-danger/90 text-danger-foreground border-danger shadow-xs"
               >
-                <Scissors className="w-3.5 h-3.5" /> Mark Canceled in Sift
+                <Scissors className="w-3.5 h-3.5" /> Mark Canceled in Sweep
               </Button>
             </div>
           </div>

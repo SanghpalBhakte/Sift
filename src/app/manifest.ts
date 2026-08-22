@@ -2,13 +2,13 @@ import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Sift — Calm Recurring Spend Workspace',
-    short_name: 'Sift',
-    description: 'A calm, minimal, mobile-first subscription and recurring payments dashboard.',
+    name: 'Sweep — Your recurring life, in one clear view',
+    short_name: 'Sweep',
+    description: 'A calm, tactile subscription and recurring spend workspace.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#F8F7F3',
-    theme_color: '#265F56',
+    background_color: '#F6F1E8',
+    theme_color: '#5B294A',
     icons: [
       {
         src: '/icons/icon-192.svg',
@@ -21,6 +21,12 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: '512x512',
         type: 'image/svg+xml',
         purpose: 'any',
+      },
+      {
+        src: '/icons/icon-maskable.svg',
+        sizes: '512x512',
+        type: 'image/svg+xml',
+        purpose: 'maskable',
       },
     ],
   };

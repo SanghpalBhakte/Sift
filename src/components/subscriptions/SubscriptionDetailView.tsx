@@ -188,7 +188,7 @@ export function SubscriptionDetailView({
       ) : null}
 
       {/* 1. Visual Anchor & Hero Summary Card */}
-      <div className="sift-card p-5 sm:p-6 space-y-4">
+      <div className="sweep-card p-5 sm:p-6 space-y-4">
         <div className="flex items-start justify-between gap-3">
           {/* Logo / Anchor Badge & Title */}
           <div className="flex items-center gap-3.5 min-w-0">
@@ -440,7 +440,7 @@ export function SubscriptionDetailView({
       {/* Confirmation Modal for Destructive Delete */}
       {isDeleteModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-100">
-          <div className="sift-card max-w-sm w-full p-5 space-y-4 shadow-xl border-danger/30">
+          <div className="sweep-card max-w-sm w-full p-5 space-y-4 shadow-xl border-danger/30">
             <div className="flex items-center gap-2.5 text-danger font-semibold text-sm">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>Delete Subscription</span>

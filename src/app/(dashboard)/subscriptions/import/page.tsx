@@ -670,7 +670,7 @@ export default function StatementImportPage() {
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               Added <strong>{importedBatchCount} subscription{importedBatchCount === 1 ? '' : 's'}</strong>{' '}
               from {selectedGroupKey !== 'ALL' ? `Account (${selectedGroupKey})` : 'your statement'} to
-              the Sift ledger in <strong className="font-mono">{activeBatchCurrency}</strong>.
+              the Sweep ledger in <strong className="font-mono">{activeBatchCurrency}</strong>.
             </p>
             <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
               {hasComparisonData ? (

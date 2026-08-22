@@ -22,7 +22,7 @@ export default function EditSubscriptionPage() {
     return (
       <div className="space-y-4 max-w-xl mx-auto py-4">
         <div className="h-6 w-32 bg-surface-muted rounded-md animate-pulse" />
-        <div className="sift-card p-6 space-y-4">
+        <div className="sweep-card p-6 space-y-4">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-3/4" />

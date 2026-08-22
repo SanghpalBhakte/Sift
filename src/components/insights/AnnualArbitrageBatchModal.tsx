@@ -138,7 +138,7 @@ export function AnnualArbitrageBatchModal({
             <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <p className="text-[11px] leading-relaxed">
               <strong className="font-semibold text-foreground">Heuristic Rate Comparison: </strong>
-              Savings are estimated using your configured {benchmarkPercent}% annual discount benchmark or your recorded plan rates. Sift does not alter external provider accounts; verify pricing details on the provider portal before switching.
+              Savings are estimated using your configured {benchmarkPercent}% annual discount benchmark or your recorded plan rates. Sweep does not alter external provider accounts; verify pricing details on the provider portal before switching.
             </p>
           </div>
         </div>
@@ -266,7 +266,7 @@ export function AnnualArbitrageBatchModal({
 
                       {isConverted ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-success px-3 py-1.5 rounded-lg bg-success-subtle">
-                          <Check className="w-3.5 h-3.5" /> Switched in Sift
+                          <Check className="w-3.5 h-3.5" /> Switched in Sweep
                         </span>
                       ) : (
                         <Button

@@ -128,12 +128,12 @@ export function MFAChallenge({ onSuccess, onCancel }: MFAChallengeProps) {
   };
 
   return (
-    <Card className="sift-card max-w-sm w-full mx-auto p-6 space-y-5 shadow-lg border-border">
+    <Card className="sweep-card max-w-sm w-full mx-auto p-6 space-y-5 shadow-md border-border">
       <CardHeader className="p-0 text-center space-y-2">
         <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center">
           <ShieldCheck className="w-6 h-6" />
         </div>
-        <CardTitle className="text-lg font-bold tracking-tight text-foreground">
+        <CardTitle className="font-serif text-xl font-bold tracking-tight text-foreground">
           Two-Factor Authentication
         </CardTitle>
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -177,7 +177,7 @@ export function MFAChallenge({ onSuccess, onCancel }: MFAChallengeProps) {
                 onChange={handleCodeChange}
                 disabled={isLoading || isVerifying}
                 placeholder="000000"
-                className="sift-input w-full text-center text-2xl tracking-[0.35em] font-mono font-bold py-2.5 px-3 bg-surface"
+                className="sweep-input w-full text-center text-2xl tracking-[0.35em] font-mono font-bold py-2.5 px-3 bg-surface"
               />
             </div>
           </div>

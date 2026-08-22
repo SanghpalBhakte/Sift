@@ -51,9 +51,9 @@ export function generateFullBackupJson(params: {
 
   return {
     version: '1.0',
-    app: 'Sift',
+    app: 'Sweep',
     exported_at: new Date().toISOString(),
-    user_email: userEmail || profile?.email || 'unknown@sift.studio',
+    user_email: userEmail || profile?.email || 'unknown@sweep.app',
     profile: {
       currency_preference: profile?.currency_preference || 'USD',
       theme_preference: profile?.theme_preference || 'paper-ledger',
@@ -131,9 +131,9 @@ export function generateSubscriptionsCsv(subscriptions: Subscription[]): string 
  */
 export function generateBackupReadme(backup: SiftBackupData): string {
   return `================================================================================
-SIFT DATA BACKUP MANIFEST
+SWEEP DATA BACKUP MANIFEST
 ================================================================================
-Application: Sift (Personal Recurring Spend Workspace)
+Application: Sweep (Your recurring life, in one clear view)
 Version: ${backup.version}
 Exported At: ${backup.exported_at}
 Account: ${backup.user_email}
@@ -142,21 +142,21 @@ CONTENTS SUMMARY:
 - Total Subscriptions: ${backup.subscriptions.length}
 - Categories: ${backup.categories.length}
 - Primary Currency: ${backup.profile.currency_preference || 'USD'}
-- Theme: ${backup.profile.theme_preference || 'Paper Ledger'}
+- Theme: ${backup.profile.theme_preference || 'Warm Ledger'}
 - Annual Discount Benchmark: ${backup.profile.annual_benchmark_percent ?? 16.7}% (${Object.keys(backup.profile.category_annual_benchmarks || {}).length} category override(s))
 
 FILE DESCRIPTIONS:
-1. sift-backup-${backup.exported_at.split('T')[0]}.json
+1. sweep-backup-${backup.exported_at.split('T')[0]}.json
    Complete machine-readable JSON structure. Contains full subscription records,
    category tags, reminder preferences, and currency settings. Can be used to restore
-   your Sift account at any time in Settings > Restore Backup.
+   your Sweep account at any time in Settings > Restore Backup.
 
-2. sift-subscriptions-${backup.exported_at.split('T')[0]}.csv
+2. sweep-subscriptions-${backup.exported_at.split('T')[0]}.csv
    Open tabular spreadsheet format suitable for Microsoft Excel, Apple Numbers,
    or Google Sheets.
 
 PRIVACY & OWNERSHIP:
-This export contains only user-owned data created within your personal Sift workspace.
+This export contains only user-owned data created within your personal Sweep workspace.
 No passwords, authentication tokens, or internal credentials are included.
 ================================================================================`;
 }
@@ -172,10 +172,10 @@ export function validateBackupJson(rawJsonText: string): BackupValidationResult 
       return { valid: false, error: 'Invalid JSON file structure.' };
     }
 
-    if (data.app !== 'Sift' && !Array.isArray(data.subscriptions)) {
+    if (data.app !== 'Sweep' && data.app !== 'Sift' && !Array.isArray(data.subscriptions)) {
       return {
         valid: false,
-        error: 'File does not appear to be a recognized Sift backup format.',
+        error: 'File does not appear to be a recognized Sweep or Sift backup format.',
       };
     }
 
@@ -460,14 +460,14 @@ export function findCategorySuggestion(
  * Designed for visual clarity and contrast in both Paper Ledger (light) and Night Shelf (dark) themes.
  */
 export const DEFAULT_CATEGORY_PRESET_COLORS = [
-  '#10b981', // Moss / Emerald
-  '#6366f1', // Indigo
-  '#f59e0b', // Ochre / Amber
-  '#06b6d4', // Cyan / Sky
-  '#8b5cf6', // Violet / Purple
-  '#f97316', // Terracotta / Coral
-  '#14b8a6', // Sage / Teal
-  '#64748b', // Slate / Stone
+  '#527243', // Moss Green
+  '#5B294A', // Rich Ink Plum
+  '#A65A24', // Toasted Amber
+  '#4f46e5', // Deep Indigo
+  '#8b5cf6', // Muted Orchid
+  '#A63F3A', // Brick Red
+  '#64748b', // Warm Slate
+  '#d97706', // Ochre
 ] as const;
 
 /**

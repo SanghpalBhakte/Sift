@@ -21,11 +21,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const variantStyles: Record<NonNullable<ButtonProps['variant']>, string> = {
-      primary:   'sift-btn-primary',
-      secondary: 'sift-btn-secondary',
-      ghost:     'sift-btn-ghost',
-      outline:   'sift-btn-outline',
-      danger:    'sift-btn-danger',
+      primary:   'sweep-btn-primary',
+      secondary: 'sweep-btn-secondary',
+      ghost:     'sweep-btn-ghost',
+      outline:   'sweep-btn-outline',
+      danger:    'sweep-btn-danger',
     };
 
     const sizeStyles: Record<NonNullable<ButtonProps['size']>, string> = {
@@ -41,7 +41,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={cn(
-          'sift-btn font-medium transition-all inline-flex items-center justify-center',
+          'sweep-btn font-medium transition-all inline-flex items-center justify-center',
           variantStyles[variant],
           sizeStyles[size],
           className

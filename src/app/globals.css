@@ -1,32 +1,27 @@
 @import "tailwindcss";
 
 /* ================================================================
-   SIFT DESIGN TOKEN SYSTEM
+   SWEEP DESIGN TOKEN SYSTEM
    
    Architecture (Tailwind v4):
    ─────────────────────────────────────────────────────────────────
-   @theme {} defines the utility API exactly once. Values reference
-   CSS custom properties that are overridden per-theme in :root and
-   .dark / [data-theme]. Never duplicate @theme per theme state.
+   Refined "paper, ink, and receipt / desk tool" aesthetic.
    
-   Token namespaces → Tailwind utilities generated:
-     --color-*    → bg-*, text-*, border-*, ring-*, shadow-* etc.
-     --radius-*   → rounded-*
-     --shadow-*   → shadow-*
-     --ease-*     → ease-*
-     --tracking-* → tracking-*
-     --font-*     → font-*
-   
-   Usage examples:
-     bg-card           background: hsl(var(--card))
-     text-foreground   color: hsl(var(--foreground))
-     text-muted-foreground
-     border-border
-     rounded-card      border-radius: 0.75rem (--radius-card)
-     shadow-card       box-shadow: var(--_shadow-card) — theme-aware
-     ease-snappy       cubic-bezier(0.2, 0, 0, 1)
-     tracking-widest
-     bg-chart-1        background: hsl(var(--chart-1))
+   Light Mode ("Warm Ledger"):
+     Background: Warm Parchment (#F6F1E8)
+     Card: Soft Cream (#FCF9F3)
+     Muted Surface: Muted Oat (#EEE6DA)
+     Ink Text: Deep Charcoal Brown (#24201E)
+     Primary Accent: Rich Ink Plum (#5B294A)
+     Secondary Tint: Muted Dusty Rose Wash (#E8D7DF)
+     
+   Dark Mode ("Espresso Desk"):
+     Background: Near-Black Espresso (#191516)
+     Card: Dark Warm Graphite (#211C1E)
+     Muted Surface: Dark Cocoa (#2C2527)
+     Ink Text: Warm Ivory (#F3EDE5)
+     Primary Accent: Muted Orchid/Plum (#C98AAE)
+     Secondary Tint: Deep Mulberry Wash (#3C2933)
    ================================================================ */
 
 /* ── Token API: declared once. Values reference runtime CSS vars. ── */
@@ -57,7 +52,7 @@
   --color-input:                hsl(var(--input));
   --color-ring:                 hsl(var(--ring));
 
-  /* Primary accent — muted teal-sage */
+  /* Primary accent — Rich ink plum */
   --color-primary:              hsl(var(--primary));
   --color-primary-hover:        hsl(var(--primary-hover));
   --color-primary-foreground:   hsl(var(--primary-foreground));
@@ -67,7 +62,7 @@
   --color-secondary-hover:      hsl(var(--secondary-hover));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
 
-  /* Accent tint */
+  /* Accent tint / highlight */
   --color-accent:               hsl(var(--accent));
   --color-accent-foreground:    hsl(var(--accent-foreground));
 
@@ -84,7 +79,7 @@
   --color-danger-subtle:        hsl(var(--danger-subtle));
   --color-danger-foreground:    hsl(var(--danger-foreground));
 
-  /* Chart palette tokens (semantic, accessible, theme-aware) */
+  /* Chart palette tokens (editorial paper palette) */
   --color-chart-1:              hsl(var(--chart-1));
   --color-chart-2:              hsl(var(--chart-2));
   --color-chart-3:              hsl(var(--chart-3));
@@ -92,7 +87,7 @@
   --color-chart-5:              hsl(var(--chart-5));
   --color-chart-6:              hsl(var(--chart-6));
 
-  /* ── Border Radius: --radius-* namespace ───────────────────────── */
+  /* ── Border Radius: --radius-* namespace (calm desk tool geometry) ── */
   --radius-none:   0px;
   --radius-xs:     0.2rem;
   --radius-sm:     0.375rem;
@@ -102,14 +97,13 @@
   --radius-2xl:    1.25rem;
   --radius-3xl:    1.5rem;
   --radius-full:   9999px;
-  /* Component-semantic aliases */
   --radius-card:   0.75rem;
   --radius-btn:    0.5rem;
   --radius-badge:  0.375rem;
   --radius-input:  0.5rem;
   --radius-modal:  1rem;
 
-  /* ── Shadows: --shadow-* namespace (theme-aware via CSS vars) ──── */
+  /* ── Shadows: theme-aware via CSS vars ──── */
   --shadow-xs:      var(--_shadow-xs);
   --shadow-sm:      var(--_shadow-sm);
   --shadow-md:      var(--_shadow-md);
@@ -119,13 +113,13 @@
   --shadow-popover: var(--_shadow-popover);
   --shadow-modal:   var(--_shadow-modal);
 
-  /* ── Easing: --ease-* namespace ────────────────────────────────── */
+  /* ── Easing ────────────────────────────────── */
   --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
   --ease-linear: linear;
 
-  /* ── Letter Spacing: --tracking-* namespace ────────────────────── */
+  /* ── Letter Spacing ────────────────────────── */
   --tracking-tighter: -0.04em;
   --tracking-tight:   -0.02em;
   --tracking-snug:    -0.01em;
@@ -134,147 +128,191 @@
   --tracking-wider:    0.05em;
   --tracking-widest:   0.1em;
 
-  /* ── Font Families: --font-* namespace ─────────────────────────── */
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  /* ── Font Families ─────────────────────────── */
+  --font-serif: var(--font-fraunces), 'Fraunces', Georgia, serif;
+  --font-display: var(--font-fraunces), 'Fraunces', Georgia, serif;
+  --font-sans: var(--font-sans), 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
 }
 
 /* ================================================================
-   THEME VALUES — Override CSS vars per active theme.
-   @theme references these; never define @theme inside a selector.
+   THEME VALUES — Sweep Paper & Ink System
    ================================================================ */
 
 @layer base {
-  /* ─── Light Mode: "Paper Ledger" ───────────────────────────────── */
+  /* ─── Light Mode: "Warm Ledger" (Paper & Ink) ─────────────────── */
   :root,
-  [data-theme="paper-ledger"] {
-    /* Backgrounds */
-    --background:            38 18% 97.5%;
-    --card:                  0 0% 100%;
-    --card-foreground:       220 15% 11%;
-    --popover:               0 0% 100%;
-    --popover-foreground:    220 15% 11%;
-    --surface:               38 14% 93%;
-    --surface-muted:         38 10% 89%;
+  [data-theme="paper-ledger"],
+  [data-theme="warm-ledger"] {
+    /* Sweep — Receipt Fold Direct Hex Variables */
+    --color-brand:            #5B294A;  /* Rich Ink Plum — primary accent */
+    --color-brand-hover:      #421C35;  /* Deep Aubergine — hover/active */
+    --color-brand-highlight:  #E8D7DF;  /* Dusty Rose — subtle highlight */
+
+    /* Light mode surfaces */
+    --color-bg:               #F6F1E8;  /* Warm Parchment */
+    --color-surface:          #FCF9F3;  /* Cream Paper */
+    --color-surface-2:        #FAFAF7;
+    --color-surface-offset:   #F0EBE0;
+    --color-border:           #D8CFC4;  /* Quiet Oat */
+    --color-divider:          #E4DED6;
+
+    /* Text */
+    --color-text:             #24201E;  /* Crisp Ink */
+    --color-text-muted:       #7A6E68;
+    --color-text-faint:       #B8AFA8;
+
+    /* Status colors */
+    --color-success:          #527243;  /* Moss Green */
+    --color-success-highlight:#DDE8D6;
+    --color-warning:          #A65A24;  /* Toasted Amber */
+    --color-warning-highlight:#F0DECE;
+    --color-error:            #A63F3A;  /* Brick Red */
+    --color-error-highlight:  #F0D8D7;
+
+    /* Backgrounds — warm parchment / paper */
+    --background:            38 35% 94%;       /* #F6F1E8 */
+    --card:                  40 43% 97%;       /* #FCF9F3 */
+    --card-foreground:       20 9% 13%;        /* #24201E */
+    --popover:               40 43% 97%;       /* #FCF9F3 */
+    --popover-foreground:    20 9% 13%;        /* #24201E */
+    --surface:               36 27% 89%;       /* #EEE6DA */
+    --surface-muted:         35 20% 85%;       /* #E3D9CC */
     --surface-raised:        0 0% 100%;
 
     /* Text */
-    --foreground:            220 15% 11%;
-    --muted:                 38 10% 91%;
-    --muted-foreground:      220 8% 46%;
+    --foreground:            20 9% 13%;        /* #24201E Deep charcoal-brown */
+    --muted:                 36 27% 89%;       /* #EEE6DA */
+    --muted-foreground:      30 7% 43%;        /* #756D65 Warm gray-brown */
 
     /* Borders */
-    --border:                38 12% 86.5%;
-    --border-strong:         220 8% 72%;
-    --input:                 38 12% 88%;
-    --ring:                  168 35% 26%;
+    --border:                34 20% 81%;       /* #D8CFC4 */
+    --border-strong:         32 11% 67%;       /* #B5ACA2 */
+    --input:                 35 24% 87%;       /* #E8DFD3 */
+    --ring:                  321 38% 26%;      /* #5B294A Ink plum */
 
-    /* Primary — muted teal-sage */
-    --primary:               168 35% 26%;
-    --primary-hover:         168 40% 20%;
-    --primary-foreground:    0 0% 100%;
+    /* Primary — rich ink plum */
+    --primary:               321 38% 26%;      /* #5B294A */
+    --primary-hover:         321 41% 18%;      /* #421C35 Deep aubergine */
+    --primary-foreground:    40 43% 97%;       /* #FCF9F3 Cream */
 
     /* Secondary */
-    --secondary:             38 12% 92%;
-    --secondary-hover:       38 12% 87%;
-    --secondary-foreground:  220 12% 16%;
+    --secondary:             36 27% 89%;       /* #EEE6DA Muted oat */
+    --secondary-hover:       37 26% 84%;       /* #E2D8C9 */
+    --secondary-foreground:  20 9% 13%;        /* #24201E */
 
-    /* Accent tint */
-    --accent:                168 28% 92%;
-    --accent-foreground:     168 40% 19%;
+    /* Accent tint — dusty rose/plum wash */
+    --accent:                327 24% 88%;      /* #E8D7DF */
+    --accent-foreground:     321 38% 26%;      /* #5B294A */
 
     /* Semantic */
-    --success:               152 42% 30%;
-    --success-subtle:        152 38% 93%;
-    --success-foreground:    0 0% 100%;
+    --success:               100 26% 35%;      /* #527243 Moss green */
+    --success-subtle:        102 28% 93%;      /* #EAF1E7 */
+    --success-foreground:    40 43% 97%;
 
-    --warning:               33 78% 36%;
-    --warning-subtle:        33 65% 93%;
-    --warning-foreground:    0 0% 100%;
+    --warning:               25 64% 40%;       /* #A65A24 Toasted amber */
+    --warning-subtle:        25 60% 94%;       /* #F9EFE7 */
+    --warning-foreground:    40 43% 97%;
 
-    --danger:                4 68% 44%;
-    --danger-subtle:         4 60% 95%;
-    --danger-foreground:     0 0% 100%;
+    --danger:                3 48% 44%;        /* #A63F3A Brick red */
+    --danger-subtle:         4 58% 95%;        /* #FBEBEA */
+    --danger-foreground:     40 43% 97%;
 
-    /* Chart palette — calm, balanced, distinct in light */
-    --chart-1:               168 35% 26%;  /* Primary teal-sage */
-    --chart-2:               190 35% 36%;  /* Slate blue-teal */
-    --chart-3:               215 30% 42%;  /* Calm steel */
-    --chart-4:               35 60% 42%;   /* Warm amber */
-    --chart-5:               152 35% 38%;  /* Soft emerald */
-    --chart-6:               280 20% 45%;  /* Muted heather */
+    /* Chart palette — restrained, editorial warm palette */
+    --chart-1:               321 38% 26%;      /* Rich Ink Plum */
+    --chart-2:               100 26% 35%;      /* Moss Green */
+    --chart-3:               25 64% 40%;       /* Toasted Amber */
+    --chart-4:               3 48% 44%;        /* Brick Clay */
+    --chart-5:               30 7% 43%;        /* Warm Slate */
+    --chart-6:               324 26% 59%;      /* Dusty Rose */
 
     /* Theme-aware shadow values */
-    --_shadow-xs:      0 1px 2px 0 rgb(26 32 30 / 0.04);
-    --_shadow-sm:      0 1px 3px 0 rgb(26 32 30 / 0.05), 0 1px 2px -1px rgb(26 32 30 / 0.03);
-    --_shadow-md:      0 4px 6px -1px rgb(26 32 30 / 0.06), 0 2px 4px -2px rgb(26 32 30 / 0.04);
-    --_shadow-lg:      0 10px 15px -3px rgb(26 32 30 / 0.07), 0 4px 6px -4px rgb(26 32 30 / 0.04);
-    --_shadow-xl:      0 20px 25px -5px rgb(26 32 30 / 0.08), 0 8px 10px -6px rgb(26 32 30 / 0.05);
-    --_shadow-card:    0 1px 2px 0 rgb(26 32 30 / 0.04), 0 2px 8px -2px rgb(26 32 30 / 0.03);
-    --_shadow-popover: 0 8px 24px -4px rgb(26 32 30 / 0.10), 0 2px 8px -2px rgb(26 32 30 / 0.07);
-    --_shadow-modal:   0 20px 25px -5px rgb(26 32 30 / 0.12), 0 10px 10px -5px rgb(26 32 30 / 0.04);
+    --_shadow-xs:      0 1px 2px 0 rgb(36 32 30 / 0.04);
+    --_shadow-sm:      0 1px 3px 0 rgb(36 32 30 / 0.05), 0 1px 2px -1px rgb(36 32 30 / 0.03);
+    --_shadow-md:      0 4px 6px -1px rgb(36 32 30 / 0.06), 0 2px 4px -2px rgb(36 32 30 / 0.04);
+    --_shadow-lg:      0 10px 15px -3px rgb(36 32 30 / 0.07), 0 4px 6px -4px rgb(36 32 30 / 0.04);
+    --_shadow-xl:      0 20px 25px -5px rgb(36 32 30 / 0.08), 0 8px 10px -6px rgb(36 32 30 / 0.05);
+    --_shadow-card:    0 1px 2px 0 rgb(36 32 30 / 0.04), 0 2px 8px -2px rgb(36 32 30 / 0.03);
+    --_shadow-popover: 0 8px 24px -4px rgb(36 32 30 / 0.10), 0 2px 8px -2px rgb(36 32 30 / 0.07);
+    --_shadow-modal:   0 20px 25px -5px rgb(36 32 30 / 0.12), 0 10px 10px -5px rgb(36 32 30 / 0.04);
   }
 
-  /* ─── Dark Mode: "Night Shelf" — warm-slate, not green-tinted ─── */
+  /* ─── Dark Mode: "Espresso Desk" (Warm Graphite & Plum) ────────── */
   .dark,
-  [data-theme="night-shelf"] {
-    /* Backgrounds — warm-slate base */
-    --background:            222 14% 8%;
-    --card:                  222 12% 11%;
-    --card-foreground:       210 10% 93%;
-    --popover:               222 11% 13%;
-    --popover-foreground:    210 10% 93%;
-    --surface:               222 10% 14%;
-    --surface-muted:         222 8% 17%;
-    --surface-raised:        222 10% 16%;
+  [data-theme="dark"],
+  [data-theme="night-shelf"],
+  [data-theme="espresso-desk"] {
+    /* Sweep — Dark Mode Direct Hex Variables */
+    --color-bg:               #191516;
+    --color-surface:          #211C1E;
+    --color-surface-2:        #261F22;
+    --color-surface-offset:   #1D1719;
+    --color-border:           #352D30;
+    --color-divider:          #2D2528;
+    --color-text:             #F3EDE5;
+    --color-text-muted:       #A89A94;
+    --color-text-faint:       #6B5F5A;
+    --color-brand:            #C98AAE;  /* Muted Orchid for dark mode */
+    --color-brand-hover:      #B06F96;
+    --color-brand-highlight:  #3C2933;
+
+    /* Backgrounds — near-black espresso */
+    --background:            345 9% 9%;        /* #191516 */
+    --card:                  336 9% 12%;       /* #211C1E */
+    --card-foreground:       34 30% 92%;       /* #F3EDE5 */
+    --popover:               336 9% 12%;       /* #211C1E */
+    --popover-foreground:    34 30% 92%;       /* #F3EDE5 */
+    --surface:               340 7% 16%;       /* #2C2527 */
+    --surface-muted:         340 7% 20%;       /* #352D30 */
+    --surface-raised:        340 8% 14%;       /* #262022 */
 
     /* Text */
-    --foreground:            210 10% 93%;
-    --muted:                 222 8% 18%;
-    --muted-foreground:      220 8% 56%;
+    --foreground:            34 30% 92%;       /* #F3EDE5 Warm ivory */
+    --muted:                 340 7% 16%;       /* #2C2527 */
+    --muted-foreground:      24 10% 69%;       /* #B8AEA8 Soft mushroom */
 
     /* Borders */
-    --border:                222 8% 18%;
-    --border-strong:         222 8% 26%;
-    --input:                 222 9% 19%;
-    --ring:                  165 38% 52%;
+    --border:                340 9% 20%;       /* #382F32 */
+    --border-strong:         340 10% 28%;      /* #4D4044 */
+    --input:                 340 7% 16%;       /* #2C2527 */
+    --ring:                  326 38% 66%;      /* #C98AAE Muted orchid */
 
-    /* Primary — bright sage for dark */
-    --primary:               165 38% 52%;
-    --primary-hover:         165 42% 58%;
-    --primary-foreground:    222 14% 8%;
+    /* Primary — muted orchid / plum */
+    --primary:               326 38% 66%;      /* #C98AAE */
+    --primary-hover:         326 48% 78%;      /* #E3ACC9 Pale rose */
+    --primary-foreground:    345 9% 9%;        /* #191516 */
 
     /* Secondary */
-    --secondary:             222 8% 15%;
-    --secondary-hover:       222 8% 19%;
-    --secondary-foreground:  210 10% 93%;
+    --secondary:             340 7% 16%;       /* #2C2527 Dark cocoa */
+    --secondary-hover:       340 9% 20%;       /* #382F32 */
+    --secondary-foreground:  34 30% 92%;       /* #F3EDE5 */
 
-    /* Accent tint */
-    --accent:                165 22% 16%;
-    --accent-foreground:     165 38% 72%;
+    /* Accent tint — deep mulberry wash */
+    --accent:                328 19% 20%;      /* #3C2933 */
+    --accent-foreground:     326 48% 78%;      /* #E3ACC9 */
 
     /* Semantic */
-    --success:               152 38% 50%;
-    --success-subtle:        152 28% 14%;
-    --success-foreground:    222 14% 8%;
+    --success:               91 26% 59%;       /* #94B17A Sage green */
+    --success-subtle:        98 20% 15%;       /* #232D1E */
+    --success-foreground:    345 9% 9%;
 
-    --warning:               33 62% 55%;
-    --warning-subtle:        33 38% 15%;
-    --warning-foreground:    222 14% 8%;
+    --warning:               28 71% 66%;       /* #E6A56B Warm apricot */
+    --warning-subtle:        28 36% 16%;       /* #37271A */
+    --warning-foreground:    345 9% 9%;
 
-    --danger:                4 65% 58%;
-    --danger-subtle:         4 32% 16%;
-    --danger-foreground:     222 14% 8%;
+    --danger:                3 59% 70%;        /* #E08B85 Soft coral */
+    --danger-subtle:         3 28% 16%;        /* #361F1E */
+    --danger-foreground:     345 9% 9%;
 
-    /* Chart palette — luminous, clear contrast in dark */
-    --chart-1:               165 38% 52%;  /* Primary bright sage */
-    --chart-2:               190 45% 58%;  /* Bright slate cyan */
-    --chart-3:               215 42% 64%;  /* Light steel blue */
-    --chart-4:               35 70% 60%;   /* Warm golden amber */
-    --chart-5:               152 45% 58%;  /* Mint green */
-    --chart-6:               280 32% 68%;  /* Soft lavender */
+    /* Chart palette — luminous contrast in dark */
+    --chart-1:               326 38% 66%;      /* Muted Plum */
+    --chart-2:               91 26% 59%;       /* Sage Green */
+    --chart-3:               28 71% 66%;       /* Warm Apricot */
+    --chart-4:               3 59% 70%;        /* Soft Coral */
+    --chart-5:               24 10% 69%;       /* Soft Mushroom */
+    --chart-6:               326 48% 78%;      /* Pale Rose */
 
-    /* Theme-aware shadow values (stronger for dark) */
+    /* Theme-aware shadow values */
     --_shadow-xs:      0 1px 2px 0 rgb(0 0 0 / 0.35);
     --_shadow-sm:      0 1px 3px 0 rgb(0 0 0 / 0.40), 0 1px 2px -1px rgb(0 0 0 / 0.30);
     --_shadow-md:      0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.35);
@@ -300,7 +338,7 @@
 
   /* Selection highlight */
   ::selection {
-    background-color: hsl(var(--primary) / 0.15);
+    background-color: hsl(var(--primary) / 0.2);
     color: hsl(var(--foreground));
   }
 
@@ -309,21 +347,25 @@
     scroll-behavior: smooth;
   }
 
-  /* Focus ring — applied via JS on keyboard nav; prefer focus-visible */
+  /* Focus ring */
   *:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
+
+  /* Tabular numbers for financial metrics */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* ================================================================
-   CSS COMPONENT CLASSES — Reusable base styles.
-   These reference CSS vars directly for theme-aware values.
-   Components extend these with additional Tailwind utilities.
+   SWEEP CSS COMPONENT CLASSES
    ================================================================ */
 
 @layer components {
   /* ── Cards ────────────────────────────────────────────────────── */
+  .sweep-card,
   .sift-card {
     background-color: hsl(var(--card));
     color: hsl(var(--card-foreground));
@@ -333,15 +375,18 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
+  .sweep-card-interactive,
   .sift-card-interactive {
     cursor: pointer;
   }
+  .sweep-card-interactive:hover,
   .sift-card-interactive:hover {
-    border-color: hsl(var(--border-strong) / 0.5);
+    border-color: hsl(var(--border-strong) / 0.7);
     box-shadow: var(--_shadow-popover);
   }
 
   /* ── Inputs ───────────────────────────────────────────────────── */
+  .sweep-input,
   .sift-input {
     background-color: hsl(var(--card));
     color: hsl(var(--foreground));
@@ -354,13 +399,16 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     width: 100%;
   }
+  .sweep-input:focus,
   .sift-input:focus {
     border-color: hsl(var(--ring));
-    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.14);
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.15);
   }
+  .sweep-input::placeholder,
   .sift-input::placeholder {
     color: hsl(var(--muted-foreground) / 0.7);
   }
+  .sweep-input:disabled,
   .sift-input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -368,6 +416,7 @@
   }
 
   /* ── Buttons ──────────────────────────────────────────────────── */
+  .sweep-btn,
   .sift-btn {
     display: inline-flex;
     align-items: center;
@@ -386,63 +435,76 @@
     border: 1px solid transparent;
     position: relative;
   }
+  .sweep-btn:active:not(:disabled),
   .sift-btn:active:not(:disabled) {
     transform: scale(0.982);
   }
+  .sweep-btn:disabled,
   .sift-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
     transform: none;
   }
+  .sweep-btn:focus-visible,
   .sift-btn:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
 
+  .sweep-btn-primary,
   .sift-btn-primary {
     background-color: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
     border-color: hsl(var(--primary));
   }
+  .sweep-btn-primary:hover:not(:disabled),
   .sift-btn-primary:hover:not(:disabled) {
     background-color: hsl(var(--primary-hover));
     border-color: hsl(var(--primary-hover));
   }
 
+  .sweep-btn-secondary,
   .sift-btn-secondary {
     background-color: hsl(var(--secondary));
     color: hsl(var(--secondary-foreground));
     border-color: hsl(var(--border));
   }
+  .sweep-btn-secondary:hover:not(:disabled),
   .sift-btn-secondary:hover:not(:disabled) {
     background-color: hsl(var(--secondary-hover));
   }
 
+  .sweep-btn-ghost,
   .sift-btn-ghost {
     background-color: transparent;
     color: hsl(var(--muted-foreground));
     border-color: transparent;
   }
+  .sweep-btn-ghost:hover:not(:disabled),
   .sift-btn-ghost:hover:not(:disabled) {
     background-color: hsl(var(--surface));
     color: hsl(var(--foreground));
   }
 
+  .sweep-btn-outline,
   .sift-btn-outline {
     background-color: transparent;
     color: hsl(var(--foreground));
     border-color: hsl(var(--border));
   }
+  .sweep-btn-outline:hover:not(:disabled),
   .sift-btn-outline:hover:not(:disabled) {
     background-color: hsl(var(--surface));
     border-color: hsl(var(--border-strong) / 0.5);
   }
 
+  .sweep-btn-danger,
   .sift-btn-danger {
     background-color: hsl(var(--danger-subtle));
     color: hsl(var(--danger));
     border-color: hsl(var(--danger) / 0.18);
   }
+  .sweep-btn-danger:hover:not(:disabled),
   .sift-btn-danger:hover:not(:disabled) {
     background-color: hsl(var(--danger));
     color: hsl(var(--danger-foreground));
@@ -450,6 +512,7 @@
   }
 
   /* ── Badges ───────────────────────────────────────────────────── */
+  .sweep-badge,
   .sift-badge {
     display: inline-flex;
     align-items: center;
@@ -461,6 +524,15 @@
     line-height: 1;
     white-space: nowrap;
     letter-spacing: 0.01em;
+  }
+
+  /* ── Editorial Section Labels ─────────────────────────────────── */
+  .sweep-editorial-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
   }
 
   /* ── Mobile Safe Padding ──────────────────────────────────────── */

@@ -195,7 +195,7 @@ export function PriceHikeReviewModal({
                 </div>
                 <p className="text-[11px] leading-relaxed">
                   Based on your recorded ledger history, this subscription increased by {formatCurrency(delta, subscription.currency)}/
-                  {subscription.billing_cycle}. Sift detects price changes strictly from your imported statements and manual updates.
+                  {subscription.billing_cycle}. Sweep detects price changes strictly from your imported statements and manual updates.
                   You can mark this price acceptable to dismiss alerts, set renewal reminders, or review cancellation options.
                 </p>
               </div>
@@ -247,7 +247,7 @@ export function PriceHikeReviewModal({
                       Review Cancellation / Alternatives
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      Evaluate alternatives or mark canceled in Sift.
+                      Evaluate alternatives or mark canceled in Sweep.
                     </div>
                   </div>
                   <Scissors className="w-4 h-4 text-danger shrink-0" />

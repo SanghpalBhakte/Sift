@@ -6,6 +6,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { cn } from '@/lib/utils/cn';
 
+import { SweepLogo } from '@/components/brand/SweepLogo';
+
 export interface AuthShellProps {
   title?: string;
   description?: string;
@@ -31,19 +33,14 @@ export function AuthShell({
     <div className={cn('w-full max-w-md mx-auto space-y-5', className)}>
       {showHeaderLogo ? (
         <div className="flex items-center justify-between px-1">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs shadow-xs transition-transform group-hover:scale-105">
-              S
-            </div>
-            <span className="text-base font-bold tracking-tight text-foreground">
-              Sift
-            </span>
+          <Link href="/" className="flex items-center gap-2 group" aria-label="Sweep home">
+            <SweepLogo size="sm" />
           </Link>
           <ThemeToggle />
         </div>
       ) : null}
 
-      <Card className={cn('sift-card shadow-lg border-border', cardClassName)}>
+      <Card className={cn('sweep-card shadow-md border-border', cardClassName)}>
         {(title || description || icon) ? (
           <CardHeader className="text-center flex-col items-center justify-center gap-1.5 pb-2">
             {icon ? (
@@ -52,7 +49,7 @@ export function AuthShell({
               </div>
             ) : null}
             {title ? (
-              <CardTitle className="text-lg font-bold tracking-tight text-foreground">
+              <CardTitle className="font-serif text-xl font-bold tracking-tight text-foreground">
                 {title}
               </CardTitle>
             ) : null}

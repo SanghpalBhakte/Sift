@@ -44,10 +44,10 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await sendWebPushToUser(user.id, {
-      title: 'Sift · Test Notification',
+      title: 'Sweep · Test Notification',
       body: 'Quiet renewal and trial alerts are active on this browser.',
       url: '/settings',
-      tag: 'sift-test-push',
+      tag: 'sweep-test-push',
     });
 
     if (result.sent === 0) {

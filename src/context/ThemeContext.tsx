@@ -13,7 +13,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_STORAGE_KEY = 'sift_theme_preference';
+const THEME_STORAGE_KEY = 'sweep_theme_preference';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system');
@@ -22,7 +22,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+      const stored = (localStorage.getItem(THEME_STORAGE_KEY) ||
+        localStorage.getItem('sift_theme_preference')) as Theme | null;
       if (stored && (stored === 'paper-ledger' || stored === 'night-shelf' || stored === 'system')) {
         setThemeState(stored);
       }

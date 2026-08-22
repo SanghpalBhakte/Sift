@@ -84,12 +84,12 @@ describe('getCancellationMatchedAlternative', () => {
     expect(alternative.externalLinkUrl).toBe('https://framer.com/cancel');
   });
 
-  it('returns pause in Sift recommendation when reason is temporary_pause', () => {
+  it('returns pause in Sweep recommendation when reason is temporary_pause', () => {
     const sub = createMockSub({ name: 'Headspace' });
     const alternative = getCancellationMatchedAlternative('temporary_pause', sub);
 
     expect(alternative.recommendedAction).toBe('pause_review');
-    expect(alternative.actionButtonLabel).toBe('Pause in Sift');
+    expect(alternative.actionButtonLabel).toBe('Pause in Sweep');
   });
 
   it('returns keep until renewal reminder recommendation when reason is not_using_enough', () => {

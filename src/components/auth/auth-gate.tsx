@@ -89,7 +89,7 @@ export function AuthGate({ children }: AuthGateProps) {
   if (!isAuthorized) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center p-4">
-        <Card className="sift-card max-w-sm w-full p-6 space-y-4 shadow-sm">
+        <Card className="sweep-card max-w-sm w-full p-6 space-y-4 shadow-sm">
           <div className="flex items-center gap-3">
             <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
             <div className="space-y-2 flex-1">

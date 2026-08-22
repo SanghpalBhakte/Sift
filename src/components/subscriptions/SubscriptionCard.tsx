@@ -66,7 +66,7 @@ export function SubscriptionCard({
       <Link
         href={`/subscriptions/${subscription.id}/edit`}
         className={cn(
-          'sift-card p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:border-primary/50 transition-all block group',
+          'sweep-card p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:border-primary/50 transition-all block group',
           subscription.status === 'paused' && 'opacity-60',
           subscription.status === 'canceled' && 'opacity-50 border-dashed'
         )}
@@ -136,7 +136,7 @@ export function SubscriptionCard({
     <>
       <div
         className={cn(
-          'sift-card p-3.5 sm:p-4 transition-all',
+          'sweep-card p-3.5 sm:p-4 transition-all',
           subscription.status === 'paused' && 'opacity-60',
           subscription.status === 'canceled' && 'opacity-50 border-dashed'
         )}
@@ -155,7 +155,7 @@ export function SubscriptionCard({
               {subscription.status === 'paused' ? (
                 <Badge variant="muted" size="sm">Paused</Badge>
               ) : subscription.status === 'canceled' ? (
-                <Badge variant="danger" size="sm">Canceled in Sift</Badge>
+                <Badge variant="danger" size="sm">Canceled in Sweep</Badge>
               ) : null}
 
               {subscription.is_trial ? (

@@ -32,7 +32,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'sift-badge rounded-badge',
+        'sweep-badge rounded-badge',
         variantStyles[variant],
         sizeStyles[size],
         className

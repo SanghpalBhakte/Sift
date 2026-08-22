@@ -208,7 +208,7 @@ export default function SecuritySettingsPage() {
             <CardTitle>Change Password</CardTitle>
           </div>
           <CardDescription>
-            Update your password to keep your Sift account secure.
+            Update your password to keep your Sweep account secure.
           </CardDescription>
         </CardHeader>
 

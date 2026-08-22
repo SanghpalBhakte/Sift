@@ -77,16 +77,30 @@ export default function DashboardPage() {
   // Next renewal info
   const nextRenewal = stats.nextUpcomingRenewal;
 
-  // Skeleton loading state
+  // Streaming skeleton loading state matching exact layout dimensions
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-xl mx-auto py-2">
-        <div className="p-6 rounded-2xl bg-card border border-border space-y-3 animate-pulse">
-          <div className="h-4 w-28 bg-surface-muted rounded-md" />
-          <div className="h-10 w-48 bg-surface-muted rounded-md" />
-          <div className="h-3 w-64 bg-surface-muted rounded-md" />
+      <div className="space-y-5 max-w-xl mx-auto pb-12 animate-in fade-in duration-150">
+        {/* Hero Spend Card Skeleton */}
+        <div className="sweep-card p-5 sm:p-6 space-y-4 min-h-[148px]">
+          <div className="flex items-center justify-between">
+            <div className="h-3.5 w-24 bg-surface-muted rounded-md animate-pulse" />
+            <div className="h-7 w-32 bg-surface-muted rounded-lg animate-pulse" />
+          </div>
+          <div className="h-9 w-48 bg-surface-muted rounded-md animate-pulse" />
+          <div className="h-3.5 w-60 bg-surface-muted rounded-md animate-pulse" />
         </div>
-        <div className="space-y-2.5 pt-2">
+
+        {/* Category Filter Chips Skeleton */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+          <div className="h-7 w-12 bg-surface-muted rounded-full shrink-0 animate-pulse" />
+          <div className="h-7 w-20 bg-surface-muted rounded-full shrink-0 animate-pulse" />
+          <div className="h-7 w-24 bg-surface-muted rounded-full shrink-0 animate-pulse" />
+          <div className="h-7 w-28 bg-surface-muted rounded-full shrink-0 animate-pulse" />
+        </div>
+
+        {/* Subscription Cards Skeleton */}
+        <div className="space-y-2.5 pt-1">
           <SubscriptionCardSkeleton />
           <SubscriptionCardSkeleton />
           <SubscriptionCardSkeleton />
@@ -112,9 +126,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5 max-w-xl mx-auto pb-12">
       {/* 1. Primary Hero Spend Card with Period Toggle */}
-      <div className="sift-card p-5 sm:p-6 space-y-4">
+      <div className="sweep-card p-5 sm:p-6 space-y-4 min-h-[148px]">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans">
             Total Spend
           </span>
 

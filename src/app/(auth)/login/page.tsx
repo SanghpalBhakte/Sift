@@ -96,7 +96,7 @@ function LoginForm() {
 
   return (
     <AuthShell
-      title="Welcome back to Sift"
+      title="Welcome back to Sweep"
       description="Sign in to your calm recurring spend workspace."
       icon={<LogIn className="w-6 h-6" />}
       footer={
@@ -246,7 +246,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="min-h-[50vh] flex items-center justify-center p-4">
-          <div className="sift-card max-w-sm w-full p-8 text-center space-y-3">
+          <div className="sweep-card max-w-sm w-full p-8 text-center space-y-3">
             <div className="h-8 w-8 rounded-full bg-surface-muted mx-auto animate-pulse" />
             <div className="h-4 w-32 bg-surface-muted mx-auto rounded animate-pulse" />
           </div>

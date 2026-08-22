@@ -430,7 +430,7 @@ export function SubscriptionForm({
                 onFocus={() => {
                   if (filteredSuggestions.length > 0) setIsSuggestionsOpen(true);
                 }}
-                className="sift-input w-full"
+                className="sweep-input w-full"
               />
             </div>
 
@@ -719,7 +719,7 @@ export function SubscriptionForm({
                 placeholder="e.g., Annual discount code, shared with team..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="sift-input w-full resize-none text-xs"
+                className="sweep-input w-full resize-none text-xs"
               />
             </div>
           </div>

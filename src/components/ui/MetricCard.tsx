@@ -29,8 +29,8 @@ export function MetricCard({
     <div
       onClick={onClick}
       className={cn(
-        'sift-card p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden transition-all',
-        isClickable && 'sift-card-interactive cursor-pointer',
+        'sweep-card p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden transition-all',
+        isClickable && 'sweep-card-interactive cursor-pointer',
         className
       )}
     >

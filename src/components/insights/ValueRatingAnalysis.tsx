@@ -43,7 +43,7 @@ export function ValueRatingAnalysis({ subscriptions }: { subscriptions: Subscrip
 
       <CardContent className="space-y-4 pt-1">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Sift organizes spend into user-declared utility tiers. Because Sift is privacy-first and never monitors
+          Sweep organizes spend into user-declared utility tiers. Because Sweep is privacy-first and never monitors
           your browser or app usage, value alignments reflect your own ongoing audit ratings.
         </p>
 

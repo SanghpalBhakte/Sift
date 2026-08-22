@@ -176,7 +176,7 @@ export function CandidateReviewCard({
                 onChange={(e) =>
                   onUpdateCandidate(candidate.id, { suggestedCategoryId: e.target.value || null })
                 }
-                className="sift-input w-full h-8 px-2 py-1 text-xs"
+                className="sweep-input w-full h-8 px-2 py-1 text-xs"
               >
                 <option value="">General & Other</option>
                 {categories.map((c) => (
@@ -199,7 +199,7 @@ export function CandidateReviewCard({
                     billingCycle: e.target.value as RecurringCandidate['billingCycle'],
                   })
                 }
-                className="sift-input w-full h-8 px-2 py-1 text-xs"
+                className="sweep-input w-full h-8 px-2 py-1 text-xs"
               >
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
@@ -219,7 +219,7 @@ export function CandidateReviewCard({
                     valueRating: e.target.value as ValueRating,
                   })
                 }
-                className="sift-input w-full h-8 px-2 py-1 text-xs"
+                className="sweep-input w-full h-8 px-2 py-1 text-xs"
               >
                 <option value="essential">Essential</option>
                 <option value="useful">Useful</option>

@@ -1,15 +1,22 @@
-# Sift
+# Sweep
 
-A calm, minimal, mobile-first subscription and recurring payments dashboard PWA.
+A calm, personal, mobile-first subscription and recurring payments ledger PWA.
 
-Sift helps individuals and independent creators track recurring services, upcoming renewals, free trials, normalized monthly/yearly run-rates, category breakdowns, and prune cancel candidates. Designed with peaceful, high-legibility surfaces inspired by Japanese stationery and oiled wood shelves—avoiding loud fintech gradients, bloated enterprise panels, and AI template tropes.
+Sweep helps individuals and independent creators understand, organize, and stay ahead of recurring services, upcoming renewals, free trials, normalized monthly/yearly run-rates, category breakdowns, and prune cancel candidates. Designed with a warm, high-legibility "paper, ink, and receipt" visual system inspired by traditional ledger stationery and oiled espresso desks—avoiding loud fintech gradients, bloated enterprise panels, and AI template tropes.
 
 ---
 
 ## 🎨 Theme Identities
 
-- **Paper Ledger (Light Mode)**: Warm parchment surfaces, crisp charcoal typography, restrained moss-teal accents, and soft linen borders.
-- **Night Shelf (Dark Mode)**: Low-glare midnight slate surfaces, soft bone typography, and luminous calm moss accents.
+- **Warm Ledger (Light Mode)**: Warm parchment surfaces (`#F6F1E8`), soft cream card stock (`#FCF9F3`), crisp ink typography (`#24201E`), deep ink plum accents (`#5B294A`), and quiet oat borders (`#D8CFC4`).
+- **Espresso Desk (Dark Mode)**: Near-black espresso surfaces (`#191516`), dark warm graphite cards (`#211C1E`), luminous ivory typography (`#F3EDE5`), and muted orchid accents (`#C98AAE`).
+
+---
+
+## 🖋️ Typography
+
+- **Display & Headings**: [Fraunces](https://fonts.google.com/specimen/Fraunces) (Variable editorial serif with warm ink character)
+- **UI & Numerals**: [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) (High-clarity geometric sans with tabular numerals)
 
 ---
 
@@ -112,7 +119,7 @@ npx vitest
 
 ## 🚢 CI/CD & Deployment Automation
 
-Sift utilizes a unified GitHub Actions pipeline ([`.github/workflows/ci.yml`](file:///.github/workflows/ci.yml)) with automated testing and **Vercel** deployment.
+Sweep utilizes a unified GitHub Actions pipeline ([`.github/workflows/ci.yml`](file:///.github/workflows/ci.yml)) with automated testing and **Vercel** deployment.
 
 ### Why Vercel?
 Vercel is the native runtime platform for Next.js 15 App Router, Server Components, and Edge/Node Route Handlers (`/api/push/*`, `/api/reminders/dispatch`). It requires zero custom build adapters or edge runtime polyfills.
@@ -137,7 +144,7 @@ Configure these environment variables in your Vercel Project Settings:
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (for server-side push/reminder dispatch).
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: Web Push VAPID public key.
 - `VAPID_PRIVATE_KEY`: Web Push VAPID private key.
-- `VAPID_SUBJECT`: Mailto contact for Web Push (`mailto:support@sift.app`).
+- `VAPID_SUBJECT`: Mailto contact for Web Push (`mailto:support@sweep.app`).
 - `RESEND_API_KEY`: Resend API key for transactional emails.
 - `CRON_SECRET`: Secret header token for triggering `/api/reminders/dispatch`.
 
@@ -151,10 +158,10 @@ For pre-launch verification, environment audits, and the 9-step launch-day smoke
 
 ## 🚀 Continuous Integration & Delivery
 
-Sift maintains a low-coupling CI/CD workflow: GitHub Actions verifies code quality (type safety, lint standards, and unit test pass rates), while Vercel's Git integration independently builds and deploys the application.
+Sweep maintains a low-coupling CI/CD workflow: GitHub Actions verifies code quality (type safety, lint standards, and unit test pass rates), while Vercel's Git integration independently builds and deploys the application.
 
 ---
 
 ## 📄 License
 
-MIT © Sift
+MIT © Sweep

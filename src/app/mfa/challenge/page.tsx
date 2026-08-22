@@ -306,7 +306,7 @@ export default function MFAChallengePage() {
     <Suspense
       fallback={
         <div className="min-h-[50vh] flex items-center justify-center p-4">
-          <div className="sift-card max-w-sm w-full p-8 text-center space-y-3">
+          <div className="sweep-card max-w-sm w-full p-8 text-center space-y-3">
             <Skeleton className="h-10 w-10 rounded-full mx-auto" />
             <Skeleton className="h-4 w-32 mx-auto rounded" />
           </div>

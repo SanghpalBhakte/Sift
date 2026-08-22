@@ -73,16 +73,16 @@ export function SubscriptionList({
   // 1. Empty ledger state
   if (subscriptions.length === 0) {
     return (
-      <div className="sift-card p-8 sm:p-10 text-center space-y-4 border-dashed">
+      <div className="sweep-card p-8 sm:p-10 text-center space-y-4 border-dashed">
         <div className="w-12 h-12 mx-auto rounded-2xl bg-surface flex items-center justify-center text-primary shadow-xs">
           <Layers className="w-6 h-6" aria-hidden="true" />
         </div>
         <div className="space-y-1">
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="font-serif text-lg font-semibold text-foreground">
             Your subscriptions ledger is empty
           </h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-            Add recurring software tools, streaming services, or import bank statements to track renewal schedules.
+            Add recurring software tools, streaming services, or import statements to sweep and track your renewals.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -126,7 +126,7 @@ export function SubscriptionList({
               placeholder="Search subscriptions, tools, categories…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="sift-input pl-9 pr-8"
+              className="sweep-input pl-9 pr-8"
               aria-label="Search subscriptions"
             />
             <kbd className="hidden sm:inline-flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center justify-center text-[10px] font-mono text-muted-foreground bg-surface border border-border rounded px-1.5 py-0.5 pointer-events-none">
@@ -138,7 +138,7 @@ export function SubscriptionList({
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="sift-input text-xs py-2 px-3 w-auto min-w-[130px]"
+              className="sweep-input text-xs py-2 px-3 w-auto min-w-[130px]"
               aria-label="Filter by category"
             >
               <option value="all">All Categories</option>
@@ -150,7 +150,7 @@ export function SubscriptionList({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="sift-input text-xs py-2 px-3 w-auto min-w-[130px]"
+              className="sweep-input text-xs py-2 px-3 w-auto min-w-[130px]"
               aria-label="Sort order"
             >
               <option value="next_renewal_date">Sort: Next Renewal</option>
@@ -204,7 +204,7 @@ export function SubscriptionList({
         </div>
       ) : (
         /* Filter zero-state */
-        <div className="sift-card p-8 sm:p-10 text-center space-y-3 border-dashed">
+        <div className="sweep-card p-8 sm:p-10 text-center space-y-3 border-dashed">
           <div className="w-10 h-10 mx-auto rounded-full bg-surface flex items-center justify-center text-muted-foreground">
             <Search className="w-5 h-5 opacity-60" aria-hidden="true" />
           </div>

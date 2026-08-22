@@ -300,7 +300,7 @@ export interface ExportedSubscription
 
 export interface SiftBackupData {
   version: '1.0';
-  app: 'Sift';
+  app: 'Sweep' | 'Sift';
   exported_at: string;
   user_email: string;
   profile: Partial<Profile>;

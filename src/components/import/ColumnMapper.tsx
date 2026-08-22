@@ -191,7 +191,7 @@ export function ColumnMapper({
                 </label>
               </div>
               <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                Label this statement source so Sift can remember column assignments for this bank layout.
+                Label this statement source so Sweep can remember column assignments for this bank layout.
               </p>
               <Input
                 value={customBankLabel}
@@ -217,7 +217,7 @@ export function ColumnMapper({
                     Save this format as a reusable recognition rule?
                   </div>
                   <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-relaxed">
-                    Sift will remember the header layout ({mapping.dateColumn || 'Date'},{' '}
+                    Sweep will remember the header layout ({mapping.dateColumn || 'Date'},{' '}
                     {mapping.descriptionColumn || 'Description'}, {mapping.amountColumn || 'Amount'})
                     to recognize and auto-map future statements from this bank.
                   </p>

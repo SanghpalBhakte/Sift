@@ -72,7 +72,7 @@ describe('Backup & Export Manifest Engine', () => {
     });
 
     expect(backup.version).toBe('1.0');
-    expect(backup.app).toBe('Sift');
+    expect(backup.app).toBe('Sweep');
     expect(backup.profile.currency_preference).toBe('EUR');
     expect(backup.profile.theme_preference).toBe('night-shelf');
     expect(backup.profile.annual_benchmark_percent).toBe(20);
@@ -174,7 +174,7 @@ describe('Backup & Export Manifest Engine', () => {
 
     const readme = generateBackupReadme(backup);
     expect(readme).toContain('Annual Discount Benchmark: 20% (2 category override(s))');
-    expect(readme).toContain('SIFT DATA BACKUP MANIFEST');
+    expect(readme).toContain('SWEEP DATA BACKUP MANIFEST');
   });
 
   describe('remapCategoryBenchmarkOverrides (Portability & Slug Fallback)', () => {
@@ -406,9 +406,9 @@ describe('Backup & Export Manifest Engine', () => {
       expect(colors).toEqual([...DEFAULT_CATEGORY_PRESET_COLORS]);
     });
 
-    it('falls back to the primary theme preset (#10b981) when both color and name are omitted', () => {
-      expect(resolveCategoryDefaultColor(null, null)).toBe('#10b981');
-      expect(resolveCategoryDefaultColor('', '')).toBe('#10b981');
+    it('falls back to the primary theme preset (#527243) when both color and name are omitted', () => {
+      expect(resolveCategoryDefaultColor(null, null)).toBe('#527243');
+      expect(resolveCategoryDefaultColor('', '')).toBe('#527243');
     });
   });
 });

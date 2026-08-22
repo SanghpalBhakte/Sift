@@ -391,7 +391,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.json')) {
-      setError('Please select a valid .json Sift backup file.');
+      setError('Please select a valid .json Sweep backup file.');
       return;
     }
 
@@ -680,7 +680,7 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
           <div className="flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-[hsl(var(--primary))]" />
             <h2 className="text-base font-bold text-[hsl(var(--foreground))]">
-              Restore Sift Account Backup
+              Restore Sweep Account Backup
             </h2>
           </div>
           <button
@@ -885,10 +885,10 @@ export function RestoreModal({ isOpen, onClose, onSuccess }: RestoreModalProps) 
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-semibold text-[hsl(var(--foreground))]">
-                      Select Sift JSON Backup File
+                      Select Sweep JSON Backup File
                     </div>
                     <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                      Choose a previously exported <code className="font-mono text-[11px]">sift-backup-*.json</code> file
+                      Choose a previously exported <code className="font-mono text-[11px]">sweep-backup-*.json</code> file
                     </div>
                   </div>
                   <Button type="button" variant="outline" size="sm" className="pointer-events-none text-xs">

@@ -32,7 +32,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             ref={ref}
             className={cn(
-              'sift-input appearance-none pr-8 cursor-pointer bg-card',
+              'sweep-input appearance-none pr-8 cursor-pointer bg-card',
               error && 'border-danger',
               className
             )}

@@ -60,30 +60,30 @@ async function runDispatch(targetUser: { id: string; email: string }) {
         try {
           const subject =
             alert.daysUntil === 0
-              ? `[Sift] ${alert.subscriptionName} Renews Today (${formatCurrency(alert.amount, alert.currency)})`
+              ? `[Sweep] ${alert.subscriptionName} Renews Today (${formatCurrency(alert.amount, alert.currency)})`
               : alert.isTrial
-              ? `[Sift] Action Needed: ${alert.subscriptionName} Trial Ends in ${alert.daysUntil} Days`
-              : `[Sift] Upcoming Renewal: ${alert.subscriptionName} in ${alert.daysUntil} Days`;
+              ? `[Sweep] Action Needed: ${alert.subscriptionName} Trial Ends in ${alert.daysUntil} Days`
+              : `[Sweep] Upcoming Renewal: ${alert.subscriptionName} in ${alert.daysUntil} Days`;
 
           const html = `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; color: #1c1c1a; background: #faf9f5; border-radius: 12px; border: 1px solid #e5e4de;">
-              <div style="margin-bottom: 20px; font-size: 14px; font-weight: 700; color: #2d5a43; letter-spacing: -0.01em;">
-                SIFT · SUBSCRIPTION LEDGER
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; color: #24201E; background: #F6F1E8; border-radius: 12px; border: 1px solid #D8CFC4;">
+              <div style="margin-bottom: 20px; font-size: 14px; font-weight: 700; color: #5B294A; letter-spacing: -0.01em;">
+                SWEEP · RECURRING SPEND WORKSPACE
               </div>
-              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #1c1c1a;">${alert.title}</h2>
-              <p style="font-size: 14px; line-height: 1.6; color: #55544d; margin: 0 0 20px 0;">${alert.message}</p>
-              <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e5e4de; margin-bottom: 24px;">
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #24201E;">${alert.title}</h2>
+              <p style="font-size: 14px; line-height: 1.6; color: #756D65; margin: 0 0 20px 0;">${alert.message}</p>
+              <div style="background: #FCF9F3; padding: 16px; border-radius: 8px; border: 1px solid #D8CFC4; margin-bottom: 24px;">
                 <table style="width: 100%; font-size: 13px;">
                   <tr>
-                    <td style="color: #78776f; padding-bottom: 6px;">Service:</td>
+                    <td style="color: #756D65; padding-bottom: 6px;">Service:</td>
                     <td style="font-weight: 600; text-align: right; padding-bottom: 6px;">${alert.subscriptionName}</td>
                   </tr>
                   <tr>
-                    <td style="color: #78776f; padding-bottom: 6px;">Charge Amount:</td>
+                    <td style="color: #756D65; padding-bottom: 6px;">Charge Amount:</td>
                     <td style="font-weight: 600; text-align: right; padding-bottom: 6px; font-family: monospace;">${formatCurrency(alert.amount, alert.currency)}</td>
                   </tr>
                   <tr>
-                    <td style="color: #78776f;">Charge Date:</td>
+                    <td style="color: #756D65;">Charge Date:</td>
                     <td style="font-weight: 600; text-align: right;">${alert.targetDate}</td>
                   </tr>
                 </table>
@@ -91,12 +91,12 @@ async function runDispatch(targetUser: { id: string; email: string }) {
               ${
                 alert.cancelUrl
                   ? `<div style="text-align: center; margin-bottom: 20px;">
-                      <a href="${alert.cancelUrl}" style="display: inline-block; background: #2d5a43; color: #ffffff; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">Manage or Cancel Service</a>
+                      <a href="${alert.cancelUrl}" style="display: inline-block; background: #5B294A; color: #FCF9F3; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">Manage or Cancel Service</a>
                      </div>`
                   : ''
               }
-              <div style="font-size: 11px; color: #a1a098; text-align: center; border-top: 1px solid #e5e4de; padding-top: 16px;">
-                Sent quietly by Sift · Personal Recurring Spend Workspace
+              <div style="font-size: 11px; color: #756D65; text-align: center; border-top: 1px solid #D8CFC4; padding-top: 16px;">
+                Sent quietly by Sweep · Your recurring life, in one clear view
               </div>
             </div>
           `;

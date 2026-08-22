@@ -49,10 +49,10 @@ export function getCancellationMatchedAlternative(
 
     case 'temporary_pause':
       return {
-        title: 'Pause Subscription in Sift',
-        description: `Pausing in Sift will exclude this charge from your active monthly budget while keeping renewal dates and notes intact for when you return.`,
+        title: 'Pause Subscription in Sweep',
+        description: `Pausing in Sweep will exclude this charge from your active monthly budget while keeping renewal dates and notes intact for when you return.`,
         recommendedAction: 'pause_review',
-        actionButtonLabel: 'Pause in Sift',
+        actionButtonLabel: 'Pause in Sweep',
         secondaryOptionLabel: 'Proceed with Full Cancellation',
         externalLinkText: subscription.cancel_url ? `Open ${subscription.name} Portal` : undefined,
         externalLinkUrl: subscription.cancel_url,
@@ -64,7 +64,7 @@ export function getCancellationMatchedAlternative(
         description: `You have already paid for the current cycle (${daysUntil > 0 ? `${daysUntil} days remaining` : 'renewing soon'}). You can set a reminder to cancel right before the next charge.`,
         recommendedAction: 'keep_until_renewal',
         actionButtonLabel: `Set Reminder for ${nextRenewalFormatted}`,
-        secondaryOptionLabel: 'Cancel in Sift Immediately',
+        secondaryOptionLabel: 'Cancel in Sweep Immediately',
         externalLinkText: subscription.cancel_url ? `Direct ${subscription.name} Cancel Page` : undefined,
         externalLinkUrl: subscription.cancel_url,
       };
@@ -95,9 +95,9 @@ export function getCancellationMatchedAlternative(
     default:
       return {
         title: 'Confirm Official Cancellation',
-        description: `Sift will mark this subscription as canceled in your personal ledger. To stop charges, remember to also cancel on ${subscription.name}'s website.`,
+        description: `Sweep will mark this subscription as canceled in your personal ledger. To stop charges, remember to also cancel on ${subscription.name}'s website.`,
         recommendedAction: 'confirm_cancel',
-        actionButtonLabel: 'Mark as Canceled in Sift',
+        actionButtonLabel: 'Mark as Canceled in Sweep',
         externalLinkText: subscription.cancel_url ? `Open ${subscription.name} Cancellation Link` : undefined,
         externalLinkUrl: subscription.cancel_url,
       };

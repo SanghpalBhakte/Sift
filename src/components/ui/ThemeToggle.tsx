@@ -9,8 +9,8 @@ export function ThemeToggle({ showLabels = false }: { showLabels?: boolean }) {
   const { theme, setTheme } = useTheme();
 
   const options = [
-    { value: 'paper-ledger', icon: Sun, label: 'Light', title: 'Paper Ledger — Light' },
-    { value: 'night-shelf', icon: Moon, label: 'Dark', title: 'Night Shelf — Dark' },
+    { value: 'paper-ledger', icon: Sun, label: 'Light', title: 'Warm Ledger — Light' },
+    { value: 'night-shelf', icon: Moon, label: 'Dark', title: 'Espresso Desk — Dark' },
     { value: 'system', icon: Laptop, label: 'Auto', title: 'Follow System' },
   ] as const;
 
