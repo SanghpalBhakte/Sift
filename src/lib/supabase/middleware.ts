@@ -1,7 +1,17 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { isSupabaseConfigured } from './client';
 import { getSafeNext } from '@/lib/utils/safe-redirect';
+
+function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return Boolean(
+    url &&
+      anonKey &&
+      !url.includes('your-project-id') &&
+      !anonKey.includes('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...')
+  );
+}
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;

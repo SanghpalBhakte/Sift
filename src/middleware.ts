@@ -7,14 +7,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - api routes (handled individually for speed)
-     * - static assets with extensions (svg, png, jpg, etc.)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|api/|icons/|manifest\\.|sw\\.js|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json)$).*)',
+    '/((?!_next/static|_next/image|favicon|icons|images|fonts|manifest|api/exchange-rates).*)',
   ],
 };
