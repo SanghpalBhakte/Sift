@@ -7,11 +7,15 @@ import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { WebVitalsReporter } from '@/lib/utils/webVitals';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
+  preload: true,
+  fallback: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+  adjustFontFallback: true,
   variable: '--font-plus-jakarta',
 });
 
@@ -59,6 +63,7 @@ export default function RootLayout({
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />
+        <WebVitalsReporter />
       </body>
     </html>
   );
