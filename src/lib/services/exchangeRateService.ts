@@ -147,40 +147,30 @@ class ExchangeRateService {
   }
 
   /**
-   * Fetches latest exchange rates from open endpoint
+   * Fetches latest exchange rates from internal same-origin API route
    */
   private async fetchLiveRates(): Promise<ExchangeRatesData> {
-    // Primary: open.er-api.com (ECB & Central Banks, reliable, HTTPS)
     try {
-      const res = await fetch('https://open.er-api.com/v6/latest/USD', {
+      const res = await fetch('/api/exchange-rates', {
         headers: { Accept: 'application/json' },
       });
       if (res.ok) {
         const data = await res.json();
         if (data && data.rates) {
           return {
-            base: 'USD',
+            base: data.base || 'USD',
             rates: { ...DEFAULT_OFFLINE_RATES, ...data.rates },
-            updatedAt: new Date().toISOString(),
-            source: 'Open Exchange Rates (ECB / Central Banks)',
-            isStale: false,
+            updatedAt: data.updatedAt || new Date().toISOString(),
+            source: data.source || 'Open Exchange Rates (ECB / Central Banks)',
+            isStale: Boolean(data.isStale),
           };
         }
       }
-    } catch {
-      // try secondary
+    } catch (err) {
+      console.warn('Error fetching from /api/exchange-rates:', err);
     }
 
-    // Secondary fallback: Frankfurter API
-    const fallbackRes = await fetch('https://api.frankfurter.dev/v1/latest?base=USD');
-    const data = await fallbackRes.json();
-    return {
-      base: 'USD',
-      rates: { ...DEFAULT_OFFLINE_RATES, USD: 1.0, ...(data.rates || {}) },
-      updatedAt: new Date().toISOString(),
-      source: 'Frankfurter (European Central Bank)',
-      isStale: false,
-    };
+    return this.getOfflineBaseline();
   }
 
   /**

@@ -44,7 +44,7 @@ const securityHeaders = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   },
-  // CSP — allow Supabase, Resend, and Vercel Analytics; block everything else
+  // CSP — allow Supabase, Resend, Vercel Analytics, and Exchange Rates APIs; block everything else
   {
     key: 'Content-Security-Policy',
     value: [
@@ -53,7 +53,7 @@ const securityHeaders = [
       `style-src 'self' 'unsafe-inline' https://api.fontshare.com https://fonts.googleapis.com`,
       `font-src 'self' https://api.fontshare.com https://fonts.gstatic.com`,
       `img-src 'self' data: blob: https://*.supabase.co`,
-      `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://vitals.vercel-insights.com`,
+      `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://vitals.vercel-insights.com https://open.er-api.com https://api.frankfurter.dev`,
       `frame-ancestors 'none'`,
       `base-uri 'self'`,
       `form-action 'self'`,
