@@ -22,6 +22,34 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  const isAuthRoute =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/mfa/challenge') ||
+    pathname.startsWith('/mfa-challenge');
+
+  // 2. Fast-path for users with NO auth cookies (First visit / Unauthenticated)
+  // Avoids blocking edge TTFB with a 250-400ms remote HTTP roundtrip to Supabase
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some(
+    (c) => c.name.startsWith('sb-') || c.name.includes('auth-token')
+  );
+
+  if (!hasAuthCookie) {
+    // If accessing login/signup without cookies, proceed immediately
+    if (isAuthRoute) {
+      return NextResponse.next({ request });
+    }
+
+    // If accessing protected route without cookies, redirect immediately to login
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('next', getSafeNext(pathname));
+    return NextResponse.redirect(url);
+  }
+
+  // 3. User has auth cookies -> Validate & Refresh Session
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -52,14 +80,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthRoute =
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/signup') ||
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/mfa/challenge') ||
-    pathname.startsWith('/mfa-challenge');
-
-  // 2. Unauthenticated users trying to access protected routes -> redirect to /login
+  // Unauthenticated users trying to access protected routes -> redirect to /login
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
@@ -67,7 +88,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 3. Authenticated users: Check MFA assurance level (AAL2)
+  // Authenticated users: Check MFA assurance level (AAL2)
   if (user) {
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     const needsMFA =

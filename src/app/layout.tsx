@@ -51,8 +51,26 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let supabaseOrigin: string | null = null;
+  if (supabaseUrl && (supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://'))) {
+    try {
+      supabaseOrigin = new URL(supabaseUrl).origin;
+    } catch {
+      // Ignore invalid URL
+    }
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {supabaseOrigin && (
+          <>
+            <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={supabaseOrigin} />
+          </>
+        )}
+      </head>
       <body className={`${plusJakartaSans.className} antialiased min-h-screen bg-background text-foreground`}>
         <ThemeProvider>
           <AuthProvider>

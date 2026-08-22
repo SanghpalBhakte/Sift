@@ -46,18 +46,28 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [isAlertPanelOpen, setIsAlertPanelOpen] = useState(false);
 
-  // Initialize dismissed alerts and check browser push capabilities
+  // Initialize dismissed alerts and check browser push capabilities after idle
   useEffect(() => {
     setDismissedIds(getDismissedAlerts());
     setPermissionStatus(getBrowserNotificationPermission());
 
-    const isSupported = pushNotificationService.isSupported();
-    setIsPushSupported(isSupported);
+    const deferPushCheck = () => {
+      const isSupported = pushNotificationService.isSupported();
+      setIsPushSupported(isSupported);
 
-    if (isSupported) {
-      pushNotificationService.getExistingSubscription().then((sub) => {
-        setIsPushSubscribed(Boolean(sub));
-      });
+      if (isSupported) {
+        pushNotificationService.getExistingSubscription().then((sub) => {
+          setIsPushSubscribed(Boolean(sub));
+        });
+      }
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(
+        deferPushCheck
+      );
+    } else {
+      setTimeout(deferPushCheck, 1000);
     }
   }, []);
 
