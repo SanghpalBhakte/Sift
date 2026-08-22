@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isSupabaseConfigured } from './client';
+import { getSafeNext } from '@/lib/utils/safe-redirect';
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -33,7 +34,7 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Use getUser() for secure server-side auth checking instead of getSession()
+  // IMPORTANT: Use getUser() for secure server-side auth checking
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -44,6 +45,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/auth') ||
+    pathname.startsWith('/mfa/challenge') ||
     pathname.startsWith('/mfa-challenge');
 
   const isPublicRoute =
@@ -59,7 +61,7 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isAuthRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('next', pathname);
+    url.searchParams.set('next', getSafeNext(pathname));
     return NextResponse.redirect(url);
   }
 
@@ -69,23 +71,30 @@ export async function updateSession(request: NextRequest) {
     const needsMFA =
       aalData && aalData.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel;
 
-    // If MFA is required but not completed, enforce /mfa-challenge
-    if (needsMFA && pathname !== '/mfa-challenge' && !pathname.startsWith('/auth/callback')) {
+    // If MFA is required but not completed, enforce /mfa/challenge
+    if (
+      needsMFA &&
+      pathname !== '/mfa/challenge' &&
+      pathname !== '/mfa-challenge' &&
+      !pathname.startsWith('/auth/callback')
+    ) {
       const url = request.nextUrl.clone();
-      url.pathname = '/mfa-challenge';
-      url.searchParams.set('next', pathname);
+      url.pathname = '/mfa/challenge';
+      url.searchParams.set('next', getSafeNext(pathname));
       return NextResponse.redirect(url);
     }
 
-    // If user is already fully authenticated (aal2 satisfied or no mfa), redirect away from login/signup/mfa-challenge
+    // If user is already fully authenticated (aal2 satisfied or no mfa), redirect away from login/signup/mfa challenge
     if (
       !needsMFA &&
       isAuthRoute &&
       !pathname.startsWith('/auth/callback') &&
       !pathname.startsWith('/api/auth/callback')
     ) {
+      const nextParam = request.nextUrl.searchParams.get('next');
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = getSafeNext(nextParam, '/');
+      url.searchParams.delete('next');
       return NextResponse.redirect(url);
     }
   }

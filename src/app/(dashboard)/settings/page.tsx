@@ -610,25 +610,18 @@ export default function SettingsPage() {
               ) : null}
 
               <div className="pt-1 flex items-center justify-end gap-2">
-                {totpFactor ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDisableMFA}
-                    isLoading={isMfaLoading}
-                    className="text-xs text-danger hover:bg-danger-subtle h-8"
-                  >
-                    Disable 2FA
+                <Link href="/settings/security">
+                  <Button variant="outline" size="sm" className="text-xs h-8">
+                    Change Password
                   </Button>
-                ) : (
-                  <Link href="/mfa-enroll">
-                    <Button variant="primary" size="sm" className="text-xs h-8 gap-1.5 shadow-xs">
-                      <Lock className="w-3.5 h-3.5" />
-                      Set Up 2FA
-                    </Button>
-                  </Link>
-                )}
+                </Link>
+
+                <Link href="/settings/mfa">
+                  <Button variant={totpFactor ? 'outline' : 'primary'} size="sm" className="text-xs h-8 gap-1.5 shadow-xs">
+                    <KeyRound className="w-3.5 h-3.5" />
+                    {totpFactor ? 'Manage 2FA' : 'Set Up 2FA'}
+                  </Button>
+                </Link>
               </div>
             </div>
 

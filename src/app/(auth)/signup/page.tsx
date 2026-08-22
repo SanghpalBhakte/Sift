@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/Card';
+import { AuthShell } from '@/components/auth/auth-shell';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { useAuth } from '@/context/AuthContext';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, UserPlus } from 'lucide-react';
 
 function GoogleIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -79,120 +79,105 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <div className="inline-flex w-10 h-10 rounded-xl bg-primary items-center justify-center text-primary-foreground font-bold text-lg mb-1 shadow-xs">
-          S
+    <AuthShell
+      title="Create your Sift workspace"
+      description="Calm, privacy-first recurring spend management."
+      icon={<UserPlus className="w-6 h-6" />}
+      footer={
+        <div className="text-center text-xs text-muted-foreground w-full">
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-foreground">
-          Create your Sift workspace
-        </h1>
-        <p className="text-xs text-muted-foreground">
-          Peaceful recurring spend and subscription management
-        </p>
-      </div>
+      }
+    >
+      <div className="space-y-4">
+        {/* Google OAuth Button */}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleGoogleSignUp}
+          isLoading={isGoogleLoading}
+          className="w-full flex items-center justify-center gap-2 text-xs font-medium bg-surface hover:bg-surface-muted"
+        >
+          <GoogleIcon className="w-4 h-4" />
+          <span>Sign up with Google</span>
+        </Button>
 
-      <Card>
-        <CardContent className="pt-5 space-y-4">
-          {/* Google OAuth Button */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGoogleSignUp}
-            isLoading={isGoogleLoading}
-            className="w-full flex items-center justify-center gap-2 text-xs font-medium bg-surface hover:bg-surface-muted"
-          >
-            <GoogleIcon className="w-4 h-4" />
-            <span>Sign up with Google</span>
-          </Button>
+        {/* Divider */}
+        <div className="relative flex items-center justify-center">
+          <div className="border-t border-border w-full" />
+          <span className="bg-card px-2 text-[11px] text-muted-foreground uppercase tracking-wider relative">
+            or
+          </span>
+        </div>
 
-          {/* Divider */}
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-border w-full" />
-            <span className="bg-card px-2 text-[11px] text-muted-foreground uppercase tracking-wider relative">
-              or
-            </span>
-          </div>
-
-          {needsConfirmation ? (
-            <div className="text-center py-4 space-y-3">
-              <CheckCircle2 className="w-8 h-8 text-success mx-auto" />
-              <h3 className="text-sm font-semibold text-foreground">
-                Confirm your email
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                We sent a confirmation link to <strong>{email}</strong>. Please check your inbox
-                to activate your account.
-              </p>
-              <Link href="/login" className="inline-block pt-2">
-                <Button variant="outline" size="sm">
-                  Back to Sign In
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error ? (
-                <div className="p-2.5 text-xs bg-danger-subtle border border-danger/30 text-danger rounded-md">
-                  {error}
-                </div>
-              ) : null}
-
-              <Input
-                label="Full Name / Display Name"
-                placeholder="Alex Mercer"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                autoComplete="name"
-              />
-
-              <Input
-                label="Email address *"
-                type="email"
-                placeholder="name@domain.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-
-              <Input
-                label="Password *"
-                type="password"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                helperText="Minimum 6 characters"
-              />
-
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full shadow-xs"
-                isLoading={isSubmitting}
-              >
-                Create Account
+        {needsConfirmation ? (
+          <div className="text-center py-3 space-y-2">
+            <CheckCircle2 className="w-8 h-8 text-success mx-auto" />
+            <h3 className="text-sm font-semibold text-foreground">
+              Confirm your email
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              We sent a confirmation link to <strong>{email}</strong>. Please check your inbox
+              to activate your account.
+            </p>
+            <Link href="/login" className="inline-block pt-1">
+              <Button variant="outline" size="sm" className="text-xs">
+                Back to Sign In
               </Button>
-            </form>
-          )}
-
-          <div className="pt-2 border-t border-border text-center text-xs text-muted-foreground">
-            Already have an account?{' '}
-            <Link
-              href="/login"
-              className="font-medium text-primary hover:underline"
-            >
-              Sign in
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            {error ? (
+              <Alert variant="destructive">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            ) : null}
 
-      <div className="flex items-center justify-center">
-        <ThemeToggle />
+            <Input
+              label="Full Name / Display Name"
+              placeholder="Alex Mercer"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              autoComplete="name"
+            />
+
+            <Input
+              label="Email address *"
+              type="email"
+              placeholder="name@domain.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+
+            <Input
+              label="Password *"
+              type="password"
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              helperText="Minimum 6 characters"
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full shadow-xs text-xs font-semibold"
+              isLoading={isSubmitting}
+            >
+              Create Account
+            </Button>
+          </form>
+        )}
       </div>
-    </div>
+    </AuthShell>
   );
 }

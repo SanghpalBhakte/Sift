@@ -1,10 +1,9 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
-import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/auth/auth-gate';
 
-export default async function DashboardLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -21,9 +20,5 @@ export default async function DashboardLayout({
     }
   }
 
-  return (
-    <AuthGate>
-      <AppShell>{children}</AppShell>
-    </AuthGate>
-  );
+  return <AuthGate>{children}</AuthGate>;
 }

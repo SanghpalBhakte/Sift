@@ -51,8 +51,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (aalData && aalData.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
-        if (pathname && !pathname.startsWith('/mfa-challenge') && !pathname.startsWith('/login')) {
-          router.push(`/mfa-challenge?next=${encodeURIComponent(pathname)}`);
+        if (
+          pathname &&
+          !pathname.startsWith('/mfa/challenge') &&
+          !pathname.startsWith('/mfa-challenge') &&
+          !pathname.startsWith('/login')
+        ) {
+          router.push(`/mfa/challenge?next=${encodeURIComponent(pathname)}`);
         }
         return true;
       }
@@ -148,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check MFA Assurance Level
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
-      router.push(`/mfa-challenge?next=${encodeURIComponent(redirectTo)}`);
+      router.push(`/mfa/challenge?next=${encodeURIComponent(redirectTo)}`);
       return { error: null, needsMFA: true };
     }
 
