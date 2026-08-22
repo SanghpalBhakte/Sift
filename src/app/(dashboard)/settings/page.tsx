@@ -13,14 +13,25 @@ import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
+import dynamic from 'next/dynamic';
 import {
   generateFullBackupJson,
   generateSubscriptionsCsv,
   generateBackupReadme,
   downloadFile,
 } from '@/lib/utils/backup';
-import { RestoreModal } from '@/components/backup/RestoreModal';
-import { CustomBankRulesManager } from '@/components/settings/CustomBankRulesManager';
+
+const RestoreModal = dynamic(
+  () => import('@/components/backup/RestoreModal').then((m) => m.RestoreModal),
+  { ssr: false }
+);
+const CustomBankRulesManager = dynamic(
+  () =>
+    import('@/components/settings/CustomBankRulesManager').then(
+      (m) => m.CustomBankRulesManager
+    ),
+  { ssr: false }
+);
 import {
   Palette,
   Database,

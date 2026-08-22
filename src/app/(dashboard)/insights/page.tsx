@@ -4,12 +4,54 @@ import React from 'react';
 import Link from 'next/link';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { MetricCard } from '@/components/ui/MetricCard';
-import { SpendTrendChart } from '@/components/insights/SpendTrendChart';
-import { CategoryBreakdown } from '@/components/insights/CategoryBreakdown';
-import { TopSubscriptions } from '@/components/insights/TopSubscriptions';
-import { UpcomingCashflowPressure } from '@/components/insights/UpcomingCashflowPressure';
-import { ValueRatingAnalysis } from '@/components/insights/ValueRatingAnalysis';
-import { AnnualOptimizationReview } from '@/components/insights/AnnualOptimizationReview';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/Skeleton';
+
+const SpendTrendChart = dynamic(
+  () => import('@/components/insights/SpendTrendChart').then((m) => m.SpendTrendChart),
+  {
+    loading: () => <Skeleton className="h-48 w-full rounded-xl" />,
+  }
+);
+const CategoryBreakdown = dynamic(
+  () => import('@/components/insights/CategoryBreakdown').then((m) => m.CategoryBreakdown),
+  {
+    loading: () => <Skeleton className="h-44 w-full rounded-xl" />,
+  }
+);
+const TopSubscriptions = dynamic(
+  () => import('@/components/insights/TopSubscriptions').then((m) => m.TopSubscriptions),
+  {
+    loading: () => <Skeleton className="h-44 w-full rounded-xl" />,
+  }
+);
+const UpcomingCashflowPressure = dynamic(
+  () =>
+    import('@/components/insights/UpcomingCashflowPressure').then(
+      (m) => m.UpcomingCashflowPressure
+    ),
+  {
+    loading: () => <Skeleton className="h-44 w-full rounded-xl" />,
+  }
+);
+const ValueRatingAnalysis = dynamic(
+  () =>
+    import('@/components/insights/ValueRatingAnalysis').then(
+      (m) => m.ValueRatingAnalysis
+    ),
+  {
+    loading: () => <Skeleton className="h-44 w-full rounded-xl" />,
+  }
+);
+const AnnualOptimizationReview = dynamic(
+  () =>
+    import('@/components/insights/AnnualOptimizationReview').then(
+      (m) => m.AnnualOptimizationReview
+    ),
+  {
+    loading: () => <Skeleton className="h-44 w-full rounded-xl" />,
+  }
+);
 import { formatCurrency } from '@/lib/utils/currency';
 import {
   calculateSpendTrend,

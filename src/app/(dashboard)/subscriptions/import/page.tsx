@@ -22,10 +22,21 @@ import {
 } from '@/lib/utils/multiAccountDetector';
 import { parsePdfStatement } from '@/lib/utils/pdfParser';
 import { detectRecurringCandidates } from '@/lib/utils/recurringDetector';
+import dynamic from 'next/dynamic';
 import { StatementDropzone } from '@/components/import/CsvDropzone';
-import { AccountGroupSelector } from '@/components/import/AccountGroupSelector';
-import { ColumnMapper } from '@/components/import/ColumnMapper';
-import { CandidateReviewCard } from '@/components/import/CandidateReviewCard';
+
+const AccountGroupSelector = dynamic(
+  () => import('@/components/import/AccountGroupSelector').then((m) => m.AccountGroupSelector),
+  { ssr: false }
+);
+const ColumnMapper = dynamic(
+  () => import('@/components/import/ColumnMapper').then((m) => m.ColumnMapper),
+  { ssr: false }
+);
+const CandidateReviewCard = dynamic(
+  () => import('@/components/import/CandidateReviewCard').then((m) => m.CandidateReviewCard),
+  { ssr: false }
+);
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';

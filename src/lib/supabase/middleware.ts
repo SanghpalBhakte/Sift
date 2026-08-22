@@ -4,14 +4,27 @@ import { isSupabaseConfigured } from './client';
 import { getSafeNext } from '@/lib/utils/safe-redirect';
 
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // 1. Fast-path exit for static, API, or public asset routes
+  const isPublicRoute =
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/icons') ||
+    pathname.includes('.') ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js' ||
+    pathname === '/robots.txt' ||
+    pathname === '/privacy';
+
+  if (isPublicRoute || !isSupabaseConfigured()) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
-
-  if (!isSupabaseConfigured()) {
-    // If Supabase environment variables are missing, allow request to proceed for local fallback
-    return supabaseResponse;
-  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,12 +47,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Use getUser() for secure server-side auth checking
+  // Check auth user
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
 
   const isAuthRoute =
     pathname.startsWith('/login') ||
@@ -48,24 +59,15 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/mfa/challenge') ||
     pathname.startsWith('/mfa-challenge');
 
-  const isPublicRoute =
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/icons') ||
-    pathname.includes('.') ||
-    pathname === '/manifest.webmanifest' ||
-    pathname === '/manifest.json' ||
-    pathname === '/privacy';
-
-  // 1. Unauthenticated users trying to access protected routes -> redirect to /login
-  if (!user && !isAuthRoute && !isPublicRoute) {
+  // 2. Unauthenticated users trying to access protected routes -> redirect to /login
+  if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', getSafeNext(pathname));
     return NextResponse.redirect(url);
   }
 
-  // 2. Authenticated users: Check MFA assurance level (AAL2)
+  // 3. Authenticated users: Check MFA assurance level (AAL2)
   if (user) {
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     const needsMFA =

@@ -63,6 +63,8 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
   async headers() {
     return [
       {
@@ -73,7 +75,7 @@ const nextConfig = {
     ];
   },
   experimental: {
-    // optimize packages
+    optimizePackageImports: ['lucide-react', 'date-fns', '@supabase/ssr', '@supabase/supabase-js'],
   },
 };
 

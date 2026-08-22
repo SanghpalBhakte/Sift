@@ -4,10 +4,15 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useAuth } from '@/context/AuthContext';
+import dynamic from 'next/dynamic';
 import { WelcomeScreen } from '@/components/dashboard/WelcomeScreen';
-import { RestoreModal } from '@/components/backup/RestoreModal';
 import { SubscriptionCard } from '@/components/subscriptions/SubscriptionCard';
 import { MetricCardSkeleton, SubscriptionCardSkeleton } from '@/components/ui/Skeleton';
+
+const RestoreModal = dynamic(
+  () => import('@/components/backup/RestoreModal').then((m) => m.RestoreModal),
+  { ssr: false }
+);
 import { formatCurrency } from '@/lib/utils/currency';
 import { Plus, Sparkles, ArrowRight, CreditCard, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
