@@ -225,6 +225,28 @@ class SubscriptionService {
         // Build typed insert payload matching production database schema strictly
         const insertPayload = buildSubscriptionInsertPayload(userId, form);
 
+        // Foreign key check: verify category_id exists in DB table to prevent FK violations
+        if (insertPayload.category_id) {
+          const { data: catExists } = await (supabase.from('categories') as any)
+            .select('id')
+            .eq('id', insertPayload.category_id)
+            .maybeSingle();
+          if (!catExists) {
+            insertPayload.category_id = null;
+          }
+        }
+
+        // Foreign key check: verify payment_method_id exists in DB table to prevent FK violations
+        if (insertPayload.payment_method_id) {
+          const { data: pmExists } = await (supabase.from('payment_methods') as any)
+            .select('id')
+            .eq('id', insertPayload.payment_method_id)
+            .maybeSingle();
+          if (!pmExists) {
+            insertPayload.payment_method_id = null;
+          }
+        }
+
         const insertRes = await (supabase.from('subscriptions') as any)
           .insert(insertPayload)
           .select('*, category:categories(*), payment_method:payment_methods(*)')
@@ -296,6 +318,28 @@ class SubscriptionService {
 
     if (supabase) {
       const updatePayload = buildSubscriptionUpdatePayload(existing, updates);
+
+      // Foreign key check: verify category_id exists in DB table
+      if (updatePayload.category_id) {
+        const { data: catExists } = await (supabase.from('categories') as any)
+          .select('id')
+          .eq('id', updatePayload.category_id)
+          .maybeSingle();
+        if (!catExists) {
+          updatePayload.category_id = null;
+        }
+      }
+
+      // Foreign key check: verify payment_method_id exists in DB table
+      if (updatePayload.payment_method_id) {
+        const { data: pmExists } = await (supabase.from('payment_methods') as any)
+          .select('id')
+          .eq('id', updatePayload.payment_method_id)
+          .maybeSingle();
+        if (!pmExists) {
+          updatePayload.payment_method_id = null;
+        }
+      }
 
       const updateRes = await (supabase.from('subscriptions') as any)
         .update(updatePayload)

@@ -295,6 +295,16 @@ export function SubscriptionForm({
     const payload = buildPayload();
     if (!payload) return;
 
+    const selectedCat = availableCategories.find((c) => c.id === categoryId);
+    const selectedPm = availablePaymentMethods.find((pm) => pm.id === paymentMethodId);
+
+    console.log({
+      categoryId: categoryId || null,
+      categoryName: selectedCat ? selectedCat.name : (categoryId ? 'Custom' : 'None / Unassigned'),
+      paymentMethodId: paymentMethodId || null,
+      paymentMethodName: selectedPm ? selectedPm.name : (paymentMethodId ? 'Custom' : 'None / Unassigned'),
+    });
+
     setIsSubmitting(true);
     try {
       await onSubmit(payload);
@@ -317,6 +327,16 @@ export function SubscriptionForm({
 
     const payload = buildPayload();
     if (!payload) return;
+
+    const selectedCat = availableCategories.find((c) => c.id === categoryId);
+    const selectedPm = availablePaymentMethods.find((pm) => pm.id === paymentMethodId);
+
+    console.log({
+      categoryId: categoryId || null,
+      categoryName: selectedCat ? selectedCat.name : (categoryId ? 'Custom' : 'None / Unassigned'),
+      paymentMethodId: paymentMethodId || null,
+      paymentMethodName: selectedPm ? selectedPm.name : (paymentMethodId ? 'Custom' : 'None / Unassigned'),
+    });
 
     setIsSubmitting(true);
     try {
