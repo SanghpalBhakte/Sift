@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { subscriptionService } from './subscriptionService';
+import {
+  buildSubscriptionInsertPayload,
+  buildSubscriptionUpdatePayload,
+} from './subscriptionPayloadBuilder';
 import { CANONICAL_CATEGORIES } from '../constants/categories';
 import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
 import { SubscriptionFormData } from '../types';
@@ -33,6 +37,96 @@ describe('Subscription Service & Data Integrity', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+  });
+
+  describe('Payload Builder Contract (Production Schema Guarantee)', () => {
+    it('buildSubscriptionInsertPayload contains only verified production columns', () => {
+      const form: SubscriptionFormData = {
+        name: 'Netflix Premium',
+        description: 'Family 4K plan',
+        amount: 22.99,
+        currency: 'USD',
+        billing_cycle: 'monthly',
+        status: 'active',
+        category_id: '10000000-0000-0000-0000-000000000004',
+        payment_method_id: '20000000-0000-0000-0000-000000000001',
+        start_date: '2026-01-01',
+        next_renewal_date: '2026-09-01',
+        is_trial: false,
+        reminder_offsets: [3, 1],
+        value_rating: 'essential',
+        cancel_url: 'https://netflix.com/cancel',
+        notes: 'Shared with parents',
+        // UI fields that MUST NOT reach database insert payload
+        monthly_alternative_price: 25.0,
+        previous_amount: 19.99,
+        price_hike_reviewed_at: '2026-08-01T00:00:00Z',
+        cancellation_reason: 'too_expensive',
+        cancellation_effective_date: '2026-09-01',
+      };
+
+      const payload = buildSubscriptionInsertPayload('user-123', form);
+
+      // Verify required production keys exist
+      expect(payload.user_id).toBe('user-123');
+      expect(payload.name).toBe('Netflix Premium');
+      expect(payload.amount).toBe(22.99);
+      expect(payload.monthly_amount).toBe(22.99);
+      expect(payload.currency).toBe('USD');
+      expect(payload.billing_cycle).toBe('monthly');
+      expect(payload.status).toBe('active');
+
+      // Verify unconfirmed / missing database columns are NOT in payload
+      expect((payload as any).cancellation_effective_date).toBeUndefined();
+      expect((payload as any).monthly_alternative_price).toBeUndefined();
+      expect((payload as any).previous_amount).toBeUndefined();
+      expect((payload as any).price_hike_reviewed_at).toBeUndefined();
+      expect((payload as any).cancellation_reason).toBeUndefined();
+      expect((payload as any).cancellation_notes).toBeUndefined();
+    });
+
+    it('buildSubscriptionUpdatePayload contains only verified production columns', () => {
+      const existing = {
+        amount: 20,
+        billing_cycle: 'monthly' as const,
+      };
+
+      const updates: Partial<SubscriptionFormData> = {
+        amount: 25,
+        notes: 'Price adjustment',
+        cancellation_effective_date: '2026-09-15',
+        monthly_alternative_price: 30,
+      };
+
+      const payload = buildSubscriptionUpdatePayload(existing, updates);
+
+      expect(payload.amount).toBe(25);
+      expect(payload.monthly_amount).toBe(25);
+      expect(payload.notes).toBe('Price adjustment');
+      expect((payload as any).cancellation_effective_date).toBeUndefined();
+      expect((payload as any).monthly_alternative_price).toBeUndefined();
+    });
+
+    it('normalizes empty category_id and payment_method_id to null', () => {
+      const form: SubscriptionFormData = {
+        name: 'GitHub Copilot',
+        amount: 10,
+        currency: 'USD',
+        billing_cycle: 'monthly',
+        status: 'active',
+        start_date: '2026-08-01',
+        next_renewal_date: '2026-09-01',
+        is_trial: false,
+        reminder_offsets: [3, 1],
+        value_rating: 'useful',
+        category_id: '',
+        payment_method_id: '',
+      };
+
+      const payload = buildSubscriptionInsertPayload('user-123', form);
+      expect(payload.category_id).toBeNull();
+      expect(payload.payment_method_id).toBeNull();
+    });
   });
 
   describe('Canonical Categories Contract', () => {

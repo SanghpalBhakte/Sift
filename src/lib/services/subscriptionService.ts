@@ -10,6 +10,10 @@ import {
 import { defaultProfile, mockSubscriptions } from '../mock/sampleData';
 import { CANONICAL_CATEGORIES } from '../constants/categories';
 import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
+import {
+  buildSubscriptionInsertPayload,
+  buildSubscriptionUpdatePayload,
+} from './subscriptionPayloadBuilder';
 import { createClient } from '../supabase/client';
 import { calculateDashboardStats } from '../utils/analytics';
 import { normalizeMonthlyAmount } from '../utils/currency';
@@ -218,70 +222,13 @@ class SubscriptionService {
       if (user) {
         userId = user.id;
 
-        // Construct canonical insert payload
-        const insertPayload: Record<string, any> = {
-          user_id: userId,
-          name: form.name.trim(),
-          description: form.description?.trim() || null,
-          amount: form.amount,
-          currency: form.currency || 'USD',
-          billing_cycle: form.billing_cycle,
-          custom_interval_days: form.custom_interval_days || null,
-          status: form.status || 'active',
-          category_id: form.category_id || null,
-          payment_method_id: form.payment_method_id || null,
-          start_date: form.start_date,
-          next_renewal_date: form.next_renewal_date,
-          is_trial: Boolean(form.is_trial),
-          trial_end_date: form.is_trial ? form.trial_end_date || null : null,
-          reminder_offsets: form.reminder_offsets || [3, 1],
-          value_rating: form.value_rating || 'useful',
-          cancel_url: form.cancel_url?.trim() || null,
-          notes: form.notes?.trim() || null,
-          monthly_amount: monthlyAmount,
-          monthly_alternative_price: form.monthly_alternative_price || null,
-          previous_amount: form.previous_amount || null,
-          price_hike_reviewed_at: form.price_hike_reviewed_at || null,
-          cancellation_reason: form.cancellation_reason || null,
-          cancellation_effective_date: form.cancellation_effective_date || null,
-        };
+        // Build typed insert payload matching production database schema strictly
+        const insertPayload = buildSubscriptionInsertPayload(userId, form);
 
-        let insertRes = await (supabase.from('subscriptions') as any)
+        const insertRes = await (supabase.from('subscriptions') as any)
           .insert(insertPayload)
           .select('*, category:categories(*), payment_method:payment_methods(*)')
           .single();
-
-        // If PostgREST schema cache has not yet reloaded non-core metadata columns, retry with base columns
-        if (insertRes.error) {
-          const errMsg = (insertRes.error.message || '').toLowerCase();
-          const isSchemaCacheError =
-            errMsg.includes('schema cache') ||
-            errMsg.includes('does not exist') ||
-            errMsg.includes('cancellation_effective_date') ||
-            errMsg.includes('cancellation_reason') ||
-            errMsg.includes('price_hike_reviewed_at') ||
-            errMsg.includes('previous_amount') ||
-            errMsg.includes('monthly_alternative_price');
-
-          if (isSchemaCacheError) {
-            console.warn(
-              'Retrying subscription insert with base schema columns due to PostgREST schema mismatch:',
-              insertRes.error
-            );
-
-            const basePayload = { ...insertPayload };
-            delete basePayload.cancellation_effective_date;
-            delete basePayload.cancellation_reason;
-            delete basePayload.price_hike_reviewed_at;
-            delete basePayload.previous_amount;
-            delete basePayload.monthly_alternative_price;
-
-            insertRes = await (supabase.from('subscriptions') as any)
-              .insert(basePayload)
-              .select('*, category:categories(*), payment_method:payment_methods(*)')
-              .single();
-          }
-        }
 
         if (insertRes.error) {
           console.error('Supabase subscription insert error:', {
@@ -305,7 +252,7 @@ class SubscriptionService {
       }
     }
 
-    // Local storage fallback for unauthenticated / offline
+    // Local storage fallback for unauthenticated / offline mode
     const newSub: Subscription = {
       ...form,
       id:
@@ -314,7 +261,6 @@ class SubscriptionService {
           : `sub-${Date.now()}`,
       user_id: userId,
       monthly_amount: monthlyAmount,
-      monthly_alternative_price: form.monthly_alternative_price || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -334,7 +280,7 @@ class SubscriptionService {
     if (!existing) throw new Error('Subscription not found');
 
     const billingCycle = updates.billing_cycle || existing.billing_cycle;
-    const amount = updates.amount !== undefined ? updates.amount : existing.amount;
+    const amount = updates.amount !== undefined ? Number(updates.amount) : existing.amount;
     const customDays =
       updates.custom_interval_days !== undefined
         ? updates.custom_interval_days
@@ -349,66 +295,11 @@ class SubscriptionService {
     };
 
     if (supabase) {
-      const updatePayload: Record<string, any> = {
-        name: updatedSub.name.trim(),
-        description: updatedSub.description?.trim() || null,
-        amount: updatedSub.amount,
-        currency: updatedSub.currency,
-        billing_cycle: updatedSub.billing_cycle,
-        custom_interval_days: updatedSub.custom_interval_days || null,
-        status: updatedSub.status,
-        category_id: updatedSub.category_id || null,
-        payment_method_id: updatedSub.payment_method_id || null,
-        start_date: updatedSub.start_date,
-        next_renewal_date: updatedSub.next_renewal_date,
-        is_trial: Boolean(updatedSub.is_trial),
-        trial_end_date: updatedSub.is_trial ? updatedSub.trial_end_date || null : null,
-        reminder_offsets: updatedSub.reminder_offsets,
-        value_rating: updatedSub.value_rating,
-        cancel_url: updatedSub.cancel_url?.trim() || null,
-        notes: updatedSub.notes?.trim() || null,
-        monthly_amount: updatedSub.monthly_amount,
-        monthly_alternative_price: updatedSub.monthly_alternative_price || null,
-        previous_amount: updatedSub.previous_amount || null,
-        price_hike_reviewed_at: updatedSub.price_hike_reviewed_at || null,
-        cancellation_reason: updatedSub.cancellation_reason || null,
-        cancellation_effective_date: updatedSub.cancellation_effective_date || null,
-        updated_at: updatedSub.updated_at,
-      };
+      const updatePayload = buildSubscriptionUpdatePayload(existing, updates);
 
-      let updateRes = await (supabase.from('subscriptions') as any)
+      const updateRes = await (supabase.from('subscriptions') as any)
         .update(updatePayload)
         .eq('id', id);
-
-      if (updateRes.error) {
-        const errMsg = (updateRes.error.message || '').toLowerCase();
-        const isSchemaCacheError =
-          errMsg.includes('schema cache') ||
-          errMsg.includes('does not exist') ||
-          errMsg.includes('cancellation_effective_date') ||
-          errMsg.includes('cancellation_reason') ||
-          errMsg.includes('price_hike_reviewed_at') ||
-          errMsg.includes('previous_amount') ||
-          errMsg.includes('monthly_alternative_price');
-
-        if (isSchemaCacheError) {
-          console.warn(
-            'Retrying subscription update with base schema columns due to PostgREST schema mismatch:',
-            updateRes.error
-          );
-
-          const basePayload = { ...updatePayload };
-          delete basePayload.cancellation_effective_date;
-          delete basePayload.cancellation_reason;
-          delete basePayload.price_hike_reviewed_at;
-          delete basePayload.previous_amount;
-          delete basePayload.monthly_alternative_price;
-
-          updateRes = await (supabase.from('subscriptions') as any)
-            .update(basePayload)
-            .eq('id', id);
-        }
-      }
 
       if (updateRes.error) {
         console.error('Supabase subscription update error:', {
@@ -557,7 +448,6 @@ class SubscriptionService {
             .replace(/(^-|-$)/g, '')
         : existing.slug;
 
-    // If slug is changing, preserve old slug in slug_aliases without duplicates
     const existingAliases = existing.slug_aliases || [];
     const updatedAliases = [...existingAliases];
     if (existing.slug && existing.slug !== newSlug && !updatedAliases.includes(existing.slug)) {
@@ -616,7 +506,6 @@ class SubscriptionService {
       }
     }
 
-    // Merge database payment methods with canonical payment methods
     const combinedMap = new Map<string, PaymentMethod>();
 
     // 1. Seed with canonical payment methods
