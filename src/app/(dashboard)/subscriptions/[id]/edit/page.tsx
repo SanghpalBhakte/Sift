@@ -70,6 +70,7 @@ export default function EditSubscriptionPage() {
         paymentMethods={paymentMethods}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
+        initialEditMode={true}
       />
     </AppErrorBoundary>
   );

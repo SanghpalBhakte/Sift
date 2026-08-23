@@ -35,6 +35,7 @@ interface SubscriptionDetailViewProps {
   paymentMethods: PaymentMethod[];
   onUpdate: (data: SubscriptionFormData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  initialEditMode?: boolean;
 }
 
 export function SubscriptionDetailView({
@@ -43,11 +44,12 @@ export function SubscriptionDetailView({
   paymentMethods,
   onUpdate,
   onDelete,
+  initialEditMode = false,
 }: SubscriptionDetailViewProps) {
   const router = useRouter();
   const { displayCurrency, exchangeRates, toggleStatus } = useSubscriptions();
 
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(initialEditMode);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);

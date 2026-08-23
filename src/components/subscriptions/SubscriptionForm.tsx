@@ -58,29 +58,33 @@ export function SubscriptionForm({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAddPmModalOpen, setIsAddPmModalOpen] = useState(false);
   const [isAddCatModalOpen, setIsAddCatModalOpen] = useState(false);
+  const [extraPaymentMethods, setExtraPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [extraCategories, setExtraCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // Available Categories (strictly from database query, including embedded initial relation if present)
   const availableCategories = useMemo(() => {
-    const list = [...(categories || [])];
+    const list = [...(categories || []), ...extraCategories];
     if (initialData?.category && !list.some((c) => c.id === initialData.category?.id)) {
       list.push(initialData.category);
     }
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [categories, initialData?.category]);
+    const unique = Array.from(new Map(list.map((c) => [c.id, c])).values());
+    return unique.sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories, extraCategories, initialData?.category]);
 
   // Available Payment Methods (strictly from database query, including embedded initial relation if present)
   const availablePaymentMethods = useMemo(() => {
-    const list = [...(paymentMethods || [])];
+    const list = [...(paymentMethods || []), ...extraPaymentMethods];
     if (
       initialData?.payment_method &&
       !list.some((pm) => pm.id === initialData.payment_method?.id)
     ) {
       list.push(initialData.payment_method);
     }
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [paymentMethods, initialData?.payment_method]);
+    const unique = Array.from(new Map(list.map((pm) => [pm.id, pm])).values());
+    return unique.sort((a, b) => a.name.localeCompare(b.name));
+  }, [paymentMethods, extraPaymentMethods, initialData?.payment_method]);
 
   // Core Required Form State
   const [name, setName] = useState(initialData?.name || '');
@@ -665,7 +669,11 @@ export function SubscriptionForm({
                   <label className="text-xs font-medium text-foreground">Category (Optional)</label>
                   <button
                     type="button"
-                    onClick={() => setIsAddCatModalOpen(true)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsAddCatModalOpen(true);
+                    }}
                     className="text-[11px] font-medium text-primary hover:underline cursor-pointer flex items-center gap-0.5"
                   >
                     + Add New
@@ -689,7 +697,11 @@ export function SubscriptionForm({
                   <label className="text-xs font-medium text-foreground">Payment Method (Optional)</label>
                   <button
                     type="button"
-                    onClick={() => setIsAddPmModalOpen(true)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsAddPmModalOpen(true);
+                    }}
                     className="text-[11px] font-medium text-primary hover:underline cursor-pointer flex items-center gap-0.5"
                   >
                     + Add New
@@ -715,7 +727,11 @@ export function SubscriptionForm({
                     <span>No payment methods yet. Add one to get started.</span>
                     <button
                       type="button"
-                      onClick={() => setIsAddPmModalOpen(true)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsAddPmModalOpen(true);
+                      }}
                       className="text-primary hover:underline font-semibold cursor-pointer"
                     >
                       + Add
@@ -925,13 +941,19 @@ export function SubscriptionForm({
       <AddPaymentMethodModal
         isOpen={isAddPmModalOpen}
         onClose={() => setIsAddPmModalOpen(false)}
-        onCreated={(pm) => setPaymentMethodId(pm.id)}
+        onCreated={(pm) => {
+          setExtraPaymentMethods((prev) => [...prev.filter((p) => p.id !== pm.id), pm]);
+          setPaymentMethodId(pm.id);
+        }}
       />
 
       <AddCategoryModal
         isOpen={isAddCatModalOpen}
         onClose={() => setIsAddCatModalOpen(false)}
-        onCreated={(cat) => setCategoryId(cat.id)}
+        onCreated={(cat) => {
+          setExtraCategories((prev) => [...prev.filter((c) => c.id !== cat.id), cat]);
+          setCategoryId(cat.id);
+        }}
       />
     </form>
   );
