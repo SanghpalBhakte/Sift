@@ -75,10 +75,11 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Skip cross-origin non-assets, extensions, or Supabase Auth/REST calls (NetworkOnly)
+  // Skip cross-origin non-assets, extensions, or Supabase Auth/REST/Callback calls (NetworkOnly)
   if (
     url.hostname.includes('supabase.co') ||
     url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/auth/') ||
     url.protocol.startsWith('chrome-extension')
   ) {
     return;

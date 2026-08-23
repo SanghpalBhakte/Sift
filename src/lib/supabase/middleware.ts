@@ -39,24 +39,26 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/mfa/challenge') ||
     pathname.startsWith('/mfa-challenge');
 
-  // 2. Fast-path for users with NO auth cookies (First visit / Unauthenticated)
-  // Avoids blocking edge TTFB with a 250-400ms remote HTTP roundtrip to Supabase
+  const isStrictlyProtectedRoute =
+    pathname.startsWith('/settings/security') ||
+    pathname.startsWith('/settings/mfa') ||
+    pathname.startsWith('/mfa-enroll') ||
+    pathname.startsWith('/mfa/enroll');
+
+  // 2. Fast-path for users with NO auth cookies
   const allCookies = request.cookies.getAll();
   const hasAuthCookie = allCookies.some(
     (c) => c.name.startsWith('sb-') || c.name.includes('auth-token')
   );
 
   if (!hasAuthCookie) {
-    // If accessing login/signup without cookies, proceed immediately
-    if (isAuthRoute) {
-      return NextResponse.next({ request });
+    if (isStrictlyProtectedRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('next', getSafeNext(pathname));
+      return NextResponse.redirect(url);
     }
-
-    // If accessing protected route without cookies, redirect immediately to login
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('next', getSafeNext(pathname));
-    return NextResponse.redirect(url);
+    return NextResponse.next({ request });
   }
 
   // 3. User has auth cookies -> Validate & Refresh Session
@@ -90,8 +92,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Unauthenticated users trying to access protected routes -> redirect to /login
-  if (!user && !isAuthRoute) {
+  // If session invalid and accessing strictly protected route -> redirect to /login
+  if (!user && isStrictlyProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', getSafeNext(pathname));
@@ -109,7 +111,8 @@ export async function updateSession(request: NextRequest) {
       needsMFA &&
       pathname !== '/mfa/challenge' &&
       pathname !== '/mfa-challenge' &&
-      !pathname.startsWith('/auth/callback')
+      !pathname.startsWith('/auth/callback') &&
+      !pathname.startsWith('/api/auth/callback')
     ) {
       const url = request.nextUrl.clone();
       url.pathname = '/mfa/challenge';
@@ -117,7 +120,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // If user is already fully authenticated (aal2 satisfied or no mfa), redirect away from login/signup/mfa challenge
+    // If user is already fully authenticated, redirect away from login/signup/mfa challenge
     if (
       !needsMFA &&
       isAuthRoute &&

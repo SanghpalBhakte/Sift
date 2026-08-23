@@ -1,36 +1,55 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { getSafeNext } from '@/lib/utils/safe-redirect';
 
-/**
- * Validates that a redirect target is a safe relative path.
- * Blocks open-redirect attacks where `next` could be set to an external URL.
- */
-function isSafeRedirectPath(path: string): boolean {
-  // Must start with / and not be a protocol-relative URL (//evil.com)
-  if (!path.startsWith('/') || path.startsWith('//')) return false;
-  // Reject anything containing a protocol colon (javascript:, data:, https:)
-  if (/[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(path)) return false;
-  return true;
-}
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const rawNext = requestUrl.searchParams.get('next');
+  const next = getSafeNext(rawNext, '/');
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const rawNext = searchParams.get('next') ?? '/';
+  // Support forwarded headers in production / Vercel proxies
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const origin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : requestUrl.origin;
 
-  // Validate the redirect target is a safe relative path before using it
-  const next = isSafeRedirectPath(rawNext) ? rawNext : '/';
+  if (code && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    let response = NextResponse.redirect(new URL(next, origin));
 
-  if (code) {
-    const supabase = await createClient();
-    if (supabase) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (!error) {
-        return NextResponse.redirect(`${origin}${next}`);
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
       }
+    );
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      // Check MFA Assurance Level
+      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
+        response = NextResponse.redirect(
+          new URL(`/mfa/challenge?next=${encodeURIComponent(next)}`, origin)
+        );
+      }
+      return response;
+    } else {
+      console.error('[Auth Callback /api/auth/callback] Code exchange error:', error.message);
     }
   }
 
-  // Return user to an error page with instructions if exchange fails
-  return NextResponse.redirect(`${origin}/login?error=auth-failed`);
+  return NextResponse.redirect(new URL('/login?error=auth-failed', origin));
 }

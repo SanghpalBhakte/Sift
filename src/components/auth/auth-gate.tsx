@@ -17,15 +17,23 @@ export function AuthGate({ children, requireAuth = true }: AuthGateProps) {
   const { session, isLoading, isConfigured } = useAuth();
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
+    // Reset redirect guard if session appears
+    if (session) {
+      hasRedirectedRef.current = false;
+      return;
+    }
+
     // Only evaluate redirect when auth loading has settled
     if (isLoading) return;
 
     // If Supabase is not configured, offline local mode is active
     if (!isConfigured) return;
 
-    if (requireAuth && !session) {
+    if (requireAuth && !session && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       const safeNext = getSafeNext(pathnameRef.current);
       router.replace(`/login?next=${encodeURIComponent(safeNext)}`);
     }

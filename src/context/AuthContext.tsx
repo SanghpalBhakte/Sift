@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   isConfigured: boolean;
   signInWithPassword: (
     email: string,
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           !pathname.startsWith('/mfa-challenge') &&
           !pathname.startsWith('/login')
         ) {
-          router.push(`/mfa/challenge?next=${encodeURIComponent(pathname)}`);
+          router.replace(`/mfa/challenge?next=${encodeURIComponent(pathname)}`);
         }
         return true;
       }
@@ -163,16 +164,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(data.user);
     setSession(data.session);
+    setIsLoading(false);
 
     // Check MFA Assurance Level
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
-      router.push(`/mfa/challenge?next=${encodeURIComponent(redirectTo)}`);
+      router.replace(`/mfa/challenge?next=${encodeURIComponent(redirectTo)}`);
       return { error: null, needsMFA: true };
     }
 
-    router.push(redirectTo);
+    // Revalidate App Router tree and navigate smoothly
     router.refresh();
+    router.replace(redirectTo);
     return { error: null, needsMFA: false };
   };
 
@@ -238,8 +241,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(data.user);
     setSession(data.session);
-    router.push('/');
+    setIsLoading(false);
     router.refresh();
+    router.replace('/');
     return { error: null, needsEmailConfirmation: false };
   };
 
@@ -288,9 +292,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(null);
     setSession(null);
-    router.push('/login');
+    setIsLoading(false);
     router.refresh();
+    router.replace('/login');
   };
+
+  const isAuthenticated = useMemo(() => Boolean(user && session), [user, session]);
 
   return (
     <AuthContext.Provider
@@ -298,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         session,
         isLoading,
+        isAuthenticated,
         isConfigured,
         signInWithPassword,
         signInWithGoogle,
