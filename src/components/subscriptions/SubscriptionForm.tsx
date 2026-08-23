@@ -16,8 +16,6 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
-import { CANONICAL_CATEGORIES } from '@/lib/constants/categories';
-import { CANONICAL_PAYMENT_METHODS } from '@/lib/constants/paymentMethods';
 import {
   Trash2,
   ArrowLeft,
@@ -52,23 +50,33 @@ export function SubscriptionForm({
   const router = useRouter();
   const nameInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const initializedIdRef = useRef<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
-  // Available Categories (strictly from database query)
+  // Available Categories (strictly from database query, including embedded initial relation if present)
   const availableCategories = useMemo(() => {
-    if (!categories || categories.length === 0) return [];
-    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
-  }, [categories]);
+    const list = [...(categories || [])];
+    if (initialData?.category && !list.some((c) => c.id === initialData.category?.id)) {
+      list.push(initialData.category);
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories, initialData?.category]);
 
-  // Available Payment Methods (strictly from database query)
+  // Available Payment Methods (strictly from database query, including embedded initial relation if present)
   const availablePaymentMethods = useMemo(() => {
-    if (!paymentMethods || paymentMethods.length === 0) return [];
-    return [...paymentMethods].sort((a, b) => a.name.localeCompare(b.name));
-  }, [paymentMethods]);
+    const list = [...(paymentMethods || [])];
+    if (
+      initialData?.payment_method &&
+      !list.some((pm) => pm.id === initialData.payment_method?.id)
+    ) {
+      list.push(initialData.payment_method);
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [paymentMethods, initialData?.payment_method]);
 
   // Core Required Form State
   const [name, setName] = useState(initialData?.name || '');
@@ -126,6 +134,45 @@ export function SubscriptionForm({
     initialData?.reminder_offsets || [3, 1]
   );
 
+  // State synchronization when editing a subscription
+  useEffect(() => {
+    if (!initialData) return;
+    if (initializedIdRef.current === initialData.id) return;
+
+    setName(initialData.name || '');
+    setAmount(initialData.amount !== undefined ? String(initialData.amount) : '');
+    setCurrency(initialData.currency || 'USD');
+    setBillingCycle(initialData.billing_cycle || 'monthly');
+    setNextRenewalDate(
+      initialData.next_renewal_date ||
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    );
+    setCategoryId(initialData.category_id || '');
+    setPaymentMethodId(initialData.payment_method_id || '');
+    setDescription(initialData.description || '');
+    setCustomDays(
+      initialData.custom_interval_days ? String(initialData.custom_interval_days) : '30'
+    );
+    setMonthlyAlternativePrice(
+      initialData.monthly_alternative_price
+        ? String(initialData.monthly_alternative_price)
+        : ''
+    );
+    setStatus(initialData.status || 'active');
+    setStartDate(initialData.start_date || new Date().toISOString().split('T')[0]);
+    setIsTrial(Boolean(initialData.is_trial));
+    setTrialEndDate(
+      initialData.trial_end_date ||
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    );
+    setValueRating(initialData.value_rating || 'useful');
+    setCancelUrl(initialData.cancel_url || '');
+    setNotes(initialData.notes || '');
+    setReminderDays(initialData.reminder_offsets || [3, 1]);
+
+    initializedIdRef.current = initialData.id;
+  }, [initialData]);
+
   // Service Autocomplete Suggestions State
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
 
@@ -179,7 +226,7 @@ export function SubscriptionForm({
       setDescription(service.description);
     }
 
-    if (service.categorySlug && (!categoryId || categoryId === '')) {
+    if (service.categorySlug) {
       const matchedCat = availableCategories.find(
         (c) =>
           c.slug === service.categorySlug ||
@@ -245,25 +292,10 @@ export function SubscriptionForm({
       priceHikeReviewedAt = undefined;
     }
 
-    // Revalidate category_id against loaded database categories
-    let validatedCategoryId: string | undefined = undefined;
-    if (categoryId && categoryId.trim() !== '') {
-      const matched = availableCategories.find((c) => c.id === categoryId);
-      if (!matched) {
-        setError('Please select a valid category from the loaded list.');
-        return null;
-      }
-      validatedCategoryId = matched.id;
-    }
-
-    // Revalidate payment_method_id against loaded database payment methods
-    let validatedPaymentMethodId: string | undefined = undefined;
-    if (paymentMethodId && paymentMethodId.trim() !== '') {
-      const matched = availablePaymentMethods.find((pm) => pm.id === paymentMethodId);
-      if (matched) {
-        validatedPaymentMethodId = matched.id;
-      }
-    }
+    const resolvedCategoryId =
+      categoryId && categoryId.trim() !== '' ? categoryId.trim() : undefined;
+    const resolvedPaymentMethodId =
+      paymentMethodId && paymentMethodId.trim() !== '' ? paymentMethodId.trim() : undefined;
 
     return {
       name: name.trim(),
@@ -276,8 +308,8 @@ export function SubscriptionForm({
       monthly_alternative_price:
         parsedMonthlyAlt && parsedMonthlyAlt > 0 ? parsedMonthlyAlt : undefined,
       status,
-      category_id: validatedCategoryId,
-      payment_method_id: validatedPaymentMethodId,
+      category_id: resolvedCategoryId,
+      payment_method_id: resolvedPaymentMethodId,
       start_date: startDate,
       next_renewal_date: nextRenewalDate,
       is_trial: isTrial,
@@ -303,20 +335,26 @@ export function SubscriptionForm({
     const payload = buildPayload();
     if (!payload) return;
 
-    const selectedCat = availableCategories.find((c) => c.id === categoryId);
-    const selectedPm = availablePaymentMethods.find((pm) => pm.id === paymentMethodId);
+    const selectedCatName =
+      availableCategories.find((c) => c.id === payload.category_id)?.name ||
+      'None / Unassigned';
+    const selectedPmName =
+      availablePaymentMethods.find((pm) => pm.id === payload.payment_method_id)?.name ||
+      'None / Unassigned';
 
     console.log({
-      categoryId: categoryId || null,
-      categoryName: selectedCat ? selectedCat.name : (categoryId ? 'Custom' : 'None / Unassigned'),
-      paymentMethodId: paymentMethodId || null,
-      paymentMethodName: selectedPm ? selectedPm.name : (paymentMethodId ? 'Custom' : 'None / Unassigned'),
+      categoryId: payload.category_id || null,
+      categoryName: selectedCatName,
+      paymentMethodId: payload.payment_method_id || null,
+      paymentMethodName: selectedPmName,
     });
 
     setIsSubmitting(true);
     try {
       await onSubmit(payload);
-      router.push('/subscriptions');
+      if (!isEditing) {
+        router.push('/subscriptions');
+      }
     } catch (err: unknown) {
       const errorMsg =
         err instanceof Error ? err.message : 'An error occurred while saving the subscription.';
@@ -336,14 +374,18 @@ export function SubscriptionForm({
     const payload = buildPayload();
     if (!payload) return;
 
-    const selectedCat = availableCategories.find((c) => c.id === categoryId);
-    const selectedPm = availablePaymentMethods.find((pm) => pm.id === paymentMethodId);
+    const selectedCatName =
+      availableCategories.find((c) => c.id === payload.category_id)?.name ||
+      'None / Unassigned';
+    const selectedPmName =
+      availablePaymentMethods.find((pm) => pm.id === payload.payment_method_id)?.name ||
+      'None / Unassigned';
 
     console.log({
-      categoryId: categoryId || null,
-      categoryName: selectedCat ? selectedCat.name : (categoryId ? 'Custom' : 'None / Unassigned'),
-      paymentMethodId: paymentMethodId || null,
-      paymentMethodName: selectedPm ? selectedPm.name : (paymentMethodId ? 'Custom' : 'None / Unassigned'),
+      categoryId: payload.category_id || null,
+      categoryName: selectedCatName,
+      paymentMethodId: payload.payment_method_id || null,
+      paymentMethodName: selectedPmName,
     });
 
     setIsSubmitting(true);

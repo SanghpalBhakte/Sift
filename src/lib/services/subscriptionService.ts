@@ -343,7 +343,9 @@ class SubscriptionService {
 
       const updateRes = await (supabase.from('subscriptions') as any)
         .update(updatePayload)
-        .eq('id', id);
+        .eq('id', id)
+        .select('*, category:categories(*), payment_method:payment_methods(*)')
+        .single();
 
       if (updateRes.error) {
         console.error('Supabase subscription update error:', {
@@ -354,6 +356,14 @@ class SubscriptionService {
           operation: 'updateSubscription',
         });
         throw new Error(updateRes.error.message || 'Failed to update subscription.');
+      }
+
+      if (updateRes.data) {
+        const persisted = updateRes.data as unknown as Subscription;
+        const all = this.getLocalData(STORAGE_KEYS.SUBSCRIPTIONS, [] as Subscription[]);
+        const updatedList = all.map((s) => (s.id === id ? persisted : s));
+        this.setLocalData(STORAGE_KEYS.SUBSCRIPTIONS, updatedList);
+        return persisted;
       }
     }
 

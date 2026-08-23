@@ -5,7 +5,6 @@ import {
   buildSubscriptionUpdatePayload,
 } from './subscriptionPayloadBuilder';
 import { CANONICAL_CATEGORIES } from '../constants/categories';
-import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
 import { SubscriptionFormData } from '../types';
 
 // Mock localStorage for Node test environment
@@ -75,6 +74,8 @@ describe('Subscription Service & Data Integrity', () => {
       expect(payload.currency).toBe('USD');
       expect(payload.billing_cycle).toBe('monthly');
       expect(payload.status).toBe('active');
+      expect(payload.category_id).toBe('10000000-0000-0000-0000-000000000004');
+      expect(payload.payment_method_id).toBe('20000000-0000-0000-0000-000000000001');
 
       // Verify unconfirmed / missing database columns are NOT in payload
       expect((payload as any).cancellation_effective_date).toBeUndefined();
@@ -85,7 +86,7 @@ describe('Subscription Service & Data Integrity', () => {
       expect((payload as any).cancellation_notes).toBeUndefined();
     });
 
-    it('buildSubscriptionUpdatePayload contains only verified production columns', () => {
+    it('buildSubscriptionUpdatePayload contains only verified production columns and handles updates correctly', () => {
       const existing = {
         amount: 20,
         billing_cycle: 'monthly' as const,
@@ -93,6 +94,8 @@ describe('Subscription Service & Data Integrity', () => {
 
       const updates: Partial<SubscriptionFormData> = {
         amount: 25,
+        category_id: '10000000-0000-0000-0000-000000000002',
+        payment_method_id: '20000000-0000-0000-0000-000000000005',
         notes: 'Price adjustment',
         cancellation_effective_date: '2026-09-15',
         monthly_alternative_price: 30,
@@ -102,12 +105,30 @@ describe('Subscription Service & Data Integrity', () => {
 
       expect(payload.amount).toBe(25);
       expect(payload.monthly_amount).toBe(25);
+      expect(payload.category_id).toBe('10000000-0000-0000-0000-000000000002');
+      expect(payload.payment_method_id).toBe('20000000-0000-0000-0000-000000000005');
       expect(payload.notes).toBe('Price adjustment');
       expect((payload as any).cancellation_effective_date).toBeUndefined();
       expect((payload as any).monthly_alternative_price).toBeUndefined();
     });
 
-    it('normalizes empty category_id and payment_method_id to null', () => {
+    it('buildSubscriptionUpdatePayload sets category_id and payment_method_id to null when unassigned', () => {
+      const existing = {
+        amount: 20,
+        billing_cycle: 'monthly' as const,
+      };
+
+      const updates: Partial<SubscriptionFormData> = {
+        category_id: '',
+        payment_method_id: '',
+      };
+
+      const payload = buildSubscriptionUpdatePayload(existing, updates);
+      expect(payload.category_id).toBeNull();
+      expect(payload.payment_method_id).toBeNull();
+    });
+
+    it('normalizes empty category_id and payment_method_id to null in insert', () => {
       const form: SubscriptionFormData = {
         name: 'GitHub Copilot',
         amount: 10,
@@ -130,7 +151,7 @@ describe('Subscription Service & Data Integrity', () => {
   });
 
   describe('Canonical Categories Contract', () => {
-    it('contains all 14 required canonical categories', () => {
+    it('contains all 14 required canonical categories in metadata', () => {
       const requiredNames = [
         'Software & Development',
         'Infrastructure & Cloud',
@@ -185,7 +206,7 @@ describe('Subscription Service & Data Integrity', () => {
     });
   });
 
-  describe('Subscription Creation and Normalization', () => {
+  describe('Subscription Creation, Update and Normalization', () => {
     it('normalizes monthly amount for yearly billing cycle', async () => {
       const form: SubscriptionFormData = {
         name: 'Figma Annual',
@@ -214,6 +235,7 @@ describe('Subscription Service & Data Integrity', () => {
         currency: 'USD',
         billing_cycle: 'monthly',
         status: 'active',
+        category_id: '10000000-0000-0000-0000-000000000004',
         start_date: '2026-08-01',
         next_renewal_date: '2026-09-01',
         is_trial: false,
@@ -223,16 +245,19 @@ describe('Subscription Service & Data Integrity', () => {
 
       const created = await subscriptionService.createSubscription(form);
       const all = await subscriptionService.getSubscriptions();
-      expect(all.some((s) => s.id === created.id)).toBe(true);
+      const found = all.find((s) => s.id === created.id);
+      expect(found).toBeDefined();
+      expect(found?.category_id).toBe('10000000-0000-0000-0000-000000000004');
     });
 
-    it('updates subscription correctly', async () => {
+    it('updates subscription category and payment method correctly', async () => {
       const form: SubscriptionFormData = {
         name: 'Notion Plus',
         amount: 10,
         currency: 'USD',
         billing_cycle: 'monthly',
         status: 'active',
+        category_id: '10000000-0000-0000-0000-000000000003',
         start_date: '2026-08-01',
         next_renewal_date: '2026-09-01',
         is_trial: false,
@@ -243,11 +268,13 @@ describe('Subscription Service & Data Integrity', () => {
       const created = await subscriptionService.createSubscription(form);
       const updated = await subscriptionService.updateSubscription(created.id, {
         amount: 12,
+        category_id: '10000000-0000-0000-0000-000000000001',
         notes: 'Price increased by $2',
       });
 
       expect(updated.amount).toBe(12);
       expect(updated.monthly_amount).toBe(12);
+      expect(updated.category_id).toBe('10000000-0000-0000-0000-000000000001');
       expect(updated.notes).toBe('Price increased by $2');
     });
 
