@@ -6,34 +6,43 @@ import {
   mapCategoryToOption,
   mapPaymentMethodToOption,
 } from "@/lib/subscriptions/mappers";
+import type { CategoryRow, PaymentMethodRow } from "@/lib/subscriptions/types";
 
-async function fetchCategories() {
+async function fetchCategories(): Promise<CategoryRow[]> {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, slug")
+    .select("id, slug, name, color, icon, created_at, user_id")
+    .is("user_id", null)
     .order("name", { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return (data as unknown as CategoryRow[]) ?? [];
 }
 
-async function fetchPaymentMethods() {
-  const { data, error } = await supabase
+async function fetchPaymentMethods(userId?: string | null): Promise<PaymentMethodRow[]> {
+  let query = supabase
     .from("payment_methods")
-    .select("id, name, slug")
+    .select("id, user_id, name, type, last4, color, is_default, created_at")
+    .order("is_default", { ascending: false })
     .order("name", { ascending: true });
+
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return (data as unknown as PaymentMethodRow[]) ?? [];
 }
 
-export function useSubscriptionLookups() {
+export function useSubscriptionLookups(userId?: string | null) {
   const categoriesQuery = useQuery({
     queryKey: subscriptionKeys.categories(),
     queryFn: fetchCategories,
@@ -42,10 +51,10 @@ export function useSubscriptionLookups() {
   });
 
   const paymentMethodsQuery = useQuery({
-    queryKey: subscriptionKeys.paymentMethods(),
-    queryFn: fetchPaymentMethods,
-    staleTime: 1000 * 60 * 30,
-    gcTime: 1000 * 60 * 60,
+    queryKey: subscriptionKeys.paymentMethods(userId),
+    queryFn: () => fetchPaymentMethods(userId),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 
   const categoryOptions = useMemo(
@@ -63,6 +72,7 @@ export function useSubscriptionLookups() {
     paymentMethods: paymentMethodsQuery.data ?? [],
     categoryOptions,
     paymentMethodOptions,
+    hasPaymentMethods: (paymentMethodsQuery.data ?? []).length > 0,
     isLoading: categoriesQuery.isLoading || paymentMethodsQuery.isLoading,
     isFetching: categoriesQuery.isFetching || paymentMethodsQuery.isFetching,
     isError: categoriesQuery.isError || paymentMethodsQuery.isError,

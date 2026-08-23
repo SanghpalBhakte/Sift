@@ -11,8 +11,8 @@ export const BILLING_CYCLE_OPTIONS: Array<{ value: BillingCycle; label: string }
 export const STATUS_OPTIONS: Array<{ value: SubscriptionStatus; label: string }> = [
   { value: "active", label: "Active" },
   { value: "paused", label: "Paused" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "trial", label: "Trial" },
+  { value: "canceled", label: "Canceled" },
+  { value: "archived", label: "Archived" },
 ];
 
 export const EMPTY_SUBSCRIPTION_FORM: import("./types").SubscriptionFormValues = {

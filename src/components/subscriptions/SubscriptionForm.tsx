@@ -29,6 +29,7 @@ import {
 import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
 import { POPULAR_SERVICES, PopularService } from '@/lib/constants/popularServices';
+import { AddPaymentMethodModal } from './AddPaymentMethodModal';
 
 interface SubscriptionFormProps {
   initialData?: Subscription;
@@ -54,6 +55,7 @@ export function SubscriptionForm({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAddPmModalOpen, setIsAddPmModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
@@ -669,18 +671,41 @@ export function SubscriptionForm({
                 ))}
               </Select>
 
-              <Select
-                label="Payment Method (Optional)"
-                value={paymentMethodId}
-                onChange={(e) => setPaymentMethodId(e.target.value)}
-              >
-                <option value="">None / Unassigned</option>
-                {availablePaymentMethods.map((pm) => (
-                  <option key={pm.id} value={pm.id}>
-                    {pm.name} {pm.last4 ? `(•••• ${pm.last4})` : ''}
-                  </option>
-                ))}
-              </Select>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground">Payment Method (Optional)</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddPmModalOpen(true)}
+                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer flex items-center gap-0.5"
+                  >
+                    + Add New
+                  </button>
+                </div>
+                <Select
+                  value={paymentMethodId}
+                  onChange={(e) => setPaymentMethodId(e.target.value)}
+                >
+                  <option value="">None / Unassigned</option>
+                  {availablePaymentMethods.map((pm) => (
+                    <option key={pm.id} value={pm.id}>
+                      {pm.name} {pm.last4 ? `(•••• ${pm.last4})` : ''}
+                    </option>
+                  ))}
+                </Select>
+                {availablePaymentMethods.length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-between pt-0.5">
+                    <span>No payment methods saved yet.</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddPmModalOpen(true)}
+                      className="text-primary hover:underline font-medium cursor-pointer"
+                    >
+                      Add one now
+                    </button>
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -879,6 +904,12 @@ export function SubscriptionForm({
           {isEditing ? 'Update Subscription' : 'Save Subscription'}
         </Button>
       </div>
+
+      <AddPaymentMethodModal
+        isOpen={isAddPmModalOpen}
+        onClose={() => setIsAddPmModalOpen(false)}
+        onCreated={(pm) => setPaymentMethodId(pm.id)}
+      />
     </form>
   );
 }

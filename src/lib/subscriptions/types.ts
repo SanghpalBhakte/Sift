@@ -19,7 +19,7 @@ export type SubscriptionUpdate =
   Database["public"]["Tables"]["subscriptions"]["Update"];
 
 export type BillingCycle = "monthly" | "yearly";
-export type SubscriptionStatus = "active" | "paused" | "cancelled" | "trial";
+export type SubscriptionStatus = "active" | "paused" | "canceled" | "archived";
 
 export type SelectOption = {
   value: string;
@@ -44,8 +44,8 @@ export type SubscriptionFormValues = {
 };
 
 export type SubscriptionWithRelations = SubscriptionRow & {
-  category: Pick<CategoryRow, "id" | "name" | "slug"> | null;
-  payment_method: Pick<PaymentMethodRow, "id" | "name" | "slug"> | null;
+  category: Pick<CategoryRow, "id" | "name" | "slug" | "color" | "icon"> | null;
+  payment_method: Pick<PaymentMethodRow, "id" | "name" | "type" | "last4" | "color" | "is_default"> | null;
 };
 
 export type SubscriptionDisplay = {

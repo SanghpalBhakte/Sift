@@ -27,7 +27,7 @@ export const subscriptionFormSchema = z.object({
   description: z.string(),
   notes: z.string(),
   isActive: z.boolean(),
-  status: z.enum(["active", "paused", "cancelled", "trial"]),
+  status: z.enum(["active", "paused", "canceled", "archived"]),
   trialEndsOn: optionalDate,
   cancellationEffectiveDate: optionalDate,
   monthlyAlternativePrice: z

@@ -398,6 +398,7 @@ class SubscriptionService {
       try {
         const { data, error } = await (supabase.from('categories') as any)
           .select('*')
+          .is('user_id', null)
           .order('name', { ascending: true });
 
         if (!error && data && data.length > 0) {
@@ -481,19 +482,9 @@ class SubscriptionService {
     const existing = categories.find((c) => c.id === id);
     if (!existing) throw new Error('Category not found');
 
-    const newSlug = updates.slug
-      ? updates.slug.trim().toLowerCase()
-      : updates.name
-        ? updates.name
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-        : existing.slug;
-
-    const existingAliases = existing.slug_aliases || [];
-    const updatedAliases = [...existingAliases];
-    if (existing.slug && existing.slug !== newSlug && !updatedAliases.includes(existing.slug)) {
+    const newSlug = updates.slug || updates.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || existing.slug;
+    const updatedAliases = existing.slug_aliases ? [...existing.slug_aliases] : [];
+    if (newSlug !== existing.slug && !updatedAliases.includes(existing.slug)) {
       updatedAliases.push(existing.slug);
     }
 
@@ -535,8 +526,9 @@ class SubscriptionService {
 
         if (user) {
           const { data, error } = await (supabase.from('payment_methods') as any)
-            .select('*')
-            .or(`user_id.is.null,user_id.eq.${user.id}`)
+            .select('id, user_id, name, type, last4, color, is_default, created_at')
+            .eq('user_id', user.id)
+            .order('is_default', { ascending: false })
             .order('name', { ascending: true });
 
           if (!error && data) {
@@ -552,6 +544,71 @@ class SubscriptionService {
 
     const cached = this.getLocalData(STORAGE_KEYS.PAYMENT_METHODS, [] as PaymentMethod[]);
     return cached;
+  }
+
+  async createPaymentMethod(data: {
+    name: string;
+    type: string;
+    last4?: string | null;
+    color?: string | null;
+    is_default?: boolean;
+  }): Promise<PaymentMethod> {
+    const supabase = createClient();
+    let userId = defaultProfile.id;
+
+    if (supabase) {
+      try {
+        const user = await this.getAuthUser(supabase);
+        if (user) {
+          userId = user.id;
+          const { data: created, error } = await (supabase.from('payment_methods') as any)
+            .insert({
+              user_id: userId,
+              name: data.name.trim(),
+              type: data.type.trim() || 'credit_card',
+              last4: data.last4?.trim() || null,
+              color: data.color?.trim() || null,
+              is_default: Boolean(data.is_default),
+            })
+            .select()
+            .single();
+
+          if (!error && created) {
+            const newPm = created as PaymentMethod;
+            const all = this.getLocalData(STORAGE_KEYS.PAYMENT_METHODS, [] as PaymentMethod[]);
+            const updated = [newPm, ...all.filter((p) => p.id !== newPm.id)];
+            this.setLocalData(STORAGE_KEYS.PAYMENT_METHODS, updated);
+            return newPm;
+          }
+          if (error) {
+            console.error('Supabase createPaymentMethod error:', error);
+            throw new Error(error.message || 'Failed to create payment method.');
+          }
+        }
+      } catch (err: any) {
+        console.error('Error creating payment method:', err);
+        throw err;
+      }
+    }
+
+    const fallbackPm: PaymentMethod = {
+      id:
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `pm-${Date.now()}`,
+      user_id: userId,
+      name: data.name.trim(),
+      type: (data.type.trim() || 'credit_card') as any,
+      last4: data.last4?.trim() || undefined,
+      color: data.color?.trim() || undefined,
+      is_default: Boolean(data.is_default),
+      created_at: new Date().toISOString(),
+    };
+
+    const all = this.getLocalData(STORAGE_KEYS.PAYMENT_METHODS, [] as PaymentMethod[]);
+    const updated = [fallbackPm, ...all.filter((p) => p.id !== fallbackPm.id)];
+    this.setLocalData(STORAGE_KEYS.PAYMENT_METHODS, updated);
+    return fallbackPm;
   }
 
   // --- Profile & Preferences ---

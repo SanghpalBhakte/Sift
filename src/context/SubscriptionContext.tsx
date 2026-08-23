@@ -30,6 +30,7 @@ interface SubscriptionContextType {
   addSubscription: (data: SubscriptionFormData) => Promise<Subscription>;
   addCategory: (data: { name: string; slug?: string; color?: string; icon?: string }) => Promise<Category>;
   updateCategory: (id: string, data: Partial<{ name: string; slug: string; color: string; icon: string }>) => Promise<Category>;
+  addPaymentMethod: (data: { name: string; type: string; last4?: string | null; color?: string | null; is_default?: boolean }) => Promise<PaymentMethod>;
   updateSubscription: (id: string, data: Partial<SubscriptionFormData>) => Promise<Subscription>;
   deleteSubscription: (id: string) => Promise<void>;
   toggleStatus: (id: string, currentStatus: string) => Promise<void>;
@@ -171,6 +172,19 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return updated;
   };
 
+  const addPaymentMethod = async (data: {
+    name: string;
+    type: string;
+    last4?: string | null;
+    color?: string | null;
+    is_default?: boolean;
+  }): Promise<PaymentMethod> => {
+    const created = await subscriptionService.createPaymentMethod(data);
+    setPaymentMethods((prev) => [...prev.filter((p) => p.id !== created.id), created]);
+    loadAll();
+    return created;
+  };
+
   // Optimistic Update
   const updateSubscription = async (
     id: string,
@@ -247,6 +261,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         addSubscription,
         addCategory,
         updateCategory,
+        addPaymentMethod,
         updateSubscription,
         deleteSubscription,
         toggleStatus,

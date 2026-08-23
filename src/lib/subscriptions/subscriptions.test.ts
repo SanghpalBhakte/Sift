@@ -18,6 +18,7 @@ describe("Typed Subscription Data Layer", () => {
       slug: "software-dev",
       color: "moss",
       icon: "terminal",
+      user_id: null,
       created_at: "2026-01-01T00:00:00Z",
     });
     expect(catOption.value).toBe("10000000-0000-0000-0000-000000000001");
@@ -27,11 +28,14 @@ describe("Typed Subscription Data Layer", () => {
       id: "20000000-0000-0000-0000-000000000001",
       name: "Credit Card",
       type: "credit_card",
-      user_id: null,
+      user_id: "user-123",
+      last4: "4242",
+      color: null,
+      is_default: true,
       created_at: "2026-01-01T00:00:00Z",
     });
     expect(pmOption.value).toBe("20000000-0000-0000-0000-000000000001");
-    expect(pmOption.label).toBe("Credit Card");
+    expect(pmOption.label).toBe("Credit Card (•••• 4242)");
   });
 
   it("maps subscription row to display object with fallback labels", () => {
@@ -44,14 +48,18 @@ describe("Typed Subscription Data Layer", () => {
       amount: 20,
       currency: "USD",
       billing_cycle: "monthly",
-      next_billing_date: "2026-09-01",
+      custom_interval_days: null,
+      status: "active",
       category_id: null,
       payment_method_id: null,
-      is_active: true,
-      status: "active",
-      trial_ends_on: null,
-      cancellation_effective_date: null,
-      monthly_alternative_price: null,
+      start_date: "2026-01-01",
+      next_renewal_date: "2026-09-01",
+      is_trial: false,
+      trial_end_date: null,
+      reminder_offsets: [3, 1],
+      value_rating: "essential",
+      cancel_url: null,
+      monthly_amount: 20,
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
     };
@@ -72,31 +80,40 @@ describe("Typed Subscription Data Layer", () => {
       amount: 20,
       currency: "USD",
       billing_cycle: "monthly",
-      next_billing_date: "2026-09-01",
+      custom_interval_days: null,
+      status: "active",
       category_id: "10000000-0000-0000-0000-000000000001",
       payment_method_id: "20000000-0000-0000-0000-000000000001",
-      is_active: true,
-      status: "active",
-      trial_ends_on: null,
-      cancellation_effective_date: null,
-      monthly_alternative_price: null,
+      start_date: "2026-01-01",
+      next_renewal_date: "2026-09-01",
+      is_trial: false,
+      trial_end_date: null,
+      reminder_offsets: [3, 1],
+      value_rating: "essential",
+      cancel_url: null,
+      monthly_amount: 20,
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
       category: {
         id: "10000000-0000-0000-0000-000000000001",
         name: "Software & Dev",
         slug: "software-dev",
+        color: "moss",
+        icon: "terminal",
       },
       payment_method: {
         id: "20000000-0000-0000-0000-000000000001",
         name: "Credit Card",
-        slug: "credit-card",
+        type: "credit_card",
+        last4: "4242",
+        color: null,
+        is_default: true,
       },
     };
 
     const display = mapSubscriptionRowToDisplay(rowWithRelations);
     expect(display.categoryName).toBe("Software & Dev");
-    expect(display.paymentMethodName).toBe("Credit Card");
+    expect(display.paymentMethodName).toBe("Credit Card (•••• 4242)");
     expect(display.categoryId).toBe("10000000-0000-0000-0000-000000000001");
   });
 

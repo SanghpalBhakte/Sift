@@ -25,7 +25,7 @@ export function useUpdateSubscription() {
           return current
             .map((item) => (item.id === updated.id ? updated : item))
             .sort((a, b) =>
-              String(a.next_billing_date).localeCompare(String(b.next_billing_date))
+              String(a.next_renewal_date).localeCompare(String(b.next_renewal_date))
             );
         }
       );

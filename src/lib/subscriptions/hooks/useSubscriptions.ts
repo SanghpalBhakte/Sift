@@ -8,7 +8,7 @@ async function fetchSubscriptions(userId: string) {
     .from("subscriptions")
     .select(subscriptionSelect)
     .eq("user_id", userId)
-    .order("next_billing_date", { ascending: true });
+    .order("next_renewal_date", { ascending: true });
 
   if (error) {
     throw error;
