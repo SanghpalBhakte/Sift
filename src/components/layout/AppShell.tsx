@@ -2,13 +2,23 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Plus } from 'lucide-react';
 import { Header } from './Header';
 import { MobileNav } from './MobileNav';
 import { DesktopSidebar } from './DesktopSidebar';
-import { AddSubscriptionModal } from '../subscriptions/AddSubscriptionModal';
-import { ServiceWorkerManager } from '@/components/pwa/ServiceWorkerManager';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+
+// Dynamically import non-critical modals and client managers to reduce critical First Load JS
+const AddSubscriptionModal = dynamic(
+  () => import('../subscriptions/AddSubscriptionModal').then((m) => m.AddSubscriptionModal),
+  { ssr: false }
+);
+
+const ServiceWorkerManager = dynamic(
+  () => import('@/components/pwa/ServiceWorkerManager').then((m) => m.ServiceWorkerManager),
+  { ssr: false }
+);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -39,10 +49,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Link>
 
       {/* Global Quick Add Subscription Modal (keyboard shortcut "N") */}
-      <AddSubscriptionModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-      />
+      {isAddModalOpen && (
+        <AddSubscriptionModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+        />
+      )}
 
       {/* Non-intrusive PWA update notification banner */}
       <ServiceWorkerManager />

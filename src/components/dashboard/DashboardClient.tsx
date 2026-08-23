@@ -7,7 +7,7 @@ import { useSubscriptions } from '@/context/SubscriptionContext';
 import { WelcomeScreen } from '@/components/dashboard/WelcomeScreen';
 import { SubscriptionCard } from '@/components/subscriptions/SubscriptionCard';
 import { Button } from '@/components/ui/Button';
-import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
+import { formatCurrency } from '@/lib/utils/currency';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -121,21 +121,23 @@ export function DashboardClient() {
           </div>
         </div>
 
-        {/* Hero Spend Figure */}
-        <div>
-          {isLoading ? (
+        {/* Hero Spend Figure (LCP Target Element with fixed reserved layout) */}
+        <div className="min-h-[58px]">
+          {isLoading && subscriptions.length === 0 ? (
             <div className="space-y-2">
               <div className="h-9 w-44 skeleton rounded-md" />
               <div className="h-3.5 w-56 skeleton rounded-md" />
             </div>
           ) : (
             <>
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums">
-                <AnimatedCurrency
-                  value={period === 'monthly' ? stats.monthlyTotal : stats.yearlyProjected}
-                  currency={targetCurrency}
-                />
-                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1.5">
+              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums flex items-baseline">
+                <span>
+                  {formatCurrency(
+                    period === 'monthly' ? stats.monthlyTotal : stats.yearlyProjected,
+                    targetCurrency
+                  )}
+                </span>
+                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1.5 font-sans">
                   /{period === 'monthly' ? 'month' : 'year'}
                 </span>
               </div>
