@@ -33,8 +33,6 @@ export function SubscriptionFormContainer({
     categoryOptions,
     paymentMethodOptions,
     isLoading: isLoadingLookups,
-    isError: isLookupError,
-    error: lookupError,
   } = useSubscriptionLookups();
 
   const { form, setField } = useSubscriptionForm({
@@ -67,27 +65,28 @@ export function SubscriptionFormContainer({
       return;
     }
 
-    const saved =
-      mode === "create"
-        ? await createMutation.mutateAsync({
-            userId,
-            values: form,
-          })
-        : await updateMutation.mutateAsync({
-            subscriptionId: subscription!.id,
-            userId,
-            values: form,
-          });
+    try {
+      const saved =
+        mode === "create"
+          ? await createMutation.mutateAsync({
+              userId,
+              values: form,
+            })
+          : await updateMutation.mutateAsync({
+              subscriptionId: subscription!.id,
+              userId,
+              values: form,
+            });
 
-    onSaved?.(saved);
+      onSaved?.(saved);
+    } catch {
+      // Mutation errors are handled via mutation cache and toast notifications;
+      // Form values are preserved in form state.
+    }
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      {isLookupError ? <div>{String(lookupError)}</div> : null}
-      {createMutation.error ? <div>{String(createMutation.error.message)}</div> : null}
-      {updateMutation.error ? <div>{String(updateMutation.error.message)}</div> : null}
-
       <input
         value={form.name}
         onChange={(e) => setField("name", e.target.value)}

@@ -1,12 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createSubscription } from "@/lib/subscriptions/api";
 import { subscriptionKeys } from "@/lib/subscriptions/queryKeys";
+import { showSuccessToast } from "@/lib/toast/toast";
 
 export function useCreateSubscription() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: createSubscription,
+    meta: {
+      entity: "subscription",
+      action: "create",
+    },
     onSuccess: async (created, variables) => {
       queryClient.setQueryData(
         subscriptionKeys.detail(variables.userId, created.id),
@@ -27,11 +32,11 @@ export function useCreateSubscription() {
         }
       );
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: subscriptionKeys.list(variables.userId),
-        }),
-      ]);
+      showSuccessToast("Subscription added.");
+
+      await queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.list(variables.userId),
+      });
     },
   });
 }

@@ -1,12 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateSubscription } from "@/lib/subscriptions/api";
 import { subscriptionKeys } from "@/lib/subscriptions/queryKeys";
+import { showSuccessToast } from "@/lib/toast/toast";
 
 export function useUpdateSubscription() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: updateSubscription,
+    meta: {
+      entity: "subscription",
+      action: "update",
+    },
     onSuccess: async (updated, variables) => {
       queryClient.setQueryData(
         subscriptionKeys.detail(variables.userId, variables.subscriptionId),
@@ -24,6 +29,8 @@ export function useUpdateSubscription() {
             );
         }
       );
+
+      showSuccessToast("Subscription updated.");
 
       await Promise.all([
         queryClient.invalidateQueries({

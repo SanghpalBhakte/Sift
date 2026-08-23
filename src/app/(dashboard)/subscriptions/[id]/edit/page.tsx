@@ -8,6 +8,8 @@ import { SubscriptionFormData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { AppErrorBoundary } from '@/lib/errors/AppErrorBoundary';
+import { SubscriptionScreenErrorFallback } from '@/lib/errors/SubscriptionScreenErrorFallback';
 
 export default function EditSubscriptionPage() {
   const params = useParams();
@@ -61,12 +63,14 @@ export default function EditSubscriptionPage() {
   };
 
   return (
-    <SubscriptionDetailView
-      subscription={subscription}
-      categories={categories}
-      paymentMethods={paymentMethods}
-      onUpdate={handleUpdate}
-      onDelete={handleDelete}
-    />
+    <AppErrorBoundary fallback={<SubscriptionScreenErrorFallback title="Unable to render Subscription Detail" />}>
+      <SubscriptionDetailView
+        subscription={subscription}
+        categories={categories}
+        paymentMethods={paymentMethods}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+      />
+    </AppErrorBoundary>
   );
 }
