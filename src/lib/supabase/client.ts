@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { Database } from './types';
+import { Database } from './database.types';
 
 export function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -8,7 +8,7 @@ export function isSupabaseConfigured(): boolean {
     url &&
       anonKey &&
       !url.includes('your-project-id') &&
-      !anonKey.includes('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...')
+      !anonKey.includes('placeholder')
   );
 }
 
@@ -22,3 +22,8 @@ export function createClient() {
 
   return createBrowserClient<Database>(url, anonKey);
 }
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+
+export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseKey);
