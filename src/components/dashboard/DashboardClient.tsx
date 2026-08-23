@@ -123,32 +123,29 @@ export function DashboardClient() {
 
         {/* Hero Spend Figure (LCP Target Element with fixed reserved layout) */}
         <div className="min-h-[58px]">
-          {isLoading && subscriptions.length === 0 ? (
-            <div className="space-y-2">
-              <div className="h-9 w-44 skeleton rounded-md" />
-              <div className="h-3.5 w-56 skeleton rounded-md" />
-            </div>
-          ) : (
-            <>
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums flex items-baseline">
-                <span>
-                  {formatCurrency(
-                    period === 'monthly' ? stats.monthlyTotal : stats.yearlyProjected,
-                    targetCurrency
-                  )}
-                </span>
-                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1.5 font-sans">
-                  /{period === 'monthly' ? 'month' : 'year'}
-                </span>
-              </div>
+          <div className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums flex items-baseline">
+            <span className={cn(isLoading && subscriptions.length === 0 && 'opacity-40 animate-pulse font-mono')}>
+              {formatCurrency(
+                period === 'monthly' ? stats.monthlyTotal : stats.yearlyProjected,
+                targetCurrency
+              )}
+            </span>
+            <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1.5 font-sans">
+              /{period === 'monthly' ? 'month' : 'year'}
+            </span>
+          </div>
 
-              <p className="text-xs text-muted-foreground mt-1.5">
+          <p className="text-xs text-muted-foreground mt-1.5 min-h-[16px]">
+            {isLoading && subscriptions.length === 0 ? (
+              <span className="opacity-50">Calculating recurring commitments...</span>
+            ) : (
+              <>
                 {activeSubscriptions.length}{' '}
                 {activeSubscriptions.length === 1 ? 'active subscription' : 'active subscriptions'}
                 {nextRenewal ? ` · Next renews ${nextRenewal.name}` : ''}
-              </p>
-            </>
-          )}
+              </>
+            )}
+          </p>
         </div>
       </div>
 

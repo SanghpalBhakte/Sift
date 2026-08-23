@@ -2,14 +2,25 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Subscription } from '@/lib/types';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { ValueRatingTag } from '../ui/ValueRatingTag';
 import { Badge } from '../ui/Badge';
-import { CancellationReviewModal } from './CancellationReviewModal';
-import { PriceHikeReviewModal } from './PriceHikeReviewModal';
 import { formatCurrency, formatCycle, convertCurrency } from '@/lib/utils/currency';
 import { getCountdownBadge, formatDate } from '@/lib/utils/dates';
+
+const CancellationReviewModal = dynamic(
+  () =>
+    import('./CancellationReviewModal').then((m) => m.CancellationReviewModal),
+  { ssr: false }
+);
+
+const PriceHikeReviewModal = dynamic(
+  () =>
+    import('./PriceHikeReviewModal').then((m) => m.PriceHikeReviewModal),
+  { ssr: false }
+);
 import {
   ExternalLink,
   Pause,
@@ -293,20 +304,24 @@ export function SubscriptionCard({
         </div>
       </div>
 
-      {/* Cancellation Review Modal */}
-      <CancellationReviewModal
-        subscription={subscription}
-        isOpen={isCancelModalOpen}
-        onClose={() => setIsCancelModalOpen(false)}
-      />
+      {/* Cancellation Review Modal (mounted only on demand) */}
+      {isCancelModalOpen && (
+        <CancellationReviewModal
+          subscription={subscription}
+          isOpen={isCancelModalOpen}
+          onClose={() => setIsCancelModalOpen(false)}
+        />
+      )}
 
-      {/* Price Hike Review Modal */}
-      <PriceHikeReviewModal
-        subscription={subscription}
-        isOpen={isPriceHikeModalOpen}
-        onClose={() => setIsPriceHikeModalOpen(false)}
-        onOpenCancelModal={() => setIsCancelModalOpen(true)}
-      />
+      {/* Price Hike Review Modal (mounted only on demand) */}
+      {isPriceHikeModalOpen && (
+        <PriceHikeReviewModal
+          subscription={subscription}
+          isOpen={isPriceHikeModalOpen}
+          onClose={() => setIsPriceHikeModalOpen(false)}
+          onOpenCancelModal={() => setIsCancelModalOpen(true)}
+        />
+      )}
     </>
   );
 }

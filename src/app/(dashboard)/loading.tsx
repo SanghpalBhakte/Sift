@@ -20,9 +20,17 @@ export default function DashboardLoading() {
           </div>
         </div>
 
-        <div>
-          <div className="h-10 w-48 skeleton rounded-lg" />
-          <div className="h-3.5 w-60 skeleton rounded-md mt-2" />
+        {/* Hero Spend Figure Skeleton with stable typography container */}
+        <div className="min-h-[58px]">
+          <div className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums flex items-baseline">
+            <span className="opacity-40 animate-pulse font-mono">$0.00</span>
+            <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1.5 font-sans">
+              /month
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1.5 min-h-[16px]">
+            <span className="opacity-50">Calculating recurring commitments...</span>
+          </p>
         </div>
       </div>
 
