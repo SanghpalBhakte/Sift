@@ -1,29 +1,23 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Maskable full-bleed background -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <rect width="512" height="512" fill="#5B294A"/>
-  
-  <!-- Safe-zone centered mark (60% scale within 80% safe circle) -->
-  <g transform="translate(160, 145) scale(6.2)" fill="none">
-    <!-- Paper Silhouette -->
+  <g transform="translate(136, 120) scale(7.5)" fill="none">
     <path
-      d="M6 3.5C4.62 3.5 3.5 4.62 3.5 6V26C3.5 27.38 4.62 28.5 6 28.5H26C27.38 28.5 28.5 27.38 28.5 26V11.5L20.5 3.5H6Z"
+      d="M6.5 3.5C5.1 3.5 4 4.6 4 6V26C4 27.4 5.1 28.5 6.5 28.5H25.5C26.9 28.5 28 27.4 28 26V11.5L20 3.5H6.5Z"
       fill="#FCF9F3"
       fill-opacity="0.22"
       stroke="#FCF9F3"
       stroke-width="2.25"
       stroke-linejoin="round"
     />
-    <!-- 45° Corner Fold Notch -->
     <path
-      d="M20.5 3.5V10.5C20.5 11.05 20.95 11.5 21.5 11.5H28.5"
+      d="M20 3.5V11C20 11.55 20.45 12 21 12H28"
       stroke="#FCF9F3"
       stroke-width="2.25"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
-    <!-- Inner S-Curve -->
     <path
-      d="M22 14.5C20.2 13 17.2 12.5 14.5 13.2C11.5 14 9.8 16.5 10.2 19C10.8 21.5 14.2 22.6 17.8 23.2C21.5 23.8 23.5 25.2 23 27.2C22.2 29.5 19 30 15.8 29.2C12.8 28.5 10.8 27 9.8 25.5"
+      d="M22 14C20.5 12.8 18 12.2 15.5 12.8C12.5 13.5 10.5 15.5 10.8 17.8C11.2 20.2 14.5 21.2 17.5 21.8C20.8 22.5 22.8 23.8 22.5 25.5C22 27.2 19 28 16 27.5C13.2 27 11.2 25.8 10.5 24.5"
       stroke="#FCF9F3"
       stroke-width="2.4"
       stroke-linecap="round"

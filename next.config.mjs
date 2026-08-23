@@ -18,7 +18,7 @@ function validateBuildEnv() {
   }
 
   if (issues.length > 0) {
-    console.error('\n\u274c [Sift Environment Validation Error]:');
+    console.error('\n\u274c [Sweep Environment Validation Error]:');
     issues.forEach((err) => console.error(`  - ${err}`));
     console.error('');
     if (process.env.NODE_ENV === 'production') {
@@ -33,7 +33,7 @@ validateBuildEnv();
 const securityHeaders = [
   // Block browsers from MIME-type sniffing
   { key: 'X-Content-Type-Options', value: 'nosniff' },
-  // Prevent Sift from being embedded in iframes (clickjacking)
+  // Prevent Sweep from being embedded in iframes (clickjacking)
   { key: 'X-Frame-Options', value: 'DENY' },
   // Enable HSTS — browsers will only connect via HTTPS for 1 year
   { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },

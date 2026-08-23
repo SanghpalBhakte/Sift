@@ -1,5 +1,5 @@
 // =============================================================================
-// Sift - Supabase Edge Function: Automated Reminder Dispatch
+// Sweep - Supabase Edge Function: Automated Reminder Dispatch
 // Path: supabase/functions/dispatch-reminders/index.ts
 // =============================================================================
 
@@ -87,18 +87,18 @@ function renderRenewalEmailHtml(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${params.subscriptionName} Renewal Reminder</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #F8F7F3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E2322;">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8F7F3; padding: 32px 16px;">
+<body style="margin: 0; padding: 0; background-color: #F6F1E8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #24201E;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F6F1E8; padding: 32px 16px;">
     <tr>
       <td align="center">
-        <table width="100%" max-width="520" style="max-width: 520px; background-color: #FFFFFF; border: 1px solid #E6E4DD; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <table width="100%" max-width="520" style="max-width: 520px; background-color: #FCF9F3; border: 1px solid #D8CFC4; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
           <!-- Header Brand -->
           <tr>
             <td style="padding-bottom: 24px;">
               <table border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="width: 28px; height: 28px; background-color: #265F56; border-radius: 6px; text-align: center; color: #FFFFFF; font-weight: bold; font-size: 14px; line-height: 28px;">S</td>
-                  <td style="padding-left: 10px; font-size: 14px; font-weight: 600; color: #1E2322; letter-spacing: -0.01em;">Sift</td>
+                  <td style="width: 28px; height: 28px; background-color: #5B294A; border-radius: 6px; text-align: center; color: #FCF9F3; font-weight: bold; font-size: 14px; line-height: 28px;">S</td>
+                  <td style="padding-left: 10px; font-size: 14px; font-weight: 700; color: #5B294A; letter-spacing: -0.01em;">SWEEP</td>
                 </tr>
               </table>
             </td>
@@ -106,14 +106,14 @@ function renderRenewalEmailHtml(params: {
 
           <!-- Heading -->
           <tr>
-            <td style="font-size: 18px; font-weight: 700; color: #1E2322; padding-bottom: 12px; letter-spacing: -0.01em;">
+            <td style="font-size: 18px; font-weight: 700; color: #24201E; padding-bottom: 12px; letter-spacing: -0.01em;">
               ${params.subscriptionName} renews ${relativeText}
             </td>
           </tr>
 
           <!-- Body message -->
           <tr>
-            <td style="font-size: 14px; line-height: 1.6; color: #4A5553; padding-bottom: 24px;">
+            <td style="font-size: 14px; line-height: 1.6; color: #756D65; padding-bottom: 24px;">
               ${greeting}<br><br>
               This is a quiet reminder that your subscription to <strong>${params.subscriptionName}</strong> is scheduled to renew ${relativeText} on <strong>${params.renewalDate}</strong>.
             </td>
@@ -121,15 +121,15 @@ function renderRenewalEmailHtml(params: {
 
           <!-- Summary Card -->
           <tr>
-            <td style="background-color: #F8F7F3; border: 1px solid #E6E4DD; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <td style="background-color: #F6F1E8; border: 1px solid #D8CFC4; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="font-size: 12px; color: #768280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Renewal Amount</td>
-                  <td align="right" style="font-size: 16px; font-weight: 700; color: #1E2322;">${params.amountFormatted}</td>
+                  <td style="font-size: 12px; color: #756D65; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Renewal Amount</td>
+                  <td align="right" style="font-size: 16px; font-weight: 700; color: #24201E; font-family: monospace;">${params.amountFormatted}</td>
                 </tr>
                 <tr>
-                  <td style="font-size: 12px; color: #768280; padding-top: 8px;">Billing Cycle</td>
-                  <td align="right" style="font-size: 13px; color: #4A5553; padding-top: 8px; text-transform: capitalize;">${params.billingCycle}</td>
+                  <td style="font-size: 12px; color: #756D65; padding-top: 8px;">Billing Cycle</td>
+                  <td align="right" style="font-size: 13px; color: #756D65; padding-top: 8px; text-transform: capitalize;">${params.billingCycle}</td>
                 </tr>
               </table>
             </td>
@@ -138,17 +138,17 @@ function renderRenewalEmailHtml(params: {
           <!-- Action Button -->
           <tr>
             <td style="padding-top: 24px; padding-bottom: 24px;" align="center">
-              <a href="${params.appUrl}" style="display: inline-block; background-color: #265F56; color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 20px; border-radius: 6px;">
-                Open in Sift
+              <a href="${params.appUrl}" style="display: inline-block; background-color: #5B294A; color: #FCF9F3; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 20px; border-radius: 6px;">
+                Open in Sweep
               </a>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="border-top: 1px solid #E6E4DD; padding-top: 16px; font-size: 11px; color: #768280; line-height: 1.5; text-align: center;">
-              You received this reminder because you enabled renewal alerts in your Sift workspace.<br>
-              Manage preferences anytime in <a href="${params.appUrl}/settings" style="color: #265F56; text-decoration: underline;">Settings</a>.
+            <td style="border-top: 1px solid #D8CFC4; padding-top: 16px; font-size: 11px; color: #756D65; line-height: 1.5; text-align: center;">
+              You received this reminder because you enabled renewal alerts in your Sweep workspace.<br>
+              Manage preferences anytime in <a href="${params.appUrl}/settings" style="color: #5B294A; text-decoration: underline;">Settings</a>.
             </td>
           </tr>
         </table>
@@ -160,8 +160,8 @@ function renderRenewalEmailHtml(params: {
   `;
 }
 
-// Generate calm transactional HTML email for free trials
-function renderTrialEmailHtml(params: {
+// Generate urgent transactional HTML email for expiring trials
+function renderTrialExpiringEmailHtml(params: {
   userName?: string;
   subscriptionName: string;
   conversionAmountFormatted: string;
@@ -181,18 +181,18 @@ function renderTrialEmailHtml(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Free Trial Ending: ${params.subscriptionName}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #F8F7F3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E2322;">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8F7F3; padding: 32px 16px;">
+<body style="margin: 0; padding: 0; background-color: #F6F1E8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #24201E;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F6F1E8; padding: 32px 16px;">
     <tr>
       <td align="center">
-        <table width="100%" max-width="520" style="max-width: 520px; background-color: #FFFFFF; border: 1px solid #E6E4DD; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <table width="100%" max-width="520" style="max-width: 520px; background-color: #FCF9F3; border: 1px solid #D8CFC4; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
           <!-- Header Brand -->
           <tr>
             <td style="padding-bottom: 24px;">
               <table border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="width: 28px; height: 28px; background-color: #265F56; border-radius: 6px; text-align: center; color: #FFFFFF; font-weight: bold; font-size: 14px; line-height: 28px;">S</td>
-                  <td style="padding-left: 10px; font-size: 14px; font-weight: 600; color: #1E2322; letter-spacing: -0.01em;">Sift</td>
+                  <td style="width: 28px; height: 28px; background-color: #5B294A; border-radius: 6px; text-align: center; color: #FCF9F3; font-weight: bold; font-size: 14px; line-height: 28px;">S</td>
+                  <td style="padding-left: 10px; font-size: 14px; font-weight: 700; color: #5B294A; letter-spacing: -0.01em;">SWEEP</td>
                 </tr>
               </table>
             </td>
@@ -200,14 +200,14 @@ function renderTrialEmailHtml(params: {
 
           <!-- Heading -->
           <tr>
-            <td style="font-size: 18px; font-weight: 700; color: #9C3D34; padding-bottom: 12px; letter-spacing: -0.01em;">
+            <td style="font-size: 18px; font-weight: 700; color: #A63F3A; padding-bottom: 12px; letter-spacing: -0.01em;">
               Free trial for ${params.subscriptionName} ends ${relativeText}
             </td>
           </tr>
 
           <!-- Body message -->
           <tr>
-            <td style="font-size: 14px; line-height: 1.6; color: #4A5553; padding-bottom: 24px;">
+            <td style="font-size: 14px; line-height: 1.6; color: #756D65; padding-bottom: 24px;">
               ${greeting}<br><br>
               Your free trial for <strong>${params.subscriptionName}</strong> expires ${relativeText} on <strong>${params.trialEndDate}</strong>. After this date, it will automatically convert to a paid subscription for <strong>${params.conversionAmountFormatted}</strong>.
             </td>
@@ -222,7 +222,7 @@ function renderTrialEmailHtml(params: {
                     params.cancelUrl
                       ? `
                   <td style="padding-right: 12px;">
-                    <a href="${params.cancelUrl}" target="_blank" style="display: inline-block; background-color: #9C3D34; color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 18px; border-radius: 6px;">
+                    <a href="${params.cancelUrl}" target="_blank" style="display: inline-block; background-color: #A63F3A; color: #FCF9F3; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 18px; border-radius: 6px;">
                       Cancel Subscription
                     </a>
                   </td>
@@ -230,8 +230,8 @@ function renderTrialEmailHtml(params: {
                       : ''
                   }
                   <td>
-                    <a href="${params.appUrl}" style="display: inline-block; background-color: #F8F7F3; border: 1px solid #E6E4DD; color: #1E2322; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 18px; border-radius: 6px;">
-                      View in Sift
+                    <a href="${params.appUrl}" style="display: inline-block; background-color: #F6F1E8; border: 1px solid #D8CFC4; color: #24201E; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 18px; border-radius: 6px;">
+                      View in Sweep
                     </a>
                   </td>
                 </tr>
@@ -241,9 +241,9 @@ function renderTrialEmailHtml(params: {
 
           <!-- Footer -->
           <tr>
-            <td style="border-top: 1px solid #E6E4DD; padding-top: 16px; font-size: 11px; color: #768280; line-height: 1.5; text-align: center;">
-              Sent by Sift to prevent unwanted trial conversions.<br>
-              Manage notification preferences in <a href="${params.appUrl}/settings" style="color: #265F56; text-decoration: underline;">Settings</a>.
+            <td style="border-top: 1px solid #D8CFC4; padding-top: 16px; font-size: 11px; color: #756D65; line-height: 1.5; text-align: center;">
+              Sent quietly by Sweep to prevent unwanted trial conversions.<br>
+              Manage notification preferences in <a href="${params.appUrl}/settings" style="color: #5B294A; text-decoration: underline;">Settings</a>.
             </td>
           </tr>
         </table>
@@ -271,8 +271,8 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const resendFromEmail =
-      Deno.env.get('RESEND_FROM_EMAIL') || 'Sift Reminders <onboarding@resend.dev>';
-    const appUrl = Deno.env.get('APP_URL') || 'https://sift-workspace.vercel.app';
+      Deno.env.get('RESEND_FROM_EMAIL') || 'Sweep Reminders <onboarding@resend.dev>';
+    const appUrl = Deno.env.get('APP_URL') || 'https://sweep-workspace.vercel.app';
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(

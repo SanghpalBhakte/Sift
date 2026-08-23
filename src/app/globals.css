@@ -381,8 +381,7 @@
 
 @layer components {
   /* ── Cards ────────────────────────────────────────────────────── */
-  .sweep-card,
-  .sift-card {
+  .sweep-card {
     background-color: hsl(var(--card));
     color: hsl(var(--card-foreground));
     border: 1px solid hsl(var(--border));
@@ -391,19 +390,16 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  .sweep-card-interactive,
-  .sift-card-interactive {
+  .sweep-card-interactive {
     cursor: pointer;
   }
-  .sweep-card-interactive:hover,
-  .sift-card-interactive:hover {
+  .sweep-card-interactive:hover {
     border-color: hsl(var(--border-strong) / 0.7);
     box-shadow: var(--_shadow-popover);
   }
 
   /* ── Inputs ───────────────────────────────────────────────────── */
-  .sweep-input,
-  .sift-input {
+  .sweep-input {
     background-color: hsl(var(--card));
     color: hsl(var(--foreground));
     border: 1px solid hsl(var(--border));
@@ -415,25 +411,21 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     width: 100%;
   }
-  .sweep-input:focus,
-  .sift-input:focus {
+  .sweep-input:focus {
     border-color: hsl(var(--ring));
     box-shadow: 0 0 0 3px hsl(var(--ring) / 0.15);
   }
-  .sweep-input::placeholder,
-  .sift-input::placeholder {
+  .sweep-input::placeholder {
     color: hsl(var(--muted-foreground) / 0.7);
   }
-  .sweep-input:disabled,
-  .sift-input:disabled {
+  .sweep-input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background-color: hsl(var(--surface-muted));
   }
 
   /* ── Buttons ──────────────────────────────────────────────────── */
-  .sweep-btn,
-  .sift-btn {
+  .sweep-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -451,85 +443,71 @@
     border: 1px solid transparent;
     position: relative;
   }
-  .sweep-btn:active:not(:disabled),
-  .sift-btn:active:not(:disabled) {
+  .sweep-btn:active:not(:disabled) {
     transform: scale(0.982);
   }
-  .sweep-btn:disabled,
-  .sift-btn:disabled {
+  .sweep-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
     transform: none;
   }
-  .sweep-btn:focus-visible,
-  .sift-btn:focus-visible {
+  .sweep-btn:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
 
-  .sweep-btn-primary,
-  .sift-btn-primary {
+  .sweep-btn-primary {
     background-color: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
     border-color: hsl(var(--primary));
   }
-  .sweep-btn-primary:hover:not(:disabled),
-  .sift-btn-primary:hover:not(:disabled) {
+  .sweep-btn-primary:hover:not(:disabled) {
     background-color: hsl(var(--primary-hover));
     border-color: hsl(var(--primary-hover));
   }
 
-  .sweep-btn-secondary,
-  .sift-btn-secondary {
+  .sweep-btn-secondary {
     background-color: hsl(var(--secondary));
     color: hsl(var(--secondary-foreground));
     border-color: hsl(var(--border));
   }
-  .sweep-btn-secondary:hover:not(:disabled),
-  .sift-btn-secondary:hover:not(:disabled) {
+  .sweep-btn-secondary:hover:not(:disabled) {
     background-color: hsl(var(--secondary-hover));
   }
 
-  .sweep-btn-ghost,
-  .sift-btn-ghost {
+  .sweep-btn-ghost {
     background-color: transparent;
     color: hsl(var(--muted-foreground));
     border-color: transparent;
   }
-  .sweep-btn-ghost:hover:not(:disabled),
-  .sift-btn-ghost:hover:not(:disabled) {
+  .sweep-btn-ghost:hover:not(:disabled) {
     background-color: hsl(var(--surface));
     color: hsl(var(--foreground));
   }
 
-  .sweep-btn-outline,
-  .sift-btn-outline {
+  .sweep-btn-outline {
     background-color: transparent;
     color: hsl(var(--foreground));
     border-color: hsl(var(--border));
   }
-  .sweep-btn-outline:hover:not(:disabled),
-  .sift-btn-outline:hover:not(:disabled) {
+  .sweep-btn-outline:hover:not(:disabled) {
     background-color: hsl(var(--surface));
     border-color: hsl(var(--border-strong) / 0.5);
   }
 
-  .sweep-btn-danger,
-  .sift-btn-danger {
+  .sweep-btn-danger {
     background-color: hsl(var(--danger-subtle));
     color: hsl(var(--danger));
     border-color: hsl(var(--danger) / 0.18);
   }
-  .sweep-btn-danger:hover:not(:disabled),
-  .sift-btn-danger:hover:not(:disabled) {
+  .sweep-btn-danger:hover:not(:disabled) {
     background-color: hsl(var(--danger));
     color: hsl(var(--danger-foreground));
     border-color: hsl(var(--danger));
   }
 
   /* ── Badges ───────────────────────────────────────────────────── */
-  .sweep-badge,
-  .sift-badge {
+  .sweep-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;

@@ -124,7 +124,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const handleSendTestNotification = useCallback((): boolean => {
-    return dispatchLocalNotification('Sift Reminder Test', {
+    return dispatchLocalNotification('Sweep Reminder Test', {
       body: 'Your subscription renewal alerts are configured and active.',
     });
   }, []);

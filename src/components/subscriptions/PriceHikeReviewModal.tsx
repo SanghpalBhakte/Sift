@@ -118,7 +118,7 @@ export function PriceHikeReviewModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md sift-card bg-card border-border shadow-modal rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
+        className="w-full max-w-md sweep-card bg-card border-border shadow-modal rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
       >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-3 shrink-0">

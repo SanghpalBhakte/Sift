@@ -533,7 +533,7 @@ export default function SettingsPage() {
                                 return next;
                               });
                             }}
-                            className="sift-input w-20 text-xs py-1 px-2 text-right"
+                            className="sweep-input w-20 text-xs py-1 px-2 text-right"
                           />
                         </div>
                       ))}

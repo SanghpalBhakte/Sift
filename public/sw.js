@@ -1,5 +1,5 @@
 // =============================================================================
-// Sift - Progressive Web App & Web Push Service Worker
+// Sweep - Progressive Web App & Web Push Service Worker
 // Path: public/sw.js
 // =============================================================================
 
@@ -22,17 +22,17 @@ self.addEventListener('push', (event) => {
     data = event.data.json();
   } catch (err) {
     data = {
-      title: 'Sift Reminder',
+      title: 'Sweep Reminder',
       body: event.data.text() || 'You have an upcoming subscription renewal.',
     };
   }
 
-  const title = data.title || 'Sift Renewal Alert';
+  const title = data.title || 'Sweep Renewal Alert';
   const options = {
     body: data.body || 'A recurring subscription is scheduled to renew soon.',
     icon: data.icon || '/icons/icon-192.png',
     badge: data.badge || '/icons/icon-192.png',
-    tag: data.tag || 'sift-renewal-alert',
+    tag: data.tag || 'sweep-renewal-alert',
     data: {
       url: data.url || '/',
       subscriptionId: data.subscriptionId,
@@ -43,7 +43,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Handle notification click -> open or focus Sift
+// Handle notification click -> open or focus Sweep
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 

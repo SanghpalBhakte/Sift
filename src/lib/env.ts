@@ -1,5 +1,5 @@
 // =============================================================================
-// Sift - Schema-Validated Environment Helper
+// Sweep - Schema-Validated Environment Helper
 // Path: src/lib/env.ts
 // =============================================================================
 
@@ -27,9 +27,9 @@ export function getServerEnv(): ServerEnv {
   return {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
-    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Sift Reminders <onboarding@resend.dev>',
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Sweep Reminders <onboarding@resend.dev>',
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
-    VAPID_SUBJECT: process.env.VAPID_SUBJECT || 'mailto:support@sift.app',
+    VAPID_SUBJECT: process.env.VAPID_SUBJECT || 'mailto:support@sweep.app',
     CRON_SECRET: process.env.CRON_SECRET,
   };
 }

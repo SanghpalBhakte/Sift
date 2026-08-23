@@ -90,7 +90,7 @@ export async function parsePdfStatement(file: File): Promise<PdfParseResult> {
         totalTextLines: allLines.length,
         isScannedOrImageOnly: true,
         error:
-          'This PDF appears to be a scanned image or photo without selectable digital text. Sift parses text-based digital statement PDFs locally. Please export a CSV from your bank or use a digital PDF statement.',
+          'This PDF appears to be a scanned image or photo without selectable digital text. Sweep parses text-based digital statement PDFs locally. Please export a CSV from your bank or use a digital PDF statement.',
       };
     }
 

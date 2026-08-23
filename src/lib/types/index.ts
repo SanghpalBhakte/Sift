@@ -309,6 +309,8 @@ export interface SiftBackupData {
   payment_methods: PaymentMethod[];
 }
 
+export type SweepBackupData = SiftBackupData;
+
 export interface BackupValidationResult {
   valid: boolean;
   error?: string;

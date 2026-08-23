@@ -38,7 +38,7 @@ Sweep helps individuals and independent creators understand, organize, and stay 
 ## 📁 Project Structure
 
 ```
-Sift/
+Sweep/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                   # GitHub Actions CI/CD workflow (tests, cache, Vercel deploy)

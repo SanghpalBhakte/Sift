@@ -71,10 +71,10 @@ export async function sendWebPushToUser(
   const notificationPayload = JSON.stringify({
     title: payload.title,
     body: payload.body,
-    icon: '/icons/icon-192.svg',
-    badge: '/icons/icon-192.svg',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     url: payload.url || '/',
-    tag: payload.tag || 'sift-reminder',
+    tag: payload.tag || 'sweep-reminder',
   });
 
   for (const sub of subscriptions) {

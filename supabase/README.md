@@ -1,6 +1,6 @@
-# Supabase Database Guide for Sift
+# Supabase Database Guide for Sweep
 
-This directory contains the database migration schema, seed data, and Row Level Security (RLS) policies for Sift.
+This directory contains the database migration schema, seed data, and Row Level Security (RLS) policies for Sweep.
 
 ## Files
 

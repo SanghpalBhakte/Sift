@@ -103,8 +103,8 @@ export function CancellationReviewModal({
     ? getCancellationMatchedAlternative(selectedReason, subscription)
     : null;
 
-  // Action 1: Full Cancel in Sift
-  const handleConfirmCancelInSift = async () => {
+  // Action 1: Full Cancel in Sweep
+  const handleConfirmCancelInSweep = async () => {
     setIsSubmitting(true);
     try {
       await updateSubscription(subscription.id, {
@@ -124,8 +124,8 @@ export function CancellationReviewModal({
     }
   };
 
-  // Action 2: Pause in Sift (Alternative for temporary pause)
-  const handlePauseInSift = async () => {
+  // Action 2: Pause in Sweep (Alternative for temporary pause)
+  const handlePauseInSweep = async () => {
     setIsSubmitting(true);
     try {
       await updateSubscription(subscription.id, {
@@ -153,7 +153,7 @@ export function CancellationReviewModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg sift-card bg-card border-border shadow-modal rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
+        className="w-full max-w-lg sweep-card bg-card border-border shadow-modal rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
       >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-3 shrink-0">
@@ -256,7 +256,7 @@ export function CancellationReviewModal({
                         variant="outline"
                         size="sm"
                         isLoading={isSubmitting}
-                        onClick={handlePauseInSift}
+                        onClick={handlePauseInSweep}
                         className="text-xs gap-1 shadow-xs"
                       >
                         <Pause className="w-3.5 h-3.5" /> {matchedAlternative.actionButtonLabel}
@@ -321,7 +321,7 @@ export function CancellationReviewModal({
                 variant="primary"
                 size="sm"
                 isLoading={isSubmitting}
-                onClick={handleConfirmCancelInSift}
+                onClick={handleConfirmCancelInSweep}
                 className="text-xs gap-1 bg-danger hover:bg-danger/90 text-danger-foreground border-danger shadow-xs"
               >
                 <Scissors className="w-3.5 h-3.5" /> Mark Canceled in Sweep

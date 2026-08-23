@@ -134,7 +134,7 @@ export function generateSubscriptionHealthActions(
           subtitle: `Converts to ${formatCurrency(sub.amount, sub.currency)}/${sub.billing_cycle} on ${formatDate(targetDate)}`,
           whyExplanation:
             daysUntil < 0
-              ? `Trial period expired on ${formatDate(targetDate)}. Sift detected potential automatic billing conversion.`
+              ? `Trial period expired on ${formatDate(targetDate)}. Sweep detected potential automatic billing conversion.`
               : daysUntil === 0
               ? `Trial period ends today. Auto-billing will convert to ${formatCurrency(sub.amount, sub.currency)}.`
               : `Trial period expires in ${daysUntil} day${daysUntil === 1 ? '' : 's'}.`,
@@ -288,7 +288,7 @@ export function generateSubscriptionHealthActions(
         severity: 'warning',
         title: `Low utilization check: ${sub.name}`,
         subtitle: `Rated "Rarely Used" (${formatCurrency(sub.amount, sub.currency)}/${sub.billing_cycle})`,
-        whyExplanation: `You rated this service "Rarely Used" in your ledger audit. Because Sift does not monitor your browser or app activity, value signals come directly from your declared ratings.`,
+        whyExplanation: `You rated this service "Rarely Used" in your ledger audit. Because Sweep does not monitor your browser or app activity, value signals come directly from your declared ratings.`,
         heuristicRule: 'Your declaration: Value Rating = "Rarely Used"',
         impactAmount: convertedMonthly,
         impactCurrency: targetCurrency,

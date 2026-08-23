@@ -1,6 +1,6 @@
-# Sift — Production Readiness & Environment Audit Checklist
+# Sweep — Production Readiness & Environment Audit Checklist
 
-This operational audit document provides a complete pre-launch and post-deployment verification guide for Sift. Follow this checklist before promoting any release to production.
+This operational audit document provides a complete pre-launch and post-deployment verification guide for Sweep. Follow this checklist before promoting any release to production.
 
 ---
 
@@ -11,12 +11,12 @@ This operational audit document provides a complete pre-launch and post-deployme
 | `NEXT_PUBLIC_SUPABASE_URL` | **Yes** (for Cloud) | **Public** | Supabase REST & Auth endpoint | `https://*.supabase.co` | `https://*.supabase.co` | `https://*.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Yes** (for Cloud) | **Public** | Anon JWT key for RLS-enforced client queries | Supabase Anon Key | Supabase Anon Key | Supabase Anon Key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional | **Server-Only** | Admin API access / background worker scripts | Unset / Local Dev | Unset / Preview | Secret in Vercel |
-| `NEXT_PUBLIC_APP_URL` | **Yes** | **Public** | Root URL for email links and auth redirects | `http://localhost:3000` | `https://*.vercel.app` | `https://sift.app` |
+| `NEXT_PUBLIC_APP_URL` | **Yes** | **Public** | Root URL for email links and auth redirects | `http://localhost:3000` | `https://*.vercel.app` | `https://sweep.app` |
 | `RESEND_API_KEY` | Optional | **Server-Only** | API token for transactional renewal alert emails | `re_*` | `re_*` | `re_*` |
-| `RESEND_FROM_EMAIL` | Optional | **Server-Only** | Sender address (e.g. `alerts@sift.app`) | `onboarding@resend.dev` | `onboarding@resend.dev` | Verified custom domain |
+| `RESEND_FROM_EMAIL` | Optional | **Server-Only** | Sender address (e.g. `alerts@sweep.app`) | `onboarding@resend.dev` | `onboarding@resend.dev` | Verified custom domain |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Optional | **Public** | Base64 public key for browser push registration | VAPID Public Key | VAPID Public Key | VAPID Public Key |
 | `VAPID_PRIVATE_KEY` | Optional | **Server-Only** | Server-side cryptographic signing key for Web Push | VAPID Private Key | VAPID Private Key | VAPID Private Key |
-| `VAPID_SUBJECT` | Optional | **Server-Only** | Contact mailto address for push services | `mailto:support@sift.app` | `mailto:support@sift.app` | `mailto:support@sift.app` |
+| `VAPID_SUBJECT` | Optional | **Server-Only** | Contact mailto address for push services | `mailto:support@sweep.app` | `mailto:support@sweep.app` | `mailto:support@sweep.app` |
 | `CRON_SECRET` | Optional | **Server-Only** | Authorization token for reminder dispatch cron API | Random token | Random token | High-entropy secret |
 
 ### Security Rules:
@@ -54,12 +54,12 @@ This operational audit document provides a complete pre-launch and post-deployme
   - `push_subscriptions`: Isolated per `user_id`.
   - `reminder_dispatch_logs`: Isolated per `user_id`.
 - [ ] **Authentication Settings in Supabase**:
-  - **Site URL**: Set to production domain (`https://sift.app`).
+  - **Site URL**: Set to production domain (`https://sweep.app`).
   - **Redirect URLs**:
-    - `https://sift.app/auth/callback`
-    - `https://sift.app/api/auth/callback`
+    - `https://sweep.app/auth/callback`
+    - `https://sweep.app/api/auth/callback`
     - `http://localhost:3000/auth/callback` (for local development)
-  - **Email Templates**: Customized transactional magic link template with calm Sift branding.
+  - **Email Templates**: Customized transactional magic link template with calm Sweep branding.
 
 ---
 
@@ -75,10 +75,10 @@ This operational audit document provides a complete pre-launch and post-deployme
 
 ## 5. PWA & Frontend Production Checks
 
-- [ ] **Web Manifest**: `public/manifest.webmanifest` returns valid JSON with `display: standalone`, `theme_color`, and icon paths.
-- [ ] **Icons**: `public/icons/icon-192.svg` and `icon-512.svg` load with correct MIME types.
+- [ ] **Web Manifest**: `public/manifest.json` and `src/app/manifest.ts` return valid JSON with `display: standalone`, `theme_color`, and raster PNG + SVG icon paths.
+- [ ] **Icons**: `public/icons/icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, and SVGs load with correct MIME types.
 - [ ] **Service Worker Lifecycle**: `/sw.js` registers without console warnings on HTTPS/localhost.
-- [ ] **Theme Persistence**: Switching between *Paper Ledger* and *Night Shelf* stores selection in `localStorage` and does not flash unstyled content on page reload.
+- [ ] **Theme Persistence**: Switching between *Warm Ledger* and *Espresso Desk* stores selection in `localStorage` and does not flash unstyled content on page reload.
 - [ ] **Mobile Touch Targets**: All buttons and interactive tabs satisfy the minimum 44×44px mobile touch target guideline.
 
 ---
@@ -88,7 +88,7 @@ This operational audit document provides a complete pre-launch and post-deployme
 - [ ] **Web Push Subscription**:
   - Clicking "Enable Web Push" prompts for native browser permissions.
   - Subscription endpoint and auth keys are saved to `push_subscriptions`.
-  - "Test Push" button sends an instant test notification that focuses Sift when clicked.
+  - "Test Push" button sends an instant test notification that focuses Sweep when clicked.
 - [ ] **Email Reminder Delivery (Resend)**:
   - Triggering dispatch evaluates due alerts within the user-selected offset windows (7d, 3d, 1d, 0d).
   - Outgoing email includes service name, billing amount, renewal date, and direct cancellation link.
@@ -102,10 +102,10 @@ This operational audit document provides a complete pre-launch and post-deployme
 
 ## 7. Data Ownership & Backup Verification
 
-- [ ] **JSON Full Backup**: Clicking "Full Backup (JSON)" downloads a complete structured JSON file with schema version `1.0`.
+- [ ] **JSON Full Backup**: Clicking "Full Backup (JSON)" downloads a complete structured JSON file with schema version `1.0` and `app: "Sweep"`.
 - [ ] **CSV Export**: Clicking "Spreadsheet (CSV)" downloads a clean CSV spreadsheet with all subscription fields.
 - [ ] **Restore Flow**:
-  - Uploading a valid `sift-backup-*.json` file parses records, matches categories, and restores subscriptions.
+  - Uploading a valid `sweep-backup-*.json` or legacy `sift-backup-*.json` file parses records, matches categories, and restores subscriptions.
   - Uploading corrupted or invalid JSON displays a clear, calm error message without crashing.
 
 ---

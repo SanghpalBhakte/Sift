@@ -51,10 +51,10 @@ export function dispatchLocalNotification(
 
   try {
     new Notification(title, {
-      body: options?.body || 'Upcoming subscription renewal reminder from Sift.',
-      icon: options?.icon || '/icons/icon-192.svg',
-      badge: options?.badge || '/icons/icon-192.svg',
-      tag: options?.tag || 'sift-reminder',
+      body: options?.body || 'Upcoming subscription renewal reminder from Sweep.',
+      icon: options?.icon || '/icons/icon-192.png',
+      badge: options?.badge || '/icons/icon-192.png',
+      tag: options?.tag || 'sweep-reminder',
       ...options,
     });
     return true;
