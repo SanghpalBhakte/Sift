@@ -8,8 +8,11 @@ export type PaymentMethodType =
   | 'credit_card'
   | 'debit_card'
   | 'bank_account'
+  | 'upi'
   | 'paypal'
   | 'apple_pay'
+  | 'google_pay'
+  | 'cash'
   | 'other';
 
 export type BrowserNotificationStatus = 'default' | 'granted' | 'denied' | 'unsupported';

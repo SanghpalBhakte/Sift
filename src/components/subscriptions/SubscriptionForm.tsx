@@ -16,6 +16,8 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
+import { CANONICAL_CATEGORIES } from '@/lib/constants/categories';
+import { CANONICAL_PAYMENT_METHODS } from '@/lib/constants/paymentMethods';
 import {
   Trash2,
   ArrowLeft,
@@ -24,6 +26,7 @@ import {
   Sparkles,
   CheckCircle2,
   Search,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
@@ -55,6 +58,30 @@ export function SubscriptionForm({
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
+  // Available Categories (merge provided with canonical)
+  const availableCategories = useMemo(() => {
+    const map = new Map<string, Category>();
+    for (const c of CANONICAL_CATEGORIES) {
+      map.set(c.id, c);
+    }
+    for (const c of categories || []) {
+      map.set(c.id, c);
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories]);
+
+  // Available Payment Methods (merge provided with canonical)
+  const availablePaymentMethods = useMemo(() => {
+    const map = new Map<string, PaymentMethod>();
+    for (const pm of CANONICAL_PAYMENT_METHODS) {
+      map.set(pm.id, pm);
+    }
+    for (const pm of paymentMethods || []) {
+      map.set(pm.id, pm);
+    }
+    return Array.from(map.values());
+  }, [paymentMethods]);
+
   // Core Required Form State
   const [name, setName] = useState(initialData?.name || '');
   const [amount, setAmount] = useState<string>(initialData ? String(initialData.amount) : '');
@@ -67,13 +94,13 @@ export function SubscriptionForm({
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
 
-  // Demoted Category & Payment Method State
+  // Category & Payment Method State
   const [categoryId, setCategoryId] = useState<string>(initialData?.category_id || '');
   const [paymentMethodId, setPaymentMethodId] = useState<string>(
     initialData?.payment_method_id || ''
   );
 
-  // Optional / Advanced State (hidden by default unless editing or populated)
+  // Optional / Advanced State
   const hasOptionalInitialData = Boolean(
     initialData?.description ||
       initialData?.notes ||
@@ -114,7 +141,6 @@ export function SubscriptionForm({
   // Service Autocomplete Suggestions State
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
 
-  // Filter suggestions based on name
   const filteredSuggestions = useMemo(() => {
     if (!name.trim() || name.trim().length < 1) return [];
     const query = name.trim().toLowerCase();
@@ -125,7 +151,6 @@ export function SubscriptionForm({
     ).slice(0, 5);
   }, [name]);
 
-  // Autofocus the service name field when the screen opens
   useEffect(() => {
     if (nameInputRef.current && !isEditing) {
       const timer = setTimeout(() => {
@@ -135,7 +160,6 @@ export function SubscriptionForm({
     }
   }, [isEditing]);
 
-  // Close suggestions on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (
@@ -167,9 +191,8 @@ export function SubscriptionForm({
       setDescription(service.description);
     }
 
-    // Auto-match category if not explicitly chosen
     if (service.categorySlug && (!categoryId || categoryId === '')) {
-      const matchedCat = categories.find(
+      const matchedCat = availableCategories.find(
         (c) =>
           c.slug === service.categorySlug ||
           c.slug_aliases?.includes(service.categorySlug!)
@@ -182,6 +205,24 @@ export function SubscriptionForm({
     setIsSuggestionsOpen(false);
   };
 
+  const validateDateString = (dateStr: string, label: string): boolean => {
+    if (!dateStr || !dateStr.trim()) {
+      setError(`Please provide a valid date for ${label}.`);
+      return false;
+    }
+    const parsed = Date.parse(dateStr);
+    if (isNaN(parsed)) {
+      setError(`Please enter a valid calendar date for ${label}.`);
+      return false;
+    }
+    const year = new Date(parsed).getFullYear();
+    if (year < 2000 || year > 2100) {
+      setError(`Please enter a realistic year (2000–2100) for ${label}.`);
+      return false;
+    }
+    return true;
+  };
+
   const buildPayload = (): SubscriptionFormData | null => {
     if (!name.trim()) {
       setError('Please enter a service name.');
@@ -189,12 +230,17 @@ export function SubscriptionForm({
       return null;
     }
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 0) {
+    if (isNaN(parsedAmount) || parsedAmount < 0 || !isFinite(parsedAmount)) {
       setError('Please enter a valid cost (0 or greater).');
       return null;
     }
-    if (!nextRenewalDate) {
-      setError('Please select the next billing date.');
+    if (!validateDateString(nextRenewalDate, 'Next Billing Date')) {
+      return null;
+    }
+    if (startDate && !validateDateString(startDate, 'Start Date')) {
+      return null;
+    }
+    if (isTrial && trialEndDate && !validateDateString(trialEndDate, 'Trial Expiration Date')) {
       return null;
     }
 
@@ -211,16 +257,6 @@ export function SubscriptionForm({
       priceHikeReviewedAt = undefined;
     }
 
-    // Fallback category if skipped
-    const defaultCategory =
-      categories.find((c) => c.slug === 'utilities-sync') ||
-      categories.find((c) => c.name.toLowerCase().includes('other')) ||
-      categories.find((c) => c.name.toLowerCase().includes('utilities')) ||
-      categories[categories.length - 1] ||
-      categories[0];
-
-    const resolvedCategoryId = categoryId || defaultCategory?.id || undefined;
-
     return {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -232,7 +268,7 @@ export function SubscriptionForm({
       monthly_alternative_price:
         parsedMonthlyAlt && parsedMonthlyAlt > 0 ? parsedMonthlyAlt : undefined,
       status,
-      category_id: resolvedCategoryId,
+      category_id: categoryId || undefined,
       payment_method_id: paymentMethodId || undefined,
       start_date: startDate,
       next_renewal_date: nextRenewalDate,
@@ -249,8 +285,10 @@ export function SubscriptionForm({
     };
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isSubmitting) return;
+
     setError(null);
     setSuccessNotice(null);
 
@@ -272,6 +310,8 @@ export function SubscriptionForm({
 
   const handleSaveAndAddAnother = async (e: React.MouseEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setError(null);
     setSuccessNotice(null);
 
@@ -298,7 +338,6 @@ export function SubscriptionForm({
 
       setSuccessNotice(`Saved "${savedName}". Ready for your next subscription.`);
 
-      // Re-focus name field immediately
       setTimeout(() => {
         nameInputRef.current?.focus();
       }, 50);
@@ -312,7 +351,7 @@ export function SubscriptionForm({
   };
 
   const handleDelete = async () => {
-    if (!initialData || !onDelete) return;
+    if (!initialData || !onDelete || isDeleting) return;
     if (confirm(`Are you sure you want to delete ${initialData.name}?`)) {
       setIsDeleting(true);
       try {
@@ -367,7 +406,8 @@ export function SubscriptionForm({
             size="sm"
             onClick={handleDelete}
             isLoading={isDeleting}
-            className="text-xs text-danger hover:bg-danger-subtle gap-1.5"
+            disabled={isDeleting || isSubmitting}
+            className="text-xs text-danger hover:bg-danger-subtle gap-1.5 cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Delete</span>
@@ -383,10 +423,26 @@ export function SubscriptionForm({
         </div>
       ) : null}
 
-      {/* Error Alert */}
+      {/* Error Alert with Actionable Retry Button */}
       {error ? (
-        <div className="p-3 text-xs bg-danger-subtle border border-danger/25 text-danger rounded-lg">
-          {error}
+        <div className="p-3.5 text-xs bg-danger-subtle border border-danger/25 text-danger rounded-xl flex items-start justify-between gap-3 animate-in fade-in duration-150">
+          <div className="flex items-start gap-2 min-w-0">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 min-w-0">
+              <p className="font-semibold">Unable to save subscription</p>
+              <p className="text-danger/90 break-words">{error}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleSubmit()}
+            isLoading={isSubmitting}
+            className="text-xs shrink-0 text-danger border-danger/30 hover:bg-danger-subtle cursor-pointer"
+          >
+            Retry
+          </Button>
         </div>
       ) : null}
 
@@ -403,7 +459,7 @@ export function SubscriptionForm({
             <div className="w-full space-y-1.5">
               <label
                 htmlFor="service-name-input"
-                className="block text-xs font-medium text-foreground flex items-center justify-between"
+                className="text-xs font-medium text-foreground flex items-center justify-between"
               >
                 <span>Service / Tool Name *</span>
                 {!isEditing && (
@@ -538,17 +594,16 @@ export function SubscriptionForm({
             />
           ) : null}
 
-          {/* Demoted Category & Payment Method (Quiet, non-competing) */}
+          {/* Category & Payment Method */}
           <div className="pt-2 border-t border-border/60">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Category (Optional)"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                helperText="Auto-assigns default if skipped"
               >
-                <option value="">Default category...</option>
-                {categories.map((c) => (
+                <option value="">None / Unassigned</option>
+                {availableCategories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
@@ -561,7 +616,7 @@ export function SubscriptionForm({
                 onChange={(e) => setPaymentMethodId(e.target.value)}
               >
                 <option value="">None / Unassigned</option>
-                {paymentMethods.map((pm) => (
+                {availablePaymentMethods.map((pm) => (
                   <option key={pm.id} value={pm.id}>
                     {pm.name} {pm.last4 ? `(•••• ${pm.last4})` : ''}
                   </option>
@@ -572,7 +627,7 @@ export function SubscriptionForm({
         </CardContent>
       </Card>
 
-      {/* Collapsible Additional Details (Notes, Trial, Arbitrage, Reminders) */}
+      {/* Collapsible Additional Details */}
       <div className="border border-border rounded-xl bg-card overflow-hidden">
         <button
           type="button"
@@ -709,7 +764,7 @@ export function SubscriptionForm({
               </div>
             </div>
 
-            {/* Private Notes Field (Hidden in default add flow unless expanded) */}
+            {/* Private Notes Field */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-foreground block">
                 Private Notes
@@ -729,7 +784,13 @@ export function SubscriptionForm({
       {/* Form Action Buttons */}
       <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2">
         <Link href="/subscriptions" className="w-full sm:w-auto">
-          <Button type="button" variant="outline" size="md" className="w-full sm:w-auto text-xs">
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            disabled={isSubmitting || isDeleting}
+            className="w-full sm:w-auto text-xs cursor-pointer"
+          >
             Cancel
           </Button>
         </Link>
@@ -741,7 +802,8 @@ export function SubscriptionForm({
             size="md"
             onClick={handleSaveAndAddAnother}
             isLoading={isSubmitting}
-            className="w-full sm:w-auto text-xs"
+            disabled={isSubmitting || isDeleting}
+            className="w-full sm:w-auto text-xs cursor-pointer"
           >
             Save & Add Another
           </Button>
@@ -752,7 +814,8 @@ export function SubscriptionForm({
           variant="primary"
           size="md"
           isLoading={isSubmitting}
-          className="w-full sm:w-auto shadow-xs font-medium text-xs"
+          disabled={isSubmitting || isDeleting}
+          className="w-full sm:w-auto shadow-xs font-medium text-xs cursor-pointer"
         >
           {isEditing ? 'Update Subscription' : 'Save Subscription'}
         </Button>

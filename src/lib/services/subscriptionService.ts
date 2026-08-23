@@ -7,12 +7,9 @@ import {
   SubscriptionFilters,
   SubscriptionFormData,
 } from '../types';
-import {
-  defaultProfile,
-  mockCategories,
-  mockPaymentMethods,
-  mockSubscriptions,
-} from '../mock/sampleData';
+import { defaultProfile, mockSubscriptions } from '../mock/sampleData';
+import { CANONICAL_CATEGORIES } from '../constants/categories';
+import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
 import { createClient } from '../supabase/client';
 import { calculateDashboardStats } from '../utils/analytics';
 import { normalizeMonthlyAmount } from '../utils/currency';
@@ -123,7 +120,6 @@ class SubscriptionService {
         );
       }
     } else {
-      // Local demo / unconfigured mode: start with clean empty ledger for authentic first-run experience
       items = this.getLocalData(
         STORAGE_KEYS.SUBSCRIPTIONS,
         [],
@@ -222,47 +218,91 @@ class SubscriptionService {
       if (user) {
         userId = user.id;
 
-        const { data, error } = await (supabase.from('subscriptions') as any)
-          .insert({
-            user_id: userId,
-            name: form.name,
-            description: form.description || null,
-            amount: form.amount,
-            currency: form.currency,
-            billing_cycle: form.billing_cycle,
-            custom_interval_days: form.custom_interval_days || null,
-            status: form.status,
-            category_id: form.category_id || null,
-            payment_method_id: form.payment_method_id || null,
-            start_date: form.start_date,
-            next_renewal_date: form.next_renewal_date,
-            is_trial: form.is_trial,
-            trial_end_date: form.trial_end_date || null,
-            reminder_offsets: form.reminder_offsets,
-            value_rating: form.value_rating,
-            cancel_url: form.cancel_url || null,
-            notes: form.notes || null,
-            monthly_amount: monthlyAmount,
-            monthly_alternative_price: form.monthly_alternative_price || null,
-            previous_amount: form.previous_amount || null,
-            price_hike_reviewed_at: form.price_hike_reviewed_at || null,
-            cancellation_reason: form.cancellation_reason || null,
-            cancellation_effective_date: form.cancellation_effective_date || null,
-          })
+        // Construct canonical insert payload
+        const insertPayload: Record<string, any> = {
+          user_id: userId,
+          name: form.name.trim(),
+          description: form.description?.trim() || null,
+          amount: form.amount,
+          currency: form.currency || 'USD',
+          billing_cycle: form.billing_cycle,
+          custom_interval_days: form.custom_interval_days || null,
+          status: form.status || 'active',
+          category_id: form.category_id || null,
+          payment_method_id: form.payment_method_id || null,
+          start_date: form.start_date,
+          next_renewal_date: form.next_renewal_date,
+          is_trial: Boolean(form.is_trial),
+          trial_end_date: form.is_trial ? form.trial_end_date || null : null,
+          reminder_offsets: form.reminder_offsets || [3, 1],
+          value_rating: form.value_rating || 'useful',
+          cancel_url: form.cancel_url?.trim() || null,
+          notes: form.notes?.trim() || null,
+          monthly_amount: monthlyAmount,
+          monthly_alternative_price: form.monthly_alternative_price || null,
+          previous_amount: form.previous_amount || null,
+          price_hike_reviewed_at: form.price_hike_reviewed_at || null,
+          cancellation_reason: form.cancellation_reason || null,
+          cancellation_effective_date: form.cancellation_effective_date || null,
+        };
+
+        let insertRes = await (supabase.from('subscriptions') as any)
+          .insert(insertPayload)
           .select('*, category:categories(*), payment_method:payment_methods(*)')
           .single();
 
-        if (error) {
-          throw new Error(error.message);
+        // If PostgREST schema cache has not yet reloaded non-core metadata columns, retry with base columns
+        if (insertRes.error) {
+          const errMsg = insertRes.error.message || '';
+          const isSchemaCacheError =
+            errMsg.includes('schema cache') ||
+            errMsg.includes('cancellation_effective_date') ||
+            errMsg.includes('cancellation_reason') ||
+            errMsg.includes('price_hike_reviewed_at') ||
+            errMsg.includes('previous_amount');
+
+          if (isSchemaCacheError) {
+            console.warn(
+              'Retrying subscription insert with base schema columns due to PostgREST schema cache error:',
+              insertRes.error
+            );
+
+            const basePayload = { ...insertPayload };
+            delete basePayload.cancellation_effective_date;
+            delete basePayload.cancellation_reason;
+            delete basePayload.price_hike_reviewed_at;
+            delete basePayload.previous_amount;
+
+            insertRes = await (supabase.from('subscriptions') as any)
+              .insert(basePayload)
+              .select('*, category:categories(*), payment_method:payment_methods(*)')
+              .single();
+          }
         }
 
-        if (data) {
-          return data as unknown as Subscription;
+        if (insertRes.error) {
+          console.error('Supabase subscription insert error:', {
+            code: insertRes.error.code,
+            message: insertRes.error.message,
+            details: insertRes.error.details,
+            hint: insertRes.error.hint,
+            operation: 'createSubscription',
+          });
+          throw new Error(insertRes.error.message || 'Failed to save subscription.');
+        }
+
+        if (insertRes.data) {
+          const created = insertRes.data as unknown as Subscription;
+          // Synchronize local cache with newly persisted record
+          const all = this.getLocalData(STORAGE_KEYS.SUBSCRIPTIONS, [] as Subscription[]);
+          const updated = [created, ...all.filter((s) => s.id !== created.id)];
+          this.setLocalData(STORAGE_KEYS.SUBSCRIPTIONS, updated);
+          return created;
         }
       }
     }
 
-    // Local storage fallback for unconfigured/offline
+    // Local storage fallback for unauthenticated / offline
     const newSub: Subscription = {
       ...form,
       id:
@@ -306,37 +346,73 @@ class SubscriptionService {
     };
 
     if (supabase) {
-      const { error } = await (supabase.from('subscriptions') as any)
-        .update({
-          name: updatedSub.name,
-          description: updatedSub.description || null,
-          amount: updatedSub.amount,
-          currency: updatedSub.currency,
-          billing_cycle: updatedSub.billing_cycle,
-          custom_interval_days: updatedSub.custom_interval_days || null,
-          status: updatedSub.status,
-          category_id: updatedSub.category_id || null,
-          payment_method_id: updatedSub.payment_method_id || null,
-          start_date: updatedSub.start_date,
-          next_renewal_date: updatedSub.next_renewal_date,
-          is_trial: updatedSub.is_trial,
-          trial_end_date: updatedSub.trial_end_date || null,
-          reminder_offsets: updatedSub.reminder_offsets,
-          value_rating: updatedSub.value_rating,
-          cancel_url: updatedSub.cancel_url || null,
-          notes: updatedSub.notes || null,
-          monthly_amount: updatedSub.monthly_amount,
-          monthly_alternative_price: updatedSub.monthly_alternative_price || null,
-          previous_amount: updatedSub.previous_amount || null,
-          price_hike_reviewed_at: updatedSub.price_hike_reviewed_at || null,
-          cancellation_reason: updatedSub.cancellation_reason || null,
-          cancellation_effective_date: updatedSub.cancellation_effective_date || null,
-          updated_at: updatedSub.updated_at,
-        })
+      const updatePayload: Record<string, any> = {
+        name: updatedSub.name.trim(),
+        description: updatedSub.description?.trim() || null,
+        amount: updatedSub.amount,
+        currency: updatedSub.currency,
+        billing_cycle: updatedSub.billing_cycle,
+        custom_interval_days: updatedSub.custom_interval_days || null,
+        status: updatedSub.status,
+        category_id: updatedSub.category_id || null,
+        payment_method_id: updatedSub.payment_method_id || null,
+        start_date: updatedSub.start_date,
+        next_renewal_date: updatedSub.next_renewal_date,
+        is_trial: Boolean(updatedSub.is_trial),
+        trial_end_date: updatedSub.is_trial ? updatedSub.trial_end_date || null : null,
+        reminder_offsets: updatedSub.reminder_offsets,
+        value_rating: updatedSub.value_rating,
+        cancel_url: updatedSub.cancel_url?.trim() || null,
+        notes: updatedSub.notes?.trim() || null,
+        monthly_amount: updatedSub.monthly_amount,
+        monthly_alternative_price: updatedSub.monthly_alternative_price || null,
+        previous_amount: updatedSub.previous_amount || null,
+        price_hike_reviewed_at: updatedSub.price_hike_reviewed_at || null,
+        cancellation_reason: updatedSub.cancellation_reason || null,
+        cancellation_effective_date: updatedSub.cancellation_effective_date || null,
+        updated_at: updatedSub.updated_at,
+      };
+
+      let updateRes = await (supabase.from('subscriptions') as any)
+        .update(updatePayload)
         .eq('id', id);
 
-      if (error) {
-        throw new Error(error.message);
+      if (updateRes.error) {
+        const errMsg = updateRes.error.message || '';
+        const isSchemaCacheError =
+          errMsg.includes('schema cache') ||
+          errMsg.includes('cancellation_effective_date') ||
+          errMsg.includes('cancellation_reason') ||
+          errMsg.includes('price_hike_reviewed_at') ||
+          errMsg.includes('previous_amount');
+
+        if (isSchemaCacheError) {
+          console.warn(
+            'Retrying subscription update with base schema columns due to PostgREST schema cache error:',
+            updateRes.error
+          );
+
+          const basePayload = { ...updatePayload };
+          delete basePayload.cancellation_effective_date;
+          delete basePayload.cancellation_reason;
+          delete basePayload.price_hike_reviewed_at;
+          delete basePayload.previous_amount;
+
+          updateRes = await (supabase.from('subscriptions') as any)
+            .update(basePayload)
+            .eq('id', id);
+        }
+      }
+
+      if (updateRes.error) {
+        console.error('Supabase subscription update error:', {
+          code: updateRes.error.code,
+          message: updateRes.error.message,
+          details: updateRes.error.details,
+          hint: updateRes.error.hint,
+          operation: 'updateSubscription',
+        });
+        throw new Error(updateRes.error.message || 'Failed to update subscription.');
       }
     }
 
@@ -352,7 +428,8 @@ class SubscriptionService {
     if (supabase) {
       const { error } = await (supabase.from('subscriptions') as any).delete().eq('id', id);
       if (error) {
-        throw new Error(error.message);
+        console.error('Supabase subscription delete error:', error);
+        throw new Error(error.message || 'Failed to delete subscription.');
       }
     }
 
@@ -365,6 +442,8 @@ class SubscriptionService {
 
   async getCategories(): Promise<Category[]> {
     const supabase = createClient();
+    let dbCategories: Category[] = [];
+
     if (supabase) {
       try {
         const { data, error } = await (supabase.from('categories') as any)
@@ -372,13 +451,32 @@ class SubscriptionService {
           .order('name', { ascending: true });
 
         if (!error && data && data.length > 0) {
-          return data as Category[];
+          dbCategories = data as Category[];
         }
       } catch {
-        // Fallback
+        // Fallback to local
       }
     }
-    return this.getLocalData(STORAGE_KEYS.CATEGORIES, mockCategories);
+
+    // Merge database categories with canonical categories so all 14 canonical categories are always present
+    const combinedMap = new Map<string, Category>();
+
+    // 1. Seed with canonical categories
+    for (const cat of CANONICAL_CATEGORIES) {
+      combinedMap.set(cat.slug, cat);
+    }
+
+    // 2. Overlay database / custom user categories
+    for (const cat of dbCategories) {
+      combinedMap.set(cat.slug || cat.id, cat);
+    }
+
+    const finalCategories = Array.from(combinedMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+
+    this.setLocalData(STORAGE_KEYS.CATEGORIES, finalCategories);
+    return finalCategories;
   }
 
   async createCategory(categoryData: {
@@ -429,7 +527,7 @@ class SubscriptionService {
       }
     }
 
-    const all = this.getLocalData(STORAGE_KEYS.CATEGORIES, mockCategories);
+    const all = this.getLocalData(STORAGE_KEYS.CATEGORIES, CANONICAL_CATEGORIES);
     const updated = [...all, newCat];
     this.setLocalData(STORAGE_KEYS.CATEGORIES, updated);
     return newCat;
@@ -483,7 +581,7 @@ class SubscriptionService {
       }
     }
 
-    const all = this.getLocalData(STORAGE_KEYS.CATEGORIES, mockCategories);
+    const all = this.getLocalData(STORAGE_KEYS.CATEGORIES, CANONICAL_CATEGORIES);
     const updatedList = all.map((c) => (c.id === id ? updatedCat : c));
     this.setLocalData(STORAGE_KEYS.CATEGORIES, updatedList);
     return updatedCat;
@@ -491,6 +589,8 @@ class SubscriptionService {
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const supabase = createClient();
+    let dbPaymentMethods: PaymentMethod[] = [];
+
     if (supabase) {
       try {
         const user = await this.getAuthUser(supabase);
@@ -498,17 +598,34 @@ class SubscriptionService {
         if (user) {
           const { data, error } = await (supabase.from('payment_methods') as any)
             .select('*')
-            .eq('user_id', user.id);
+            .or(`user_id.is.null,user_id.eq.${user.id}`)
+            .order('name', { ascending: true });
 
-          if (!error && data) {
-            return data as PaymentMethod[];
+          if (!error && data && data.length > 0) {
+            dbPaymentMethods = data as PaymentMethod[];
           }
         }
       } catch {
         // Fallback
       }
     }
-    return this.getLocalData(STORAGE_KEYS.PAYMENT_METHODS, mockPaymentMethods);
+
+    // Merge database payment methods with canonical payment methods
+    const combinedMap = new Map<string, PaymentMethod>();
+
+    // 1. Seed with canonical payment methods
+    for (const pm of CANONICAL_PAYMENT_METHODS) {
+      combinedMap.set(pm.id, pm);
+    }
+
+    // 2. Overlay user custom payment methods or database records
+    for (const pm of dbPaymentMethods) {
+      combinedMap.set(pm.id, pm);
+    }
+
+    const finalPaymentMethods = Array.from(combinedMap.values());
+    this.setLocalData(STORAGE_KEYS.PAYMENT_METHODS, finalPaymentMethods);
+    return finalPaymentMethods;
   }
 
   // --- Profile & Preferences ---
@@ -643,6 +760,7 @@ class SubscriptionService {
       localStorage.removeItem(STORAGE_KEYS.PROFILE);
       localStorage.removeItem('sift_statement_column_mappings_v1');
       localStorage.removeItem('sift_onboarding_dismissed_v1');
+      localStorage.removeItem('sweep_onboarding_dismissed_v1');
     }
   }
 

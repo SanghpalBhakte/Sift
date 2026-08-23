@@ -14,76 +14,14 @@ export const defaultProfile: Profile = {
   updated_at: '2024-01-01T00:00:00Z',
 };
 
-// System categories (shared by all users)
-export const mockCategories: Category[] = [
-  {
-    id: '10000000-0000-0000-0000-000000000001',
-    user_id: null,
-    name: 'Software & Dev',
-    slug: 'software-dev',
-    color: 'moss',
-    icon: 'terminal',
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '10000000-0000-0000-0000-000000000002',
-    user_id: null,
-    name: 'Infrastructure & Cloud',
-    slug: 'infra-cloud',
-    color: 'slate',
-    icon: 'server',
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '10000000-0000-0000-0000-000000000003',
-    user_id: null,
-    name: 'Productivity & Notes',
-    slug: 'productivity',
-    color: 'ochre',
-    icon: 'edit-3',
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '10000000-0000-0000-0000-000000000004',
-    user_id: null,
-    name: 'Media & Reading',
-    slug: 'media-reading',
-    color: 'terracotta',
-    icon: 'book-open',
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '10000000-0000-0000-0000-000000000005',
-    user_id: null,
-    name: 'Health & Routine',
-    slug: 'health-routine',
-    color: 'sage',
-    icon: 'heart',
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '10000000-0000-0000-0000-000000000006',
-    user_id: null,
-    name: 'Utilities & Sync',
-    slug: 'utilities-sync',
-    color: 'stone',
-    icon: 'home',
-    created_at: '2024-01-01T00:00:00Z',
-  },
-];
+import { CANONICAL_CATEGORIES } from '../constants/categories';
+import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
 
-export const mockPaymentMethods: PaymentMethod[] = [
-  {
-    id: '20000000-0000-0000-0000-000000000001',
-    user_id: '00000000-0000-0000-0000-000000000001',
-    name: 'Primary Card',
-    type: 'credit_card',
-    last4: '4821',
-    color: 'stone',
-    is_default: true,
-    created_at: '2024-01-01T00:00:00Z',
-  },
-];
+// Canonical categories (shared by all users)
+export const mockCategories: Category[] = CANONICAL_CATEGORIES;
+
+// Canonical standard payment methods
+export const mockPaymentMethods: PaymentMethod[] = CANONICAL_PAYMENT_METHODS;
 
 const today = new Date();
 const addDaysISO = (days: number): string => {

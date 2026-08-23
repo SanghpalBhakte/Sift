@@ -1,10 +1,38 @@
 -- =============================================================================
--- Sweep - System Categories & Canonical Payment Methods Seed Data
+-- Migration: Add Subscription Metadata Columns and System Payment Methods
+-- Path: supabase/migrations/20240106000000_subscription_metadata.sql
 -- =============================================================================
 
--- Seed system categories (available to all users)
-insert into public.categories (id, user_id, name, slug, color, icon)
-values
+-- 1. Add missing metadata columns to public.subscriptions
+ALTER TABLE public.subscriptions
+ADD COLUMN IF NOT EXISTS previous_amount NUMERIC(12, 2),
+ADD COLUMN IF NOT EXISTS price_hike_reviewed_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS cancellation_reason TEXT,
+ADD COLUMN IF NOT EXISTS cancellation_effective_date DATE;
+
+-- 2. Allow system payment methods (nullable user_id) and expand check constraint
+ALTER TABLE public.payment_methods ALTER COLUMN user_id DROP NOT NULL;
+
+ALTER TABLE public.payment_methods DROP CONSTRAINT IF EXISTS payment_methods_type_check;
+ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_type_check
+CHECK (type IN ('credit_card', 'debit_card', 'bank_account', 'upi', 'paypal', 'apple_pay', 'google_pay', 'cash', 'other'));
+
+-- 3. Update payment_methods RLS to allow viewing system payment methods
+DROP POLICY IF EXISTS "Users can view own and system payment methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "Users can manage own payment methods" ON public.payment_methods;
+
+CREATE POLICY "Users can view own and system payment methods"
+  ON public.payment_methods FOR SELECT
+  USING (user_id IS NULL OR auth.uid() = user_id);
+
+CREATE POLICY "Users can manage own payment methods"
+  ON public.payment_methods FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- 4. Seed Canonical System Categories
+INSERT INTO public.categories (id, user_id, name, slug, color, icon)
+VALUES
   ('10000000-0000-0000-0000-000000000001', null, 'Software & Development', 'software-dev', 'moss', 'terminal'),
   ('10000000-0000-0000-0000-000000000002', null, 'Infrastructure & Cloud', 'infra-cloud', 'slate', 'server'),
   ('10000000-0000-0000-0000-000000000003', null, 'Productivity & Notes', 'productivity', 'ochre', 'edit-3'),
@@ -19,15 +47,15 @@ values
   ('10000000-0000-0000-0000-000000000012', null, 'Entertainment & Games', 'entertainment-games', 'violet', 'gamepad-2'),
   ('10000000-0000-0000-0000-000000000013', null, 'Family & Home', 'family-home', 'teal', 'users'),
   ('10000000-0000-0000-0000-000000000014', null, 'Other', 'other', 'stone', 'folder')
-on conflict (id) do update set
+ON CONFLICT (id) DO UPDATE SET
   name = excluded.name,
   slug = excluded.slug,
   color = excluded.color,
   icon = excluded.icon;
 
--- Seed system payment methods (available to all users)
-insert into public.payment_methods (id, user_id, name, type, is_default)
-values
+-- 5. Seed Canonical System Payment Methods
+INSERT INTO public.payment_methods (id, user_id, name, type, is_default)
+VALUES
   ('20000000-0000-0000-0000-000000000001', null, 'Credit Card', 'credit_card', false),
   ('20000000-0000-0000-0000-000000000002', null, 'Debit Card', 'debit_card', false),
   ('20000000-0000-0000-0000-000000000003', null, 'Bank Account', 'bank_account', false),
@@ -37,6 +65,9 @@ values
   ('20000000-0000-0000-0000-000000000007', null, 'Google Pay', 'google_pay', false),
   ('20000000-0000-0000-0000-000000000008', null, 'Cash', 'cash', false),
   ('20000000-0000-0000-0000-000000000009', null, 'Other', 'other', false)
-on conflict (id) do update set
+ON CONFLICT (id) DO UPDATE SET
   name = excluded.name,
   type = excluded.type;
+
+-- 6. Reload PostgREST Schema Cache
+NOTIFY pgrst, 'reload schema';

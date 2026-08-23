@@ -73,7 +73,7 @@ export interface Database {
       payment_methods: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           name: string;
           type: string;
           last4: string | null;
@@ -83,7 +83,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string | null;
           name: string;
           type: string;
           last4?: string | null;
@@ -93,7 +93,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: string | null;
           name?: string;
           type?: string;
           last4?: string | null;
@@ -124,6 +124,11 @@ export interface Database {
           cancel_url: string | null;
           notes: string | null;
           monthly_amount: number;
+          monthly_alternative_price: number | null;
+          previous_amount: number | null;
+          price_hike_reviewed_at: string | null;
+          cancellation_reason: string | null;
+          cancellation_effective_date: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -148,6 +153,11 @@ export interface Database {
           cancel_url?: string | null;
           notes?: string | null;
           monthly_amount: number;
+          monthly_alternative_price?: number | null;
+          previous_amount?: number | null;
+          price_hike_reviewed_at?: string | null;
+          cancellation_reason?: string | null;
+          cancellation_effective_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -172,6 +182,11 @@ export interface Database {
           cancel_url?: string | null;
           notes?: string | null;
           monthly_amount?: number;
+          monthly_alternative_price?: number | null;
+          previous_amount?: number | null;
+          price_hike_reviewed_at?: string | null;
+          cancellation_reason?: string | null;
+          cancellation_effective_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };
