@@ -114,7 +114,7 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -122,11 +122,11 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-card border border-border rounded-modal shadow-popover overflow-hidden"
+        className="w-full max-w-lg bg-card border border-border rounded-modal shadow-popover overflow-hidden max-h-[88vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
+        <div className="px-4 sm:px-5 py-3.5 border-b border-border flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
               <Plus className="w-4 h-4" aria-hidden="true" />
@@ -152,7 +152,7 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-5 py-4 space-y-4 overflow-y-auto flex-1">
           {error ? (
             <div className="px-3 py-2.5 text-xs bg-danger-subtle border border-danger/25 text-danger rounded-lg leading-relaxed">
               {error}

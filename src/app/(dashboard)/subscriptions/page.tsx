@@ -9,7 +9,8 @@ import { Plus, UploadCloud } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
 
 export default function SubscriptionsPage() {
-  const { subscriptions, stats, profile, toggleStatus, deleteSubscription } = useSubscriptions();
+  const { subscriptions, stats, profile, isLoading, toggleStatus, deleteSubscription } =
+    useSubscriptions();
 
   return (
     <div className="space-y-6">
@@ -47,6 +48,7 @@ export default function SubscriptionsPage() {
       {/* Subscription List with full interactive filters */}
       <SubscriptionList
         subscriptions={subscriptions}
+        isLoading={isLoading}
         onToggleStatus={toggleStatus}
         onDelete={deleteSubscription}
       />

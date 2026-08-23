@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   Category,
   DashboardStats,
@@ -57,6 +57,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     source: 'Offline Static Baseline',
   });
 
+  const inFlightLoadRef = useRef<Promise<void> | null>(null);
+
   const [filters, setFilters] = useState<SubscriptionFilters>({
     status: 'all',
     category_id: 'all',
@@ -78,37 +80,45 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const loadAll = useCallback(async (isInitial = false) => {
-    // Only show skeleton if we have no data at all
-    if (isInitial && subscriptions.length === 0) {
-      setIsLoading(true);
+    // If a load request is already in flight, reuse it
+    if (inFlightLoadRef.current) {
+      return inFlightLoadRef.current;
     }
-    try {
-      // Fetch all independent data sources in parallel (0 waterfalls)
-      const [subs, cats, pms, prof, rates] = await Promise.all([
-        subscriptionService.getSubscriptions(),
-        subscriptionService.getCategories(),
-        subscriptionService.getPaymentMethods(),
-        subscriptionService.getProfile(),
-        exchangeRateService.getExchangeRates(),
-      ]);
-      setSubscriptions(subs);
-      setCategories(cats);
-      setPaymentMethods(pms);
-      setProfile(prof);
-      setExchangeRates(rates);
-    } catch (err) {
-      console.error('Error loading subscription data:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [subscriptions.length]);
+
+    const loadPromise = (async () => {
+      try {
+        const [subs, cats, pms, prof, rates] = await Promise.all([
+          subscriptionService.getSubscriptions(),
+          subscriptionService.getCategories(),
+          subscriptionService.getPaymentMethods(),
+          subscriptionService.getProfile(),
+          exchangeRateService.getExchangeRates(),
+        ]);
+        setSubscriptions(subs);
+        setCategories(cats);
+        setPaymentMethods(pms);
+        setProfile(prof);
+        setExchangeRates(rates);
+      } catch (err) {
+        console.error('Error loading subscription data:', err);
+      } finally {
+        setIsLoading(false);
+        inFlightLoadRef.current = null;
+      }
+    })();
+
+    inFlightLoadRef.current = loadPromise;
+    return loadPromise;
+  }, []);
 
   const userId = user?.id;
 
   useEffect(() => {
-    // Seed from local storage immediately on client mount if available
+    // 1. Seed immediately from local storage cache on client mount for 0ms initial render
     try {
-      const cachedSubs = localStorage.getItem('sift_subscriptions_v1');
+      const cachedSubs =
+        localStorage.getItem('sweep_subscriptions_v1') ||
+        localStorage.getItem('sift_subscriptions_v1');
       if (cachedSubs) {
         const parsed = JSON.parse(cachedSubs);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -117,7 +127,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         }
       }
     } catch {
-      // Continue with regular load
+      // Continue with regular fetch
     }
 
     loadAll(true);
@@ -130,9 +140,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return () => cleanup();
   }, [loadAll, userId]);
 
+  // Optimistic Add
   const addSubscription = async (data: SubscriptionFormData): Promise<Subscription> => {
     const created = await subscriptionService.createSubscription(data);
-    await loadAll();
+    setSubscriptions((prev) => [created, ...prev.filter((s) => s.id !== created.id)]);
+    // Revalidate in background
+    loadAll();
     return created;
   };
 
@@ -143,7 +156,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     icon?: string;
   }): Promise<Category> => {
     const created = await subscriptionService.createCategory(data);
-    await loadAll();
+    setCategories((prev) => [...prev.filter((c) => c.id !== created.id), created]);
+    loadAll();
     return created;
   };
 
@@ -152,30 +166,39 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     data: Partial<{ name: string; slug: string; color: string; icon: string }>
   ): Promise<Category> => {
     const updated = await subscriptionService.updateCategory(id, data);
-    await loadAll();
+    setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    loadAll();
     return updated;
   };
 
+  // Optimistic Update
   const updateSubscription = async (
     id: string,
     data: Partial<SubscriptionFormData>
   ): Promise<Subscription> => {
     const updated = await subscriptionService.updateSubscription(id, data);
-    await loadAll();
+    setSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)));
+    loadAll();
     return updated;
   };
 
+  // Optimistic Delete
   const deleteSubscription = async (id: string): Promise<void> => {
+    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
     await subscriptionService.deleteSubscription(id);
-    await loadAll();
+    loadAll();
   };
 
+  // Optimistic Toggle Status
   const toggleStatus = async (id: string, currentStatus: string): Promise<void> => {
     const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+    setSubscriptions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: newStatus as Subscription['status'] } : s))
+    );
     await subscriptionService.updateSubscription(id, {
       status: newStatus as Subscription['status'],
     });
-    await loadAll();
+    loadAll();
   };
 
   const handleUpdateProfile = async (updates: Partial<Profile>): Promise<void> => {
@@ -195,11 +218,17 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   const handleClearAllData = async (): Promise<void> => {
     await subscriptionService.clearAllData();
+    setSubscriptions([]);
     await loadAll();
   };
 
-  const stats = useMemo(() => {
-    return calculateDashboardStats(subscriptions, displayCurrency, exchangeRates.rates);
+  // Compute live dashboard stats reactively from current optimistic subscriptions
+  const stats: DashboardStats = useMemo(() => {
+    return calculateDashboardStats(
+      subscriptions,
+      displayCurrency,
+      exchangeRates.rates
+    );
   }, [subscriptions, displayCurrency, exchangeRates.rates]);
 
   return (
@@ -226,7 +255,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         resetToSampleData: handleResetToSampleData,
         clearAllData: handleClearAllData,
         refreshExchangeRates: loadExchangeRates,
-        refresh: loadAll,
+        refresh: () => loadAll(false),
       }}
     >
       {children}

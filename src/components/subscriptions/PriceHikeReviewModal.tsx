@@ -111,17 +111,17 @@ export function PriceHikeReviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       aria-labelledby="price-hike-modal-title"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md sweep-card bg-card border-border shadow-modal rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
+        className="w-full max-w-md sweep-card bg-card border-border shadow-modal rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]"
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-3 shrink-0">
+        <div className="p-3.5 sm:p-5 border-b border-border flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-warning-subtle flex items-center justify-center text-warning shrink-0 shadow-xs">
               <TrendingUp className="w-4 h-4" />
@@ -140,14 +140,14 @@ export function PriceHikeReviewModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-5 space-y-4">
+        <div className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1">
           {completedMessage ? (
             <div className="py-6 text-center space-y-2">
               <div className="w-10 h-10 mx-auto rounded-full bg-success-subtle flex items-center justify-center text-success shadow-xs">

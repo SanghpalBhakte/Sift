@@ -12,14 +12,17 @@ interface SubscriptionListProps {
   subscriptions: Subscription[];
   onToggleStatus?: (id: string, currentStatus: string) => void;
   onDelete?: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export function SubscriptionList({
   subscriptions,
   onToggleStatus,
   onDelete,
+  isLoading: propLoading,
 }: SubscriptionListProps) {
-  const { categories, populateStarterTemplates } = useSubscriptions();
+  const { categories, populateStarterTemplates, isLoading: contextLoading } = useSubscriptions();
+  const isLoading = propLoading !== undefined ? propLoading : contextLoading;
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'trials' | 'candidates' | 'paused'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -70,8 +73,23 @@ export function SubscriptionList({
     return 0;
   });
 
-  // 1. Empty ledger state
-  if (subscriptions.length === 0) {
+  // 1. Loading skeleton state (prevent empty flash)
+  if (isLoading && subscriptions.length === 0) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="skeleton sweep-card"
+            style={{ height: '78px', borderRadius: '12px' }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // 2. Empty ledger state (only when truly empty and done loading)
+  if (!isLoading && subscriptions.length === 0) {
     return (
       <div className="sweep-card p-8 sm:p-10 text-center space-y-4 border-dashed">
         <div className="w-12 h-12 mx-auto rounded-2xl bg-surface flex items-center justify-center text-primary shadow-xs">

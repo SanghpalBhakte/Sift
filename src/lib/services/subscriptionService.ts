@@ -19,6 +19,13 @@ import { normalizeMonthlyAmount } from '../utils/currency';
 import { resolveCategoryDefaultColor } from '../utils/backup';
 
 const STORAGE_KEYS = {
+  SUBSCRIPTIONS: 'sweep_subscriptions_v1',
+  CATEGORIES: 'sweep_categories_v1',
+  PAYMENT_METHODS: 'sweep_payment_methods_v1',
+  PROFILE: 'sweep_profile_v1',
+};
+
+const LEGACY_STORAGE_KEYS = {
   SUBSCRIPTIONS: 'sift_subscriptions_v1',
   CATEGORIES: 'sift_categories_v1',
   PAYMENT_METHODS: 'sift_payment_methods_v1',
@@ -26,10 +33,11 @@ const STORAGE_KEYS = {
 };
 
 class SubscriptionService {
-  private getLocalData<T>(key: string, fallback: T): T {
+  private getLocalData<T>(key: string, fallback: T, legacyKey?: string): T {
     if (typeof window === 'undefined') return fallback;
     try {
-      const saved = localStorage.getItem(key);
+      const saved =
+        localStorage.getItem(key) || (legacyKey ? localStorage.getItem(legacyKey) : null);
       return saved ? JSON.parse(saved) : fallback;
     } catch {
       return fallback;
@@ -89,20 +97,38 @@ class SubscriptionService {
           const { data, error } = await query;
           if (!error && data) {
             items = data as unknown as Subscription[];
+            this.setLocalData(STORAGE_KEYS.SUBSCRIPTIONS, items);
           } else {
             console.error('Supabase query error:', error);
-            items = [];
+            items = this.getLocalData(
+              STORAGE_KEYS.SUBSCRIPTIONS,
+              [],
+              LEGACY_STORAGE_KEYS.SUBSCRIPTIONS
+            );
           }
         } else {
-          items = [];
+          // Unauthenticated / offline local mode
+          items = this.getLocalData(
+            STORAGE_KEYS.SUBSCRIPTIONS,
+            [],
+            LEGACY_STORAGE_KEYS.SUBSCRIPTIONS
+          );
         }
       } catch (err) {
         console.error('Error fetching subscriptions from Supabase:', err);
-        items = [];
+        items = this.getLocalData(
+          STORAGE_KEYS.SUBSCRIPTIONS,
+          [],
+          LEGACY_STORAGE_KEYS.SUBSCRIPTIONS
+        );
       }
     } else {
       // Local demo / unconfigured mode: start with clean empty ledger for authentic first-run experience
-      items = this.getLocalData(STORAGE_KEYS.SUBSCRIPTIONS, []);
+      items = this.getLocalData(
+        STORAGE_KEYS.SUBSCRIPTIONS,
+        [],
+        LEGACY_STORAGE_KEYS.SUBSCRIPTIONS
+      );
     }
 
     // Apply in-memory search

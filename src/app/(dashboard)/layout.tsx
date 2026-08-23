@@ -8,7 +8,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGate>
+    <AuthGate requireAuth={false}>
       <AppShell>{children}</AppShell>
     </AuthGate>
   );
