@@ -342,12 +342,14 @@ export function SubscriptionForm({
       availablePaymentMethods.find((pm) => pm.id === payload.payment_method_id)?.name ||
       'None / Unassigned';
 
-    console.log({
+    console.log('subscription submit values', {
+      billingCycle: payload.billing_cycle,
       categoryId: payload.category_id || null,
       categoryName: selectedCatName,
       paymentMethodId: payload.payment_method_id || null,
       paymentMethodName: selectedPmName,
     });
+    console.log('subscription insert/update payload', payload);
 
     setIsSubmitting(true);
     try {
@@ -640,8 +642,6 @@ export function SubscriptionForm({
             >
               <option value="monthly">Monthly</option>
               <option value="yearly">Yearly (Annual)</option>
-              <option value="quarterly">Quarterly (Every 3 months)</option>
-              <option value="custom">Custom interval</option>
             </Select>
 
             <Input
@@ -652,17 +652,6 @@ export function SubscriptionForm({
               required
             />
           </div>
-
-          {billingCycle === 'custom' ? (
-            <Input
-              label="Interval in Days"
-              type="number"
-              min="1"
-              value={customDays}
-              onChange={(e) => setCustomDays(e.target.value)}
-              placeholder="30"
-            />
-          ) : null}
 
           {/* Category & Payment Method */}
           <div className="pt-2 border-t border-border/60">

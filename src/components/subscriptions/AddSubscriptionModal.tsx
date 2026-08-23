@@ -198,9 +198,7 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
                 onChange={(e) => setBillingCycle(e.target.value as BillingCycle)}
               >
                 <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="weekly">Weekly</option>
+                <option value="yearly">Yearly (Annual)</option>
               </Select>
               <Select
                 label="Category"
