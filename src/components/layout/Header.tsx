@@ -2,24 +2,29 @@
 
 import React from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Plus, LogOut, Bell } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { Button } from '../ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
-import { AlertsSlideOver } from '../reminders/AlertsSlideOver';
-
 import { SweepLogo } from '../brand/SweepLogo';
+
+// Dynamically import non-critical AlertsSlideOver drawer (only loaded on interaction)
+const AlertsSlideOver = dynamic(
+  () => import('../reminders/AlertsSlideOver').then((m) => m.AlertsSlideOver),
+  { ssr: false }
+);
 
 export function Header() {
   const { user, signOut, isConfigured } = useAuth();
-  const { totalAlertsCount, urgentAlertsCount, toggleAlertPanel } = useNotifications();
+  const { totalAlertsCount, urgentAlertsCount, isAlertPanelOpen, toggleAlertPanel } =
+    useNotifications();
 
   return (
     <>
       <header className="sticky top-0 z-30 w-full bg-background/85 backdrop-blur-md border-b border-border transition-colors">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-
           {/* Brand */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5 group" aria-label="Sweep home">
@@ -32,7 +37,6 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-
             {/* Reminders bell */}
             <button
               type="button"
@@ -42,7 +46,7 @@ export function Header() {
                   ? `${totalAlertsCount} upcoming alerts`
                   : 'Upcoming reminders & alerts'
               }
-              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors"
+              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors cursor-pointer"
             >
               <Bell className="w-4 h-4" aria-hidden="true" />
               {totalAlertsCount > 0 ? (
@@ -79,7 +83,7 @@ export function Header() {
                 type="button"
                 onClick={() => signOut()}
                 title={`Sign out (${user.email})`}
-                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -94,8 +98,8 @@ export function Header() {
         </div>
       </header>
 
-      {/* Slide-over Reminders Drawer */}
-      <AlertsSlideOver />
+      {/* Slide-over Reminders Drawer (mounted only on demand) */}
+      {isAlertPanelOpen && <AlertsSlideOver />}
     </>
   );
 }
