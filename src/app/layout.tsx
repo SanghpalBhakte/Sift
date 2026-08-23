@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, Fraunces } from 'next/font/google';
 import './globals.css';
+import { Providers } from '@/app/providers';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
@@ -120,13 +121,15 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${plusJakartaSans.variable} ${fraunces.variable} font-sans antialiased min-h-screen bg-background text-foreground`}
       >
-        <ThemeProvider>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <NotificationProvider>{children}</NotificationProvider>
-            </SubscriptionProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <NotificationProvider>{children}</NotificationProvider>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </Providers>
         <Analytics />
         <SpeedInsights />
         <WebVitalsReporter />
