@@ -253,17 +253,19 @@ class SubscriptionService {
 
         // If PostgREST schema cache has not yet reloaded non-core metadata columns, retry with base columns
         if (insertRes.error) {
-          const errMsg = insertRes.error.message || '';
+          const errMsg = (insertRes.error.message || '').toLowerCase();
           const isSchemaCacheError =
             errMsg.includes('schema cache') ||
+            errMsg.includes('does not exist') ||
             errMsg.includes('cancellation_effective_date') ||
             errMsg.includes('cancellation_reason') ||
             errMsg.includes('price_hike_reviewed_at') ||
-            errMsg.includes('previous_amount');
+            errMsg.includes('previous_amount') ||
+            errMsg.includes('monthly_alternative_price');
 
           if (isSchemaCacheError) {
             console.warn(
-              'Retrying subscription insert with base schema columns due to PostgREST schema cache error:',
+              'Retrying subscription insert with base schema columns due to PostgREST schema mismatch:',
               insertRes.error
             );
 
@@ -272,6 +274,7 @@ class SubscriptionService {
             delete basePayload.cancellation_reason;
             delete basePayload.price_hike_reviewed_at;
             delete basePayload.previous_amount;
+            delete basePayload.monthly_alternative_price;
 
             insertRes = await (supabase.from('subscriptions') as any)
               .insert(basePayload)
@@ -378,17 +381,19 @@ class SubscriptionService {
         .eq('id', id);
 
       if (updateRes.error) {
-        const errMsg = updateRes.error.message || '';
+        const errMsg = (updateRes.error.message || '').toLowerCase();
         const isSchemaCacheError =
           errMsg.includes('schema cache') ||
+          errMsg.includes('does not exist') ||
           errMsg.includes('cancellation_effective_date') ||
           errMsg.includes('cancellation_reason') ||
           errMsg.includes('price_hike_reviewed_at') ||
-          errMsg.includes('previous_amount');
+          errMsg.includes('previous_amount') ||
+          errMsg.includes('monthly_alternative_price');
 
         if (isSchemaCacheError) {
           console.warn(
-            'Retrying subscription update with base schema columns due to PostgREST schema cache error:',
+            'Retrying subscription update with base schema columns due to PostgREST schema mismatch:',
             updateRes.error
           );
 
@@ -397,6 +402,7 @@ class SubscriptionService {
           delete basePayload.cancellation_reason;
           delete basePayload.price_hike_reviewed_at;
           delete basePayload.previous_amount;
+          delete basePayload.monthly_alternative_price;
 
           updateRes = await (supabase.from('subscriptions') as any)
             .update(basePayload)
