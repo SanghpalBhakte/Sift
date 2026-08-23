@@ -22,7 +22,7 @@ export function AddPaymentMethodModal({
   const { addPaymentMethod } = useSubscriptions();
 
   const [name, setName] = useState('');
-  const [type, setType] = useState('card');
+  const [type, setType] = useState('credit_card');
   const [last4, setLast4] = useState('');
   const [color, setColor] = useState('');
   const [isDefault, setIsDefault] = useState(false);
@@ -35,7 +35,7 @@ export function AddPaymentMethodModal({
   useEffect(() => {
     if (isOpen) {
       setName('');
-      setType('card');
+      setType('credit_card');
       setLast4('');
       setColor('');
       setIsDefault(false);
@@ -152,11 +152,12 @@ export function AddPaymentMethodModal({
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
-              <option value="card">Card (Credit / Debit)</option>
-              <option value="upi">UPI / Virtual</option>
-              <option value="bank">Bank Account</option>
-              <option value="wallet">Digital Wallet</option>
-              <option value="other">Other</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="debit_card">Debit Card</option>
+              <option value="bank_account">Bank Account / Transfer</option>
+              <option value="paypal">PayPal</option>
+              <option value="apple_pay">Apple Pay</option>
+              <option value="other">UPI / Digital Wallet / Other</option>
             </Select>
 
             <Input

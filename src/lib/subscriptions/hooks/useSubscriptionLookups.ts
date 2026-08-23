@@ -7,6 +7,7 @@ import {
   mapPaymentMethodToOption,
 } from "@/lib/subscriptions/mappers";
 import type { CategoryRow, PaymentMethodRow } from "@/lib/subscriptions/types";
+import { CANONICAL_CATEGORIES } from "@/lib/constants/categories";
 
 async function fetchCategories(): Promise<CategoryRow[]> {
   const { data, error } = await supabase
@@ -14,11 +15,26 @@ async function fetchCategories(): Promise<CategoryRow[]> {
     .select("id, slug, name, color, icon, created_at, user_id")
     .order("name", { ascending: true });
 
-  if (error) {
-    throw error;
+  const dbList = (data as unknown as CategoryRow[]) ?? [];
+  const dbSlugs = new Set(dbList.map((c) => c.slug));
+  const dbIds = new Set(dbList.map((c) => c.id));
+
+  const merged: CategoryRow[] = [...dbList];
+  for (const canon of CANONICAL_CATEGORIES) {
+    if (!dbSlugs.has(canon.slug) && !dbIds.has(canon.id)) {
+      merged.push({
+        id: canon.id,
+        user_id: null,
+        name: canon.name,
+        slug: canon.slug,
+        color: canon.color,
+        icon: canon.icon,
+        created_at: canon.created_at,
+      });
+    }
   }
 
-  return (data as unknown as CategoryRow[]) ?? [];
+  return merged.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function fetchPaymentMethods(): Promise<PaymentMethodRow[]> {

@@ -231,8 +231,28 @@ class SubscriptionService {
             .select('id')
             .eq('id', insertPayload.category_id)
             .maybeSingle();
+
           if (!catExists) {
-            insertPayload.category_id = null;
+            const canon = CANONICAL_CATEGORIES.find((c) => c.id === insertPayload.category_id);
+            if (canon) {
+              const { data: createdCat } = await (supabase.from('categories') as any)
+                .insert({
+                  id: canon.id,
+                  user_id: user.id,
+                  name: canon.name,
+                  slug: canon.slug,
+                  color: canon.color,
+                  icon: canon.icon,
+                })
+                .select('id')
+                .maybeSingle();
+
+              if (!createdCat) {
+                insertPayload.category_id = null;
+              }
+            } else {
+              insertPayload.category_id = null;
+            }
           }
         }
 
@@ -325,8 +345,29 @@ class SubscriptionService {
           .select('id')
           .eq('id', updatePayload.category_id)
           .maybeSingle();
+
         if (!catExists) {
-          updatePayload.category_id = null;
+          const canon = CANONICAL_CATEGORIES.find((c) => c.id === updatePayload.category_id);
+          if (canon) {
+            const user = await this.getAuthUser(supabase);
+            const { data: createdCat } = await (supabase.from('categories') as any)
+              .insert({
+                id: canon.id,
+                user_id: user ? user.id : null,
+                name: canon.name,
+                slug: canon.slug,
+                color: canon.color,
+                icon: canon.icon,
+              })
+              .select('id')
+              .maybeSingle();
+
+            if (!createdCat) {
+              updatePayload.category_id = null;
+            }
+          } else {
+            updatePayload.category_id = null;
+          }
         }
       }
 
@@ -400,23 +441,31 @@ class SubscriptionService {
           .select('id, user_id, name, slug, color, icon, created_at')
           .order('name', { ascending: true });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const dbCategories = data as Category[];
-          this.setLocalData(STORAGE_KEYS.CATEGORIES, dbCategories);
-          return dbCategories;
+          const dbSlugs = new Set(dbCategories.map((c) => c.slug));
+          const dbIds = new Set(dbCategories.map((c) => c.id));
+          const merged = [...dbCategories];
+          for (const canon of CANONICAL_CATEGORIES) {
+            if (!dbSlugs.has(canon.slug) && !dbIds.has(canon.id)) {
+              merged.push(canon);
+            }
+          }
+          const sorted = merged.sort((a, b) => a.name.localeCompare(b.name));
+          this.setLocalData(STORAGE_KEYS.CATEGORIES, sorted);
+          return sorted;
         }
       } catch (err) {
         console.warn('Error querying categories from Supabase:', err);
       }
     }
 
-    // Local storage fallback for unauthenticated / offline mode
-    const cached = this.getLocalData(STORAGE_KEYS.CATEGORIES, [] as Category[]);
+    const cached = this.getLocalData(STORAGE_KEYS.CATEGORIES, CANONICAL_CATEGORIES);
     if (cached && cached.length > 0) {
       return cached;
     }
 
-    return mockCategories;
+    return CANONICAL_CATEGORIES;
   }
 
   async createCategory(categoryData: {
@@ -551,6 +600,17 @@ class SubscriptionService {
     return cached;
   }
 
+  private normalizePaymentMethodType(raw?: string | null): string {
+    if (!raw) return 'credit_card';
+    const t = raw.toLowerCase().trim();
+    if (t === 'credit_card' || t === 'card') return 'credit_card';
+    if (t === 'debit_card') return 'debit_card';
+    if (t === 'bank_account' || t === 'bank') return 'bank_account';
+    if (t === 'paypal') return 'paypal';
+    if (t === 'apple_pay') return 'apple_pay';
+    return 'other';
+  }
+
   async createPaymentMethod(data: {
     name: string;
     type: string;
@@ -566,11 +626,12 @@ class SubscriptionService {
         const user = await this.getAuthUser(supabase);
         if (user) {
           userId = user.id;
+          const normalizedType = this.normalizePaymentMethodType(data.type);
           const { data: created, error } = await (supabase.from('payment_methods') as any)
             .insert({
               user_id: user.id,
               name: data.name.trim(),
-              type: data.type.trim() || 'card',
+              type: normalizedType,
               last4: data.last4?.trim() || null,
               color: data.color?.trim() || null,
               is_default: Boolean(data.is_default),
@@ -603,7 +664,7 @@ class SubscriptionService {
           : `pm-${Date.now()}`,
       user_id: userId,
       name: data.name.trim(),
-      type: data.type.trim() || 'card',
+      type: this.normalizePaymentMethodType(data.type),
       last4: data.last4?.trim() || null,
       color: data.color?.trim() || null,
       is_default: Boolean(data.is_default),
