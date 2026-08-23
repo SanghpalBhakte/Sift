@@ -7,7 +7,7 @@ import {
   SubscriptionFilters,
   SubscriptionFormData,
 } from '../types';
-import { defaultProfile, mockSubscriptions } from '../mock/sampleData';
+import { defaultProfile, mockCategories, mockSubscriptions } from '../mock/sampleData';
 import { CANONICAL_CATEGORIES } from '../constants/categories';
 import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
 import {
@@ -383,7 +383,6 @@ class SubscriptionService {
 
   async getCategories(): Promise<Category[]> {
     const supabase = createClient();
-    let dbCategories: Category[] = [];
 
     if (supabase) {
       try {
@@ -392,32 +391,22 @@ class SubscriptionService {
           .order('name', { ascending: true });
 
         if (!error && data && data.length > 0) {
-          dbCategories = data as Category[];
+          const dbCategories = data as Category[];
+          this.setLocalData(STORAGE_KEYS.CATEGORIES, dbCategories);
+          return dbCategories;
         }
-      } catch {
-        // Fallback to local
+      } catch (err) {
+        console.warn('Error querying categories from Supabase:', err);
       }
     }
 
-    // Merge database categories with canonical categories so all 14 canonical categories are always present
-    const combinedMap = new Map<string, Category>();
-
-    // 1. Seed with canonical categories
-    for (const cat of CANONICAL_CATEGORIES) {
-      combinedMap.set(cat.slug, cat);
+    // Local storage fallback for unauthenticated / offline mode
+    const cached = this.getLocalData(STORAGE_KEYS.CATEGORIES, [] as Category[]);
+    if (cached && cached.length > 0) {
+      return cached;
     }
 
-    // 2. Overlay database / custom user categories
-    for (const cat of dbCategories) {
-      combinedMap.set(cat.slug || cat.id, cat);
-    }
-
-    const finalCategories = Array.from(combinedMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-
-    this.setLocalData(STORAGE_KEYS.CATEGORIES, finalCategories);
-    return finalCategories;
+    return mockCategories;
   }
 
   async createCategory(categoryData: {
@@ -529,7 +518,6 @@ class SubscriptionService {
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const supabase = createClient();
-    let dbPaymentMethods: PaymentMethod[] = [];
 
     if (supabase) {
       try {
@@ -541,30 +529,19 @@ class SubscriptionService {
             .or(`user_id.is.null,user_id.eq.${user.id}`)
             .order('name', { ascending: true });
 
-          if (!error && data && data.length > 0) {
-            dbPaymentMethods = data as PaymentMethod[];
+          if (!error && data) {
+            const dbPaymentMethods = data as PaymentMethod[];
+            this.setLocalData(STORAGE_KEYS.PAYMENT_METHODS, dbPaymentMethods);
+            return dbPaymentMethods;
           }
         }
-      } catch {
-        // Fallback
+      } catch (err) {
+        console.warn('Error querying payment methods from Supabase:', err);
       }
     }
 
-    const combinedMap = new Map<string, PaymentMethod>();
-
-    // 1. Seed with canonical payment methods
-    for (const pm of CANONICAL_PAYMENT_METHODS) {
-      combinedMap.set(pm.id, pm);
-    }
-
-    // 2. Overlay user custom payment methods or database records
-    for (const pm of dbPaymentMethods) {
-      combinedMap.set(pm.id, pm);
-    }
-
-    const finalPaymentMethods = Array.from(combinedMap.values());
-    this.setLocalData(STORAGE_KEYS.PAYMENT_METHODS, finalPaymentMethods);
-    return finalPaymentMethods;
+    const cached = this.getLocalData(STORAGE_KEYS.PAYMENT_METHODS, [] as PaymentMethod[]);
+    return cached;
   }
 
   // --- Profile & Preferences ---

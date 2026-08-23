@@ -14,14 +14,58 @@ export const defaultProfile: Profile = {
   updated_at: '2024-01-01T00:00:00Z',
 };
 
-import { CANONICAL_CATEGORIES } from '../constants/categories';
-import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
+export const mockCategories: Category[] = [
+  {
+    id: '10000000-0000-0000-0000-000000000001',
+    name: 'Software & Dev',
+    slug: 'software-dev',
+    color: 'moss',
+    icon: 'terminal',
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000002',
+    name: 'Infrastructure & Cloud',
+    slug: 'infra-cloud',
+    color: 'slate',
+    icon: 'server',
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000003',
+    name: 'Productivity & Notes',
+    slug: 'productivity',
+    color: 'ochre',
+    icon: 'edit-3',
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000004',
+    name: 'Media & Reading',
+    slug: 'media-reading',
+    color: 'terracotta',
+    icon: 'book-open',
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000005',
+    name: 'Health & Routine',
+    slug: 'health-routine',
+    color: 'sage',
+    icon: 'heart',
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000006',
+    name: 'Utilities & Sync',
+    slug: 'utilities-sync',
+    color: 'stone',
+    icon: 'home',
+    created_at: '2024-01-01T00:00:00Z',
+  },
+];
 
-// Canonical categories (shared by all users)
-export const mockCategories: Category[] = CANONICAL_CATEGORIES;
-
-// Canonical standard payment methods
-export const mockPaymentMethods: PaymentMethod[] = CANONICAL_PAYMENT_METHODS;
+export const mockPaymentMethods: PaymentMethod[] = [];
 
 const today = new Date();
 const addDaysISO = (days: number): string => {

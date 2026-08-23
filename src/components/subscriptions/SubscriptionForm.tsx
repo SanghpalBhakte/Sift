@@ -58,28 +58,16 @@ export function SubscriptionForm({
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
-  // Available Categories (merge provided with canonical)
+  // Available Categories (strictly from database query)
   const availableCategories = useMemo(() => {
-    const map = new Map<string, Category>();
-    for (const c of CANONICAL_CATEGORIES) {
-      map.set(c.id, c);
-    }
-    for (const c of categories || []) {
-      map.set(c.id, c);
-    }
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    if (!categories || categories.length === 0) return [];
+    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
   }, [categories]);
 
-  // Available Payment Methods (merge provided with canonical)
+  // Available Payment Methods (strictly from database query)
   const availablePaymentMethods = useMemo(() => {
-    const map = new Map<string, PaymentMethod>();
-    for (const pm of CANONICAL_PAYMENT_METHODS) {
-      map.set(pm.id, pm);
-    }
-    for (const pm of paymentMethods || []) {
-      map.set(pm.id, pm);
-    }
-    return Array.from(map.values());
+    if (!paymentMethods || paymentMethods.length === 0) return [];
+    return [...paymentMethods].sort((a, b) => a.name.localeCompare(b.name));
   }, [paymentMethods]);
 
   // Core Required Form State
@@ -257,6 +245,26 @@ export function SubscriptionForm({
       priceHikeReviewedAt = undefined;
     }
 
+    // Revalidate category_id against loaded database categories
+    let validatedCategoryId: string | undefined = undefined;
+    if (categoryId && categoryId.trim() !== '') {
+      const matched = availableCategories.find((c) => c.id === categoryId);
+      if (!matched) {
+        setError('Please select a valid category from the loaded list.');
+        return null;
+      }
+      validatedCategoryId = matched.id;
+    }
+
+    // Revalidate payment_method_id against loaded database payment methods
+    let validatedPaymentMethodId: string | undefined = undefined;
+    if (paymentMethodId && paymentMethodId.trim() !== '') {
+      const matched = availablePaymentMethods.find((pm) => pm.id === paymentMethodId);
+      if (matched) {
+        validatedPaymentMethodId = matched.id;
+      }
+    }
+
     return {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -268,8 +276,8 @@ export function SubscriptionForm({
       monthly_alternative_price:
         parsedMonthlyAlt && parsedMonthlyAlt > 0 ? parsedMonthlyAlt : undefined,
       status,
-      category_id: categoryId || undefined,
-      payment_method_id: paymentMethodId || undefined,
+      category_id: validatedCategoryId,
+      payment_method_id: validatedPaymentMethodId,
       start_date: startDate,
       next_renewal_date: nextRenewalDate,
       is_trial: isTrial,
