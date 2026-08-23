@@ -8,18 +8,11 @@ import {
 } from "@/lib/subscriptions/mappers";
 import type { CategoryRow, PaymentMethodRow } from "@/lib/subscriptions/types";
 
-async function fetchCategories(userId?: string | null): Promise<CategoryRow[]> {
-  let query = supabase
+async function fetchCategories(): Promise<CategoryRow[]> {
+  const { data, error } = await supabase
     .from("categories")
-    .select("id, slug, name, color, icon, created_at, user_id");
-
-  if (userId) {
-    query = query.or(`user_id.is.null,user_id.eq.${userId}`);
-  } else {
-    query = query.is("user_id", null);
-  }
-
-  const { data, error } = await query.order("name", { ascending: true });
+    .select("id, slug, name, color, icon, created_at, user_id")
+    .order("name", { ascending: true });
 
   if (error) {
     throw error;
@@ -28,18 +21,12 @@ async function fetchCategories(userId?: string | null): Promise<CategoryRow[]> {
   return (data as unknown as CategoryRow[]) ?? [];
 }
 
-async function fetchPaymentMethods(userId?: string | null): Promise<PaymentMethodRow[]> {
-  let query = supabase
+async function fetchPaymentMethods(): Promise<PaymentMethodRow[]> {
+  const { data, error } = await supabase
     .from("payment_methods")
     .select("id, user_id, name, type, last4, color, is_default, created_at")
     .order("is_default", { ascending: false })
     .order("name", { ascending: true });
-
-  if (userId) {
-    query = query.eq("user_id", userId);
-  }
-
-  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -48,17 +35,17 @@ async function fetchPaymentMethods(userId?: string | null): Promise<PaymentMetho
   return (data as unknown as PaymentMethodRow[]) ?? [];
 }
 
-export function useSubscriptionLookups(userId?: string | null) {
+export function useSubscriptionLookups() {
   const categoriesQuery = useQuery({
-    queryKey: subscriptionKeys.categories(userId),
-    queryFn: () => fetchCategories(userId),
+    queryKey: subscriptionKeys.categories(),
+    queryFn: fetchCategories,
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
   });
 
   const paymentMethodsQuery = useQuery({
-    queryKey: subscriptionKeys.paymentMethods(userId),
-    queryFn: () => fetchPaymentMethods(userId),
+    queryKey: subscriptionKeys.paymentMethods(),
+    queryFn: fetchPaymentMethods,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });

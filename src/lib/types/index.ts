@@ -5,15 +5,17 @@ export type BillingCycle = 'monthly' | 'quarterly' | 'yearly' | 'custom';
 export type ValueRating = 'essential' | 'useful' | 'rarely_used' | 'cancel_candidate';
 
 export type PaymentMethodType =
+  | 'card'
+  | 'upi'
+  | 'bank'
+  | 'wallet'
   | 'credit_card'
   | 'debit_card'
   | 'bank_account'
-  | 'upi'
   | 'paypal'
   | 'apple_pay'
-  | 'google_pay'
-  | 'cash'
-  | 'other';
+  | 'other'
+  | string;
 
 export type BrowserNotificationStatus = 'default' | 'granted' | 'denied' | 'unsupported';
 
@@ -35,7 +37,7 @@ export interface Profile {
 
 export interface Category {
   id: string;
-  user_id?: string | null;
+  user_id: string | null;
   name: string;
   slug: string;
   slug_aliases?: string[];
@@ -48,9 +50,9 @@ export interface PaymentMethod {
   id: string;
   user_id: string;
   name: string;
-  type: PaymentMethodType;
-  last4?: string;
-  color?: string;
+  type: string;
+  last4?: string | null;
+  color?: string | null;
   is_default: boolean;
   created_at: string;
 }

@@ -700,21 +700,25 @@ export function SubscriptionForm({
                   onChange={(e) => setPaymentMethodId(e.target.value)}
                 >
                   <option value="">None / Unassigned</option>
-                  {availablePaymentMethods.map((pm) => (
-                    <option key={pm.id} value={pm.id}>
-                      {pm.name} {pm.last4 ? `(•••• ${pm.last4})` : ''}
-                    </option>
-                  ))}
+                  {availablePaymentMethods.length === 0 ? (
+                    <option value="" disabled>No payment methods yet</option>
+                  ) : (
+                    availablePaymentMethods.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name} {pm.last4 ? `(•••• ${pm.last4})` : ''}
+                      </option>
+                    ))
+                  )}
                 </Select>
                 {availablePaymentMethods.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground flex items-center justify-between pt-0.5">
-                    <span>No payment methods saved yet.</span>
+                    <span>No payment methods yet. Add one to get started.</span>
                     <button
                       type="button"
                       onClick={() => setIsAddPmModalOpen(true)}
-                      className="text-primary hover:underline font-medium cursor-pointer"
+                      className="text-primary hover:underline font-semibold cursor-pointer"
                     >
-                      Add one now
+                      + Add
                     </button>
                   </p>
                 ) : null}

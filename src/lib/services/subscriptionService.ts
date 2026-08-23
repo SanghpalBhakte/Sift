@@ -396,15 +396,9 @@ class SubscriptionService {
 
     if (supabase) {
       try {
-        const user = await this.getAuthUser(supabase);
-        let query = (supabase.from('categories') as any).select('*');
-        if (user) {
-          query = query.or(`user_id.is.null,user_id.eq.${user.id}`);
-        } else {
-          query = query.is('user_id', null);
-        }
-
-        const { data, error } = await query.order('name', { ascending: true });
+        const { data, error } = await (supabase.from('categories') as any)
+          .select('id, user_id, name, slug, color, icon, created_at')
+          .order('name', { ascending: true });
 
         if (!error && data && data.length > 0) {
           const dbCategories = data as Category[];
@@ -444,6 +438,7 @@ class SubscriptionService {
         typeof crypto !== 'undefined' && crypto.randomUUID
           ? crypto.randomUUID()
           : `cat-${Date.now()}`,
+      user_id: null,
       name: categoryData.name.trim(),
       slug,
       color: resolveCategoryDefaultColor(categoryData.color, categoryData.name || slug),
@@ -537,20 +532,15 @@ class SubscriptionService {
 
     if (supabase) {
       try {
-        const user = await this.getAuthUser(supabase);
+        const { data, error } = await (supabase.from('payment_methods') as any)
+          .select('id, user_id, name, type, last4, color, is_default, created_at')
+          .order('is_default', { ascending: false })
+          .order('name', { ascending: true });
 
-        if (user) {
-          const { data, error } = await (supabase.from('payment_methods') as any)
-            .select('id, user_id, name, type, last4, color, is_default, created_at')
-            .eq('user_id', user.id)
-            .order('is_default', { ascending: false })
-            .order('name', { ascending: true });
-
-          if (!error && data) {
-            const dbPaymentMethods = data as PaymentMethod[];
-            this.setLocalData(STORAGE_KEYS.PAYMENT_METHODS, dbPaymentMethods);
-            return dbPaymentMethods;
-          }
+        if (!error && data) {
+          const dbPaymentMethods = data as PaymentMethod[];
+          this.setLocalData(STORAGE_KEYS.PAYMENT_METHODS, dbPaymentMethods);
+          return dbPaymentMethods;
         }
       } catch (err) {
         console.warn('Error querying payment methods from Supabase:', err);
@@ -578,9 +568,9 @@ class SubscriptionService {
           userId = user.id;
           const { data: created, error } = await (supabase.from('payment_methods') as any)
             .insert({
-              user_id: userId,
+              user_id: user.id,
               name: data.name.trim(),
-              type: data.type.trim() || 'credit_card',
+              type: data.type.trim() || 'card',
               last4: data.last4?.trim() || null,
               color: data.color?.trim() || null,
               is_default: Boolean(data.is_default),
@@ -613,9 +603,9 @@ class SubscriptionService {
           : `pm-${Date.now()}`,
       user_id: userId,
       name: data.name.trim(),
-      type: (data.type.trim() || 'credit_card') as any,
-      last4: data.last4?.trim() || undefined,
-      color: data.color?.trim() || undefined,
+      type: data.type.trim() || 'card',
+      last4: data.last4?.trim() || null,
+      color: data.color?.trim() || null,
       is_default: Boolean(data.is_default),
       created_at: new Date().toISOString(),
     };

@@ -17,6 +17,7 @@ export const defaultProfile: Profile = {
 export const mockCategories: Category[] = [
   {
     id: '10000000-0000-0000-0000-000000000001',
+    user_id: null,
     name: 'Software & Dev',
     slug: 'software-dev',
     color: 'moss',
@@ -25,6 +26,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: '10000000-0000-0000-0000-000000000002',
+    user_id: null,
     name: 'Infrastructure & Cloud',
     slug: 'infra-cloud',
     color: 'slate',
@@ -33,6 +35,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: '10000000-0000-0000-0000-000000000003',
+    user_id: null,
     name: 'Productivity & Notes',
     slug: 'productivity',
     color: 'ochre',
@@ -41,6 +44,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: '10000000-0000-0000-0000-000000000004',
+    user_id: null,
     name: 'Media & Reading',
     slug: 'media-reading',
     color: 'terracotta',
@@ -49,6 +53,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: '10000000-0000-0000-0000-000000000005',
+    user_id: null,
     name: 'Health & Routine',
     slug: 'health-routine',
     color: 'sage',
@@ -57,6 +62,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: '10000000-0000-0000-0000-000000000006',
+    user_id: null,
     name: 'Utilities & Sync',
     slug: 'utilities-sync',
     color: 'stone',

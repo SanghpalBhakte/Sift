@@ -22,8 +22,9 @@ export function AddPaymentMethodModal({
   const { addPaymentMethod } = useSubscriptions();
 
   const [name, setName] = useState('');
-  const [type, setType] = useState('credit_card');
+  const [type, setType] = useState('card');
   const [last4, setLast4] = useState('');
+  const [color, setColor] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +35,9 @@ export function AddPaymentMethodModal({
   useEffect(() => {
     if (isOpen) {
       setName('');
-      setType('credit_card');
+      setType('card');
       setLast4('');
+      setColor('');
       setIsDefault(false);
       setError(null);
 
@@ -75,6 +77,7 @@ export function AddPaymentMethodModal({
         name: name.trim(),
         type,
         last4: last4.trim() ? last4.trim().slice(-4) : null,
+        color: color.trim() || null,
         is_default: isDefault,
       });
 
@@ -137,7 +140,7 @@ export function AddPaymentMethodModal({
           <Input
             ref={inputRef}
             label="Payment Method Name *"
-            placeholder="e.g. Chase Sapphire, Work Amex, Apple Card"
+            placeholder="e.g. HDFC Visa, Google Pay, SBI Account"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -149,12 +152,11 @@ export function AddPaymentMethodModal({
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
-              <option value="credit_card">Credit Card</option>
-              <option value="debit_card">Debit Card</option>
-              <option value="bank_account">Bank Account / Transfer</option>
-              <option value="paypal">PayPal</option>
-              <option value="apple_pay">Apple Pay</option>
-              <option value="other">Other / Digital Wallet</option>
+              <option value="card">Card (Credit / Debit)</option>
+              <option value="upi">UPI / Virtual</option>
+              <option value="bank">Bank Account</option>
+              <option value="wallet">Digital Wallet</option>
+              <option value="other">Other</option>
             </Select>
 
             <Input
@@ -166,6 +168,19 @@ export function AddPaymentMethodModal({
               onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
             />
           </div>
+
+          <Select
+            label="Color Tag (Optional)"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+          >
+            <option value="">Default (Slate)</option>
+            <option value="moss">Moss (Green)</option>
+            <option value="slate">Slate (Blue)</option>
+            <option value="ochre">Ochre (Gold)</option>
+            <option value="terracotta">Terracotta (Rust)</option>
+            <option value="indigo">Indigo (Navy)</option>
+          </Select>
 
           <label className="flex items-center gap-2 pt-1 text-xs text-foreground cursor-pointer select-none">
             <input

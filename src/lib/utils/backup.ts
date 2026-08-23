@@ -67,6 +67,7 @@ export function generateFullBackupJson(params: {
     subscriptions: sanitizedSubscriptions as any,
     categories: categories.map((c) => ({
       id: c.id,
+      user_id: c.user_id ?? null,
       name: c.name,
       slug: c.slug,
       slug_aliases: c.slug_aliases || [],

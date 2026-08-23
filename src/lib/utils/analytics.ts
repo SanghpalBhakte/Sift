@@ -231,6 +231,7 @@ export function calculateCategoryBreakdown(
 
   const uncategorizedCat: Category = {
     id: 'uncategorized',
+    user_id: null,
     name: 'General & Other',
     slug: 'general-other',
     color: 'stone',

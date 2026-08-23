@@ -32,6 +32,7 @@ const CustomBankRulesManager = dynamic(
     ),
   { ssr: false }
 );
+import { AddPaymentMethodModal } from '@/components/subscriptions/AddPaymentMethodModal';
 import {
   Palette,
   Database,
@@ -52,6 +53,8 @@ import {
   LogOut,
   KeyRound,
   Lock,
+  CreditCard,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -75,6 +78,7 @@ export default function SettingsPage() {
   const {
     subscriptions,
     categories,
+    paymentMethods,
     profile,
     updateProfile,
     populateStarterTemplates,
@@ -95,6 +99,7 @@ export default function SettingsPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [restoreSuccess, setRestoreSuccess] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [isAddPmModalOpen, setIsAddPmModalOpen] = useState(false);
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
@@ -579,7 +584,80 @@ export default function SettingsPage() {
       </Card>
 
       {/* ========================================================================= */}
-      {/* 2. ACCOUNT & SECURITY (MFA / 2FA) */}
+      {/* 2. PAYMENT METHODS & CARDS (WALLET) */}
+      {/* ========================================================================= */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-primary" />
+            <CardTitle>Payment Methods & Wallet</CardTitle>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddPmModalOpen(true)}
+            className="text-xs gap-1.5 shadow-xs font-semibold"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Payment Method</span>
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0 text-xs">
+          <p className="text-muted-foreground text-[11px]">
+            Manage credit cards, bank accounts, and digital wallets used for subscription billing.
+          </p>
+
+          {paymentMethods.length === 0 ? (
+            <div className="p-4 rounded-xl bg-surface/50 border border-border text-center space-y-2">
+              <p className="text-muted-foreground">
+                No payment methods saved yet. Add one to assign subscriptions and track accounts.
+              </p>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => setIsAddPmModalOpen(true)}
+                className="text-xs gap-1.5 shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Your First Payment Method
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {paymentMethods.map((pm) => (
+                <div
+                  key={pm.id}
+                  className="p-3 rounded-xl bg-surface/50 border border-border flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <CreditCard className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground truncate">
+                        {pm.name}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground capitalize">
+                        {pm.type.replace('_', ' ')} {pm.last4 ? `(•••• ${pm.last4})` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  {pm.is_default ? (
+                    <Badge variant="success" size="sm" className="shrink-0">
+                      Default
+                    </Badge>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ========================================================================= */}
+      {/* 3. ACCOUNT & SECURITY (MFA / 2FA) */}
       {/* ========================================================================= */}
       {user ? (
         <Card>
@@ -891,6 +969,11 @@ export default function SettingsPage() {
           </div>
         </div>
       ) : null}
+
+      <AddPaymentMethodModal
+        isOpen={isAddPmModalOpen}
+        onClose={() => setIsAddPmModalOpen(false)}
+      />
     </div>
   );
 }
