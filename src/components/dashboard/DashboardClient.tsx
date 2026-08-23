@@ -9,7 +9,7 @@ import { SubscriptionCard } from '@/components/subscriptions/SubscriptionCard';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, normalizeMonthlyAmount } from '@/lib/utils/currency';
 import { formatDate, getCountdownBadge } from '@/lib/utils/dates';
-import { ArrowRight, Plus, Sparkles } from 'lucide-react';
+import { ArrowRight, Plus, Sparkles, Calendar, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 const RestoreModal = dynamic(
@@ -106,7 +106,7 @@ export function DashboardClient() {
       {/* 1. Asymmetric Hero Composition */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
         {/* Primary Spend Card (Dominant: 7 Columns) */}
-        <div className="sm:col-span-7 sweep-card p-5 sm:p-6 flex flex-col justify-between min-h-[160px]">
+        <div className="sm:col-span-7 sweep-card p-5 sm:p-6 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans">
               Recurring Spend
@@ -175,11 +175,12 @@ export function DashboardClient() {
           </div>
         </div>
 
-        {/* Secondary Companion Card: Next Renewal (5 Columns) */}
-        <div className="sm:col-span-5 sweep-card p-5 flex flex-col justify-between min-h-[160px] bg-card/60">
+        {/* Secondary Companion Card: Next Renewal Slip (5 Columns) */}
+        <div className="sm:col-span-5 sweep-card p-5 flex flex-col justify-between min-h-[160px] bg-surface/40 border border-border/80 relative">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans">
-              Next Renewal
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans flex items-center gap-1.5">
+              <Receipt className="w-3 h-3 opacity-60" />
+              <span>Next Renewal</span>
             </span>
             {nextRenewalCountdown && (
               <span
@@ -197,7 +198,7 @@ export function DashboardClient() {
 
           {nextRenewal ? (
             <div className="my-auto py-1">
-              <div className="flex items-center gap-2.5 mb-1">
+              <div className="flex items-center gap-2.5 mb-1.5">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
                   style={{
@@ -213,9 +214,10 @@ export function DashboardClient() {
                   {nextRenewal.name}
                 </span>
               </div>
-              <div className="flex items-baseline justify-between gap-2 mt-2">
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(nextRenewal.next_renewal_date)}
+              <div className="flex items-baseline justify-between gap-2 mt-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3 opacity-60" />
+                  <span>{formatDate(nextRenewal.next_renewal_date)}</span>
                 </span>
                 <span className="text-sm font-bold text-foreground tabular-nums">
                   {formatCurrency(nextRenewal.amount, nextRenewal.currency)}
@@ -244,13 +246,13 @@ export function DashboardClient() {
         </div>
       </div>
 
-      {/* 2. Restrained Supporting Ledger Notes (2 quiet, compact items) */}
+      {/* 2. Unified Desk Strip (2 integrated supporting notes) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Note 1: Top single commitment */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-surface/50 border border-border/70 flex items-center justify-between gap-3 text-xs">
           <div className="min-w-0">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block font-sans">
-              Top Commitment
+              Top Outflow
             </span>
             <span className="font-medium text-foreground truncate block mt-0.5">
               {largestSubscription ? largestSubscription.name : 'None recorded'}
@@ -274,7 +276,7 @@ export function DashboardClient() {
         <div className="p-3 sm:p-3.5 rounded-xl bg-surface/50 border border-border/70 flex items-center justify-between gap-3 text-xs">
           <div className="min-w-0">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block font-sans">
-              {stats.trialCount > 0 ? 'Active Free Trials' : 'Due Next 7 Days'}
+              {stats.trialCount > 0 ? 'Active Free Trials' : '7-Day Horizon'}
             </span>
             <span className="font-medium text-foreground truncate block mt-0.5">
               {stats.trialCount > 0
@@ -301,7 +303,7 @@ export function DashboardClient() {
         </div>
       </div>
 
-      {/* 3. Core Content: Recurring Spend Ledger Preview */}
+      {/* 3. Core Content: Recurring Spend Ledger */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 px-0.5">
           <div className="flex items-center gap-2">
@@ -319,7 +321,7 @@ export function DashboardClient() {
           </Link>
         </div>
 
-        {/* Category Filter Pills (Single scrollable row) */}
+        {/* Category Filter Pills */}
         {activeSubscriptions.length > 2 && (
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap flex-nowrap">
             <button
@@ -416,12 +418,12 @@ export function DashboardClient() {
                 />
               ))}
 
-              {/* Graceful single-item prompt */}
+              {/* Graceful single-item prompt tailored for students/individuals */}
               {activeSubscriptions.length === 1 && (
                 <div className="p-4 rounded-xl border border-dashed border-border/80 bg-surface/20 flex items-center justify-between gap-3 text-xs mt-3">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span>Your recurring commitments will appear here as you add them.</span>
+                    <span>Track your streaming, iCloud, or gym to see your full recurring picture.</span>
                   </div>
                   <Link href="/subscriptions/new">
                     <Button variant="outline" size="sm" className="text-xs shrink-0 gap-1">
