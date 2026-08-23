@@ -2,29 +2,42 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSubscriptions } from '@/context/SubscriptionContext';
-import { PaymentMethod } from '@/lib/types';
+import { Category } from '@/lib/types';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { X, CreditCard, Plus } from 'lucide-react';
+import { X, FolderPlus, Plus } from 'lucide-react';
 
-interface AddPaymentMethodModalProps {
+interface AddCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreated?: (pm: PaymentMethod) => void;
+  onCreated?: (cat: Category) => void;
 }
 
-export function AddPaymentMethodModal({
+const CATEGORY_COLORS = [
+  { label: 'Moss (Green)', value: 'moss' },
+  { label: 'Slate (Blue)', value: 'slate' },
+  { label: 'Ochre (Gold)', value: 'ochre' },
+  { label: 'Terracotta (Rust)', value: 'terracotta' },
+  { label: 'Sage (Soft Green)', value: 'sage' },
+  { label: 'Stone (Neutral)', value: 'stone' },
+  { label: 'Indigo (Deep Blue)', value: 'indigo' },
+  { label: 'Emerald (Vibrant Green)', value: 'emerald' },
+  { label: 'Amber (Orange)', value: 'amber' },
+  { label: 'Rose (Pink)', value: 'rose' },
+  { label: 'Violet (Purple)', value: 'violet' },
+  { label: 'Teal (Cyan)', value: 'teal' },
+];
+
+export function AddCategoryModal({
   isOpen,
   onClose,
   onCreated,
-}: AddPaymentMethodModalProps) {
-  const { addPaymentMethod } = useSubscriptions();
+}: AddCategoryModalProps) {
+  const { addCategory } = useSubscriptions();
 
   const [name, setName] = useState('');
-  const [type, setType] = useState('credit_card');
-  const [last4, setLast4] = useState('');
-  const [isDefault, setIsDefault] = useState(false);
+  const [color, setColor] = useState('moss');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,9 +47,7 @@ export function AddPaymentMethodModal({
   useEffect(() => {
     if (isOpen) {
       setName('');
-      setType('credit_card');
-      setLast4('');
-      setIsDefault(false);
+      setColor('moss');
       setError(null);
 
       const timer = setTimeout(() => {
@@ -63,7 +74,7 @@ export function AddPaymentMethodModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Please enter a payment method name.');
+      setError('Please enter a category name.');
       return;
     }
 
@@ -71,17 +82,16 @@ export function AddPaymentMethodModal({
     setError(null);
 
     try {
-      const created = await addPaymentMethod({
+      const created = await addCategory({
         name: name.trim(),
-        type,
-        last4: last4.trim() ? last4.trim().slice(-4) : null,
-        is_default: isDefault,
+        color,
+        icon: 'folder',
       });
 
       onCreated?.(created);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to add payment method.');
+      setError(err.message || 'Failed to add category.');
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +103,7 @@ export function AddPaymentMethodModal({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="add-pm-title"
+      aria-labelledby="add-cat-title"
     >
       <div
         ref={modalRef}
@@ -104,14 +114,14 @@ export function AddPaymentMethodModal({
         <div className="px-4 sm:px-5 py-3.5 border-b border-border flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <CreditCard className="w-4 h-4" aria-hidden="true" />
+              <FolderPlus className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="add-pm-title" className="text-sm font-semibold text-foreground">
-                Add Payment Method
+              <h2 id="add-cat-title" className="text-sm font-semibold text-foreground">
+                Add Category
               </h2>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Assign subscriptions to cards, accounts, or digital wallets
+                Organize your recurring subscriptions into custom groups
               </p>
             </div>
           </div>
@@ -136,46 +146,24 @@ export function AddPaymentMethodModal({
 
           <Input
             ref={inputRef}
-            label="Payment Method Name *"
-            placeholder="e.g. Chase Sapphire, Work Amex, Apple Card"
+            label="Category Name *"
+            placeholder="e.g. AI & Copilots, Gym & Fitness, Hosting"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
 
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              label="Type *"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-            >
-              <option value="credit_card">Credit Card</option>
-              <option value="debit_card">Debit Card</option>
-              <option value="bank_account">Bank Account / Transfer</option>
-              <option value="paypal">PayPal</option>
-              <option value="apple_pay">Apple Pay</option>
-              <option value="other">Other / Digital Wallet</option>
-            </Select>
-
-            <Input
-              label="Last 4 Digits (Optional)"
-              type="text"
-              maxLength={4}
-              placeholder="4242"
-              value={last4}
-              onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            />
-          </div>
-
-          <label className="flex items-center gap-2 pt-1 text-xs text-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isDefault}
-              onChange={(e) => setIsDefault(e.target.checked)}
-              className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
-            />
-            <span>Set as my default payment method</span>
-          </label>
+          <Select
+            label="Color Theme"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+          >
+            {CATEGORY_COLORS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </Select>
 
           <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
             <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={isSubmitting}>
@@ -189,7 +177,7 @@ export function AddPaymentMethodModal({
               className="gap-1.5 shadow-xs font-semibold"
             >
               <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-              Save Payment Method
+              Save Category
             </Button>
           </div>
         </form>

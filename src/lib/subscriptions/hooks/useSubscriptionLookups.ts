@@ -8,12 +8,18 @@ import {
 } from "@/lib/subscriptions/mappers";
 import type { CategoryRow, PaymentMethodRow } from "@/lib/subscriptions/types";
 
-async function fetchCategories(): Promise<CategoryRow[]> {
-  const { data, error } = await supabase
+async function fetchCategories(userId?: string | null): Promise<CategoryRow[]> {
+  let query = supabase
     .from("categories")
-    .select("id, slug, name, color, icon, created_at, user_id")
-    .is("user_id", null)
-    .order("name", { ascending: true });
+    .select("id, slug, name, color, icon, created_at, user_id");
+
+  if (userId) {
+    query = query.or(`user_id.is.null,user_id.eq.${userId}`);
+  } else {
+    query = query.is("user_id", null);
+  }
+
+  const { data, error } = await query.order("name", { ascending: true });
 
   if (error) {
     throw error;
@@ -44,8 +50,8 @@ async function fetchPaymentMethods(userId?: string | null): Promise<PaymentMetho
 
 export function useSubscriptionLookups(userId?: string | null) {
   const categoriesQuery = useQuery({
-    queryKey: subscriptionKeys.categories(),
-    queryFn: fetchCategories,
+    queryKey: subscriptionKeys.categories(userId),
+    queryFn: () => fetchCategories(userId),
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
   });

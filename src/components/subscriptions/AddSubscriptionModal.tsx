@@ -15,13 +15,14 @@ interface AddSubscriptionModalProps {
 }
 
 export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalProps) {
-  const { categories, profile, addSubscription } = useSubscriptions();
+  const { categories, paymentMethods, profile, addSubscription } = useSubscriptions();
 
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState(profile?.currency_preference || 'USD');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [categoryId, setCategoryId] = useState('');
+  const [paymentMethodId, setPaymentMethodId] = useState('');
   const [nextRenewalDate, setNextRenewalDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
@@ -95,6 +96,7 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
         billing_cycle: billingCycle,
         status: 'active',
         category_id: categoryId || null,
+        payment_method_id: paymentMethodId || null,
         start_date: new Date().toISOString().split('T')[0],
         next_renewal_date: isTrial ? trialEndDate : nextRenewalDate,
         is_trial: isTrial,
@@ -212,15 +214,30 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
               </Select>
             </div>
 
-            <Input
-              label="Next Renewal Date"
-              type="date"
-              value={isTrial ? trialEndDate : nextRenewalDate}
-              onChange={(e) => {
-                if (isTrial) setTrialEndDate(e.target.value);
-                else setNextRenewalDate(e.target.value);
-              }}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="Payment Method"
+                value={paymentMethodId}
+                onChange={(e) => setPaymentMethodId(e.target.value)}
+              >
+                <option value="">None / Unassigned</option>
+                {paymentMethods.map((pm) => (
+                  <option key={pm.id} value={pm.id}>
+                    {pm.name} {pm.last4 ? `(•••• ${pm.last4})` : ''}
+                  </option>
+                ))}
+              </Select>
+
+              <Input
+                label="Next Renewal Date"
+                type="date"
+                value={isTrial ? trialEndDate : nextRenewalDate}
+                onChange={(e) => {
+                  if (isTrial) setTrialEndDate(e.target.value);
+                  else setNextRenewalDate(e.target.value);
+                }}
+              />
+            </div>
 
             {/* Free Trial Toggle */}
             <label className="flex items-center justify-between p-3 rounded-xl bg-surface/60 border border-border cursor-pointer hover:bg-surface transition-colors">

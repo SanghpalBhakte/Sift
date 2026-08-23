@@ -396,10 +396,15 @@ class SubscriptionService {
 
     if (supabase) {
       try {
-        const { data, error } = await (supabase.from('categories') as any)
-          .select('*')
-          .is('user_id', null)
-          .order('name', { ascending: true });
+        const user = await this.getAuthUser(supabase);
+        let query = (supabase.from('categories') as any).select('*');
+        if (user) {
+          query = query.or(`user_id.is.null,user_id.eq.${user.id}`);
+        } else {
+          query = query.is('user_id', null);
+        }
+
+        const { data, error } = await query.order('name', { ascending: true });
 
         if (!error && data && data.length > 0) {
           const dbCategories = data as Category[];
@@ -449,19 +454,29 @@ class SubscriptionService {
     const supabase = createClient();
     if (supabase) {
       try {
-        const { data, error } = await (supabase.from('categories') as any)
-          .insert({
-            id: newCat.id,
-            name: newCat.name,
-            slug: newCat.slug,
-            color: newCat.color,
-            icon: newCat.icon,
-          })
-          .select()
-          .single();
+        const user = await this.getAuthUser(supabase);
+        if (user) {
+          const { data, error } = await (supabase.from('categories') as any)
+            .insert({
+              user_id: user.id,
+              name: newCat.name,
+              slug: newCat.slug,
+              color: newCat.color,
+              icon: newCat.icon,
+            })
+            .select()
+            .single();
 
-        if (!error && data) {
-          return data as Category;
+          if (!error && data) {
+            const inserted = data as Category;
+            const all = this.getLocalData(STORAGE_KEYS.CATEGORIES, [] as Category[]);
+            const updated = [inserted, ...all.filter((c) => c.id !== inserted.id)];
+            this.setLocalData(STORAGE_KEYS.CATEGORIES, updated);
+            return inserted;
+          }
+          if (error) {
+            console.error('Supabase createCategory error:', error);
+          }
         }
       } catch (err) {
         console.warn('Failed to insert category into Supabase, using local storage fallback:', err);

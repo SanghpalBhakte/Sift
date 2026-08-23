@@ -30,6 +30,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
 import { POPULAR_SERVICES, PopularService } from '@/lib/constants/popularServices';
 import { AddPaymentMethodModal } from './AddPaymentMethodModal';
+import { AddCategoryModal } from './AddCategoryModal';
 
 interface SubscriptionFormProps {
   initialData?: Subscription;
@@ -56,6 +57,7 @@ export function SubscriptionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAddPmModalOpen, setIsAddPmModalOpen] = useState(false);
+  const [isAddCatModalOpen, setIsAddCatModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
@@ -295,9 +297,9 @@ export function SubscriptionForm({
     }
 
     const resolvedCategoryId =
-      categoryId && categoryId.trim() !== '' ? categoryId.trim() : undefined;
+      categoryId && categoryId.trim() !== '' ? categoryId.trim() : null;
     const resolvedPaymentMethodId =
-      paymentMethodId && paymentMethodId.trim() !== '' ? paymentMethodId.trim() : undefined;
+      paymentMethodId && paymentMethodId.trim() !== '' ? paymentMethodId.trim() : null;
 
     return {
       name: name.trim(),
@@ -658,18 +660,29 @@ export function SubscriptionForm({
           {/* Category & Payment Method */}
           <div className="pt-2 border-t border-border/60">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Select
-                label="Category (Optional)"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-              >
-                <option value="">None / Unassigned</option>
-                {availableCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground">Category (Optional)</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddCatModalOpen(true)}
+                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer flex items-center gap-0.5"
+                  >
+                    + Add New
+                  </button>
+                </div>
+                <Select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                >
+                  <option value="">None / Unassigned</option>
+                  {availableCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -909,6 +922,12 @@ export function SubscriptionForm({
         isOpen={isAddPmModalOpen}
         onClose={() => setIsAddPmModalOpen(false)}
         onCreated={(pm) => setPaymentMethodId(pm.id)}
+      />
+
+      <AddCategoryModal
+        isOpen={isAddCatModalOpen}
+        onClose={() => setIsAddCatModalOpen(false)}
+        onCreated={(cat) => setCategoryId(cat.id)}
       />
     </form>
   );
