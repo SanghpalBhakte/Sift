@@ -19,7 +19,8 @@ import {
   Check,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'sift_onboarding_dismissed_v1';
+const STORAGE_KEY = 'sweep_onboarding_dismissed_v1';
+const LEGACY_STORAGE_KEY = 'sift_onboarding_dismissed_v1';
 
 export function OnboardingChecklist() {
   const { subscriptions, profile, populateStarterTemplates } = useSubscriptions();
@@ -29,7 +30,8 @@ export function OnboardingChecklist() {
   useEffect(() => {
     setIsMounted(true);
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored =
+        localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (stored === 'true') {
         setIsDismissed(true);
       }

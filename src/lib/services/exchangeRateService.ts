@@ -1,11 +1,12 @@
 // =============================================================================
-// Sift - Exchange Rate Synchronization & Conversion Service
+// Sweep - Exchange Rate Synchronization & Conversion Service
 // Path: src/lib/services/exchangeRateService.ts
 // =============================================================================
 
 import { ExchangeRatesData } from '../types';
 
-const CACHE_KEY = 'sift_exchange_rates_cache_v1';
+const CACHE_KEY = 'sweep_exchange_rates_cache_v1';
+const LEGACY_CACHE_KEY = 'sift_exchange_rates_cache_v1';
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 const RECONNECT_MIN_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes debounce for reconnect sync
 
@@ -48,7 +49,7 @@ class ExchangeRateService {
     // 2. Check localStorage in browser
     if (typeof window !== 'undefined' && !forceRefresh) {
       try {
-        const stored = localStorage.getItem(CACHE_KEY);
+        const stored = localStorage.getItem(CACHE_KEY) || localStorage.getItem(LEGACY_CACHE_KEY);
         if (stored) {
           const parsed: ExchangeRatesData = JSON.parse(stored);
           if (!this.isExpired(parsed.updatedAt)) {

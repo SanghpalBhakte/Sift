@@ -30,7 +30,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://sift-sand.vercel.app'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || 'https://sweep-sanghapal2006-8427s-projects.vercel.app'
+  ),
   title: 'Sweep — Your recurring life, in one clear view',
   description:
     'A calm, tactile subscription and recurring spend workspace. Track subscriptions, upcoming renewals, free trials, and clear financial clutter with peace of mind.',
@@ -56,7 +58,7 @@ export const metadata: Metadata = {
     title: 'Sweep — Your recurring life, in one clear view',
     description:
       'A calm, tactile subscription and recurring spend workspace. Track subscriptions, upcoming renewals, free trials, and clear financial clutter.',
-    url: 'https://sift-sand.vercel.app',
+    url: 'https://sweep-sanghapal2006-8427s-projects.vercel.app',
     siteName: 'Sweep',
     images: [
       {
