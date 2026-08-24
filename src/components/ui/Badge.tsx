@@ -14,19 +14,19 @@ export function Badge({
   ...props
 }: BadgeProps) {
   const variantStyles: Record<NonNullable<BadgeProps['variant']>, string> = {
-    default:  'bg-surface text-muted-foreground border border-border',
-    primary:  'bg-primary/10 text-primary border border-primary/20',
-    accent:   'bg-accent text-accent-foreground border border-primary/15',
-    success:  'bg-success-subtle text-success border border-success/20',
-    warning:  'bg-warning-subtle text-warning border border-warning/20',
-    danger:   'bg-danger-subtle text-danger border border-danger/20',
-    outline:  'bg-transparent text-foreground border border-border',
-    muted:    'bg-muted text-muted-foreground border border-transparent',
+    default:  'bg-surface/80 text-muted-foreground border border-border/40',
+    primary:  'bg-primary/10 text-primary border border-primary/15',
+    accent:   'bg-accent/80 text-accent-foreground border border-primary/12',
+    success:  'bg-success/10 text-success border border-success/15',
+    warning:  'bg-warning/10 text-warning border border-warning/15',
+    danger:   'bg-danger/10 text-danger border border-danger/15',
+    outline:  'bg-transparent text-muted-foreground border border-border/50',
+    muted:    'bg-surface/60 text-muted-foreground border border-border/30',
   };
 
   const sizeStyles: Record<NonNullable<BadgeProps['size']>, string> = {
-    sm: 'text-[10px] px-1.5 py-0.5',
-    md: 'text-[11px] px-2 py-0.5',
+    sm: 'text-[11px] px-1.5 py-0.5 font-medium',
+    md: 'text-xs px-2 py-0.5 font-medium',
   };
 
   return (

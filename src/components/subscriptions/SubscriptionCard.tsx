@@ -77,7 +77,7 @@ export function SubscriptionCard({
       <Link
         href={`/subscriptions/${subscription.id}/edit`}
         className={cn(
-          'p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:bg-surface/50 transition-colors block group cursor-pointer',
+          'px-3.5 py-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 hover:bg-surface/50 transition-colors block group cursor-pointer',
           subscription.status === 'paused' && 'opacity-60 bg-surface/20',
           subscription.status === 'canceled' && 'opacity-50'
         )}
@@ -85,7 +85,7 @@ export function SubscriptionCard({
         {/* Left: Icon Badge & Name & Next Billing Date */}
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-transform group-hover:scale-105 border border-border/50 shadow-xs"
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-transform group-hover:scale-105 border border-border/40 shadow-2xs"
             style={{
               backgroundColor: subscription.category?.color
                 ? `${subscription.category.color}15`
@@ -97,19 +97,18 @@ export function SubscriptionCard({
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate block">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate block">
                 {subscription.name}
               </span>
               {subscription.is_trial ? (
-                <span className="inline-block px-1.5 py-0.2 bg-warning-subtle text-warning border border-warning/30 rounded text-[9px] font-bold shrink-0">
+                <span className="inline-block px-1.5 py-0.2 bg-warning/12 text-warning rounded text-[10px] font-medium shrink-0">
                   Trial
                 </span>
               ) : null}
             </div>
 
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-              <Calendar className="w-3 h-3 opacity-60 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
               <span className="truncate">
                 {formatDate(subscription.next_renewal_date)}
               </span>
@@ -125,9 +124,9 @@ export function SubscriptionCard({
 
         {/* Right: Cost & Cycle */}
         <div className="text-right shrink-0">
-          <div className="text-xs sm:text-sm font-bold font-mono tracking-tight text-foreground tabular-nums">
+          <div className="text-sm font-semibold font-mono tracking-tight text-foreground tabular-nums">
             {formatCurrency(subscription.amount, subscription.currency)}
-            <span className="text-[10px] font-normal font-sans text-muted-foreground ml-0.5">
+            <span className="text-xs font-normal font-sans text-muted-foreground ml-1">
               {formatCycle(subscription.billing_cycle, subscription.custom_interval_days)}
             </span>
           </div>
@@ -135,14 +134,14 @@ export function SubscriptionCard({
           {countdown.urgent || countdown.warning ? (
             <span
               className={cn(
-                'text-[10px] font-medium block mt-0.5',
-                countdown.urgent ? 'text-danger font-bold' : 'text-warning'
+                'text-[11px] font-medium block mt-0.5',
+                countdown.urgent ? 'text-danger font-semibold' : 'text-warning'
               )}
             >
               {countdown.label}
             </span>
           ) : (
-            <span className="text-[10px] text-muted-foreground block mt-0.5 capitalize">
+            <span className="text-[11px] text-muted-foreground/80 block mt-0.5 capitalize">
               {subscription.status}
             </span>
           )}

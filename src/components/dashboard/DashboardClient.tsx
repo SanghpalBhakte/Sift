@@ -220,14 +220,14 @@ export function DashboardClient() {
       </div>
 
       {/* ─── 2. Unified Desk Summary Band (Single cohesive band, NOT 4 cards) ── */}
-      <div className="rounded-xl bg-card border border-border/80 shadow-xs divide-y lg:divide-y-0 lg:divide-x divide-border/70 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="rounded-xl bg-card border border-border/60 shadow-xs divide-y lg:divide-y-0 lg:divide-x divide-border/50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {/* Metric 1: Total Recurring Commitment */}
         <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-xs font-medium text-muted-foreground">
               {period === 'monthly' ? 'Monthly Commitment' : 'Annual Commitment'}
             </span>
-            <span className="text-[10px] font-mono text-muted-foreground px-1.5 py-0.2 rounded bg-surface border border-border/60">
+            <span className="text-[11px] font-mono text-muted-foreground px-1.5 py-0.2 rounded bg-surface border border-border/40">
               {period === 'monthly' ? '/mo' : '/yr'}
             </span>
           </div>
@@ -239,12 +239,12 @@ export function DashboardClient() {
                 targetCurrency
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Across {activeSubscriptions.length} active service{activeSubscriptions.length === 1 ? '' : 's'}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+          <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground flex items-center justify-between">
             <span>Annual Run-Rate</span>
             <span className="font-mono font-semibold text-foreground">
               {formatCurrency(stats.yearlyProjected, targetCurrency)}/yr
@@ -255,16 +255,16 @@ export function DashboardClient() {
         {/* Metric 2: 7-Day Renewal Window */}
         <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3 h-3 opacity-60" />
+            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 opacity-60" />
               <span>7-Day Cashflow</span>
             </span>
             {next7DaysRenewals.length > 0 ? (
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-warning-subtle text-warning border border-warning/30">
+              <span className="text-xs font-semibold px-2 py-0.2 rounded-full bg-warning/12 text-warning">
                 {next7DaysRenewals.length} due
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground">Clear</span>
+              <span className="text-xs text-muted-foreground">Clear</span>
             )}
           </div>
 
@@ -276,14 +276,14 @@ export function DashboardClient() {
                 <span className="text-muted-foreground text-xl font-normal font-sans">None due</span>
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {next7DaysRenewals.length > 0
                 ? `${next7DaysRenewals.length} charge${next7DaysRenewals.length === 1 ? '' : 's'} scheduled this week`
                 : 'No charges in next 7 days'}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+          <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground flex items-center justify-between">
             <span>30-Day Outlook</span>
             <span className="font-mono font-semibold text-foreground">
               {formatCurrency(stats.upcoming30DaysTotal, targetCurrency)}
@@ -294,17 +294,17 @@ export function DashboardClient() {
         {/* Metric 3: Next Up Imminent Renewal */}
         <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-              <Receipt className="w-3 h-3 opacity-60" />
+            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Receipt className="w-3.5 h-3.5 opacity-60" />
               <span>Next Renewal</span>
             </span>
             {nextRenewalCountdown && (
               <span
                 className={cn(
-                  'text-[10px] font-medium px-1.5 py-0.2 rounded-full border',
+                  'text-xs font-medium px-2 py-0.2 rounded-full',
                   nextRenewalCountdown.urgent
-                    ? 'bg-danger-subtle text-danger border-danger/30 font-semibold'
-                    : 'bg-surface text-muted-foreground border-border'
+                    ? 'bg-danger/12 text-danger font-semibold'
+                    : 'bg-surface text-muted-foreground'
                 )}
               >
                 {nextRenewalCountdown.label}
@@ -322,18 +322,18 @@ export function DashboardClient() {
                   {formatCurrency(nextRenewal.amount, nextRenewal.currency)}
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
                 Due {formatDate(nextRenewal.next_renewal_date)}
               </p>
             </div>
           ) : (
             <div>
               <p className="text-base font-medium text-foreground">All caught up</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">No renewals pending</p>
+              <p className="text-xs text-muted-foreground mt-0.5">No renewals pending</p>
             </div>
           )}
 
-          <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+          <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground flex items-center justify-between">
             <span>Cycle</span>
             <span className="capitalize">{nextRenewal?.billing_cycle || 'None'}</span>
           </div>
@@ -342,13 +342,13 @@ export function DashboardClient() {
         {/* Metric 4: Ledger Health & Optimization */}
         <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-primary opacity-80" />
+            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary opacity-80" />
               <span>Ledger Health</span>
             </span>
             <Link
               href="/insights"
-              className="text-[10px] text-primary font-medium hover:underline flex items-center gap-0.5"
+              className="text-xs text-primary font-medium hover:underline flex items-center gap-0.5"
             >
               <span>Insights</span>
               <ChevronRight className="w-2.5 h-2.5" />
@@ -360,7 +360,7 @@ export function DashboardClient() {
               <span>{stats.cancelCandidateCount + stats.trialCount}</span>
               <span className="text-xs font-normal text-muted-foreground font-sans">flagged</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {stats.trialCount > 0
                 ? `${stats.trialCount} free trial${stats.trialCount > 1 ? 's' : ''} active`
                 : stats.cancelCandidateCount > 0
@@ -369,7 +369,7 @@ export function DashboardClient() {
             </p>
           </div>
 
-          <div className="pt-2 border-t border-border/50 text-[11px] flex items-center justify-between">
+          <div className="pt-2 border-t border-border/40 text-xs flex items-center justify-between">
             <span className="text-muted-foreground">Audit Status</span>
             <span
               className={cn(
@@ -429,7 +429,7 @@ export function DashboardClient() {
                   'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0',
                   selectedCategoryId === 'all'
                     ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                    : 'bg-surface/80 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/70'
+                    : 'bg-surface/50 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/40'
                 )}
               >
                 All ({activeSubscriptions.length})
@@ -450,7 +450,7 @@ export function DashboardClient() {
                       'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
                       isSelected
                         ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                        : 'bg-surface/80 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/70'
+                        : 'bg-surface/50 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/40'
                     )}
                   >
                     {category.color ? (
@@ -465,7 +465,7 @@ export function DashboardClient() {
                     {count > 0 ? (
                       <span
                         className={cn(
-                          'text-[10px] tabular-nums font-mono',
+                          'text-[11px] tabular-nums font-mono',
                           isSelected ? 'opacity-80' : 'text-muted-foreground'
                         )}
                       >
@@ -479,18 +479,18 @@ export function DashboardClient() {
           )}
 
           {/* Composed Ledger List (Single cohesive container with dividing lines) */}
-          <div className="rounded-xl bg-card border border-border/80 shadow-xs divide-y divide-border/60 overflow-hidden">
+          <div className="rounded-xl bg-card border border-border/60 shadow-xs divide-y divide-border/40 overflow-hidden">
             {isLoading ? (
               [1, 2, 3].map((i) => (
                 <div key={i} className="p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-surface-muted animate-pulse" />
+                    <div className="w-8 h-8 rounded-lg bg-surface-muted sweep-skeleton" />
                     <div className="space-y-1.5">
-                      <div className="w-24 h-3.5 bg-surface-muted rounded animate-pulse" />
-                      <div className="w-36 h-2.5 bg-surface-muted rounded animate-pulse" />
+                      <div className="w-24 h-3.5 bg-surface-muted sweep-skeleton" />
+                      <div className="w-36 h-2.5 bg-surface-muted sweep-skeleton" />
                     </div>
                   </div>
-                  <div className="w-16 h-4 bg-surface-muted rounded animate-pulse" />
+                  <div className="w-16 h-4 bg-surface-muted sweep-skeleton" />
                 </div>
               ))
             ) : filteredSubscriptions.length === 0 ? (
@@ -522,7 +522,7 @@ export function DashboardClient() {
             )}
 
             {/* Footer summary row */}
-            <div className="p-3 bg-surface/30 flex items-center justify-between text-xs px-4">
+            <div className="p-3 bg-surface/20 flex items-center justify-between text-xs px-4">
               <span className="text-muted-foreground">
                 Showing {filteredSubscriptions.length} of {activeSubscriptions.length} commitments
               </span>
@@ -539,7 +539,7 @@ export function DashboardClient() {
 
         {/* Right Support Zone: Unified Intelligence & Horizon Panel (5/12 Cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-xl bg-card border border-border/80 shadow-xs p-4 sm:p-5 space-y-5">
+          <div className="rounded-xl bg-card border border-border/60 shadow-xs p-4 sm:p-5 space-y-5">
             {/* Section A: 30-Day Renewal Horizon */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">

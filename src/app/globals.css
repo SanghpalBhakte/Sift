@@ -157,46 +157,46 @@
     --color-brand-hover:      #421C35;  /* Deep Aubergine — hover/active */
     --color-brand-highlight:  #E8D7DF;  /* Dusty Rose — subtle highlight */
 
-    /* Light mode surfaces */
-    --color-bg:               #F6F1E8;  /* Warm Parchment */
-    --color-surface:          #FCF9F3;  /* Cream Paper */
-    --color-surface-2:        #FAFAF7;
-    --color-surface-offset:   #F0EBE0;
-    --color-border:           #D8CFC4;  /* Quiet Oat */
-    --color-divider:          #E4DED6;
+    /* Light mode surfaces — softened warm stationery */
+    --color-bg:               #F5F0E6;  /* Soft Warm Parchment */
+    --color-surface:          #FAF6EE;  /* Muted Cream Paper */
+    --color-surface-2:        #F4EFE6;
+    --color-surface-offset:   #EDE6DA;
+    --color-border:           #DDD5C9;  /* Quiet Low-Contrast Oat */
+    --color-divider:          #E6DFD3;
 
-    /* Text */
-    --color-text:             #24201E;  /* Crisp Ink */
-    --color-text-muted:       #7A6E68;
-    --color-text-faint:       #B8AFA8;
+    /* Text — crisp deep ink, reduced glare */
+    --color-text:             #221E1C;  /* Deep charcoal-brown */
+    --color-text-muted:       #736A64;  /* Comfortable reading contrast */
+    --color-text-faint:       #B0A69E;
 
-    /* Status colors */
-    --color-success:          #527243;  /* Moss Green */
-    --color-success-highlight:#DDE8D6;
-    --color-warning:          #A65A24;  /* Toasted Amber */
-    --color-warning-highlight:#F0DECE;
-    --color-error:            #A63F3A;  /* Brick Red */
-    --color-error-highlight:  #F0D8D7;
+    /* Status colors — calm, non-glaring tones */
+    --color-success:          #4B6B3D;  /* Moss Green */
+    --color-success-highlight:#E4EFE0;
+    --color-warning:          #9E5522;  /* Toasted Amber */
+    --color-warning-highlight:#F7E9DE;
+    --color-error:            #9E3A35;  /* Brick Red */
+    --color-error-highlight:#F7DEDB;
 
-    /* Backgrounds — warm parchment / paper */
-    --background:            38 35% 94%;       /* #F6F1E8 */
-    --card:                  40 43% 97%;       /* #FCF9F3 */
-    --card-foreground:       20 9% 13%;        /* #24201E */
-    --popover:               40 43% 97%;       /* #FCF9F3 */
-    --popover-foreground:    20 9% 13%;        /* #24201E */
-    --surface:               36 27% 89%;       /* #EEE6DA */
-    --surface-muted:         35 20% 85%;       /* #E3D9CC */
+    /* Backgrounds — soft stationery paper */
+    --background:            38 30% 93.5%;     /* #F5F0E6 */
+    --card:                  40 33% 96%;       /* #FAF6EE */
+    --card-foreground:       20 10% 12%;       /* #221E1C */
+    --popover:               40 33% 96%;       /* #FAF6EE */
+    --popover-foreground:    20 10% 12%;       /* #221E1C */
+    --surface:               36 22% 88.5%;     /* #EBE3D7 */
+    --surface-muted:         35 18% 84.5%;     /* #E0D7CB */
     --surface-raised:        0 0% 100%;
 
     /* Text */
-    --foreground:            20 9% 13%;        /* #24201E Deep charcoal-brown */
-    --muted:                 36 27% 89%;       /* #EEE6DA */
-    --muted-foreground:      30 7% 43%;        /* #756D65 Warm gray-brown */
+    --foreground:            20 10% 12%;       /* #221E1C Deep crisp charcoal */
+    --muted:                 36 22% 88.5%;     /* #EBE3D7 */
+    --muted-foreground:      30 7% 42%;        /* #736A64 */
 
-    /* Borders */
-    --border:                34 20% 81%;       /* #D8CFC4 */
-    --border-strong:         32 11% 67%;       /* #B5ACA2 */
-    --input:                 35 24% 87%;       /* #E8DFD3 */
+    /* Borders — soft low-contrast hairlines */
+    --border:                34 16% 83%;       /* #DDD5C9 */
+    --border-strong:         32 10% 68%;       /* #B4ABA1 */
+    --input:                 35 20% 86%;       /* #E5DDD1 */
     --ring:                  321 38% 26%;      /* #5B294A Ink plum */
 
     /* Primary — rich ink plum */
@@ -205,25 +205,25 @@
     --primary-foreground:    40 43% 97%;       /* #FCF9F3 Cream */
 
     /* Secondary */
-    --secondary:             36 27% 89%;       /* #EEE6DA Muted oat */
-    --secondary-hover:       37 26% 84%;       /* #E2D8C9 */
-    --secondary-foreground:  20 9% 13%;        /* #24201E */
+    --secondary:             36 22% 88.5%;     /* #EBE3D7 */
+    --secondary-hover:       37 20% 83.5%;     /* #DFD6C9 */
+    --secondary-foreground:  20 10% 12%;       /* #221E1C */
 
     /* Accent tint — dusty rose/plum wash */
-    --accent:                327 24% 88%;      /* #E8D7DF */
+    --accent:                327 20% 89%;      /* #E9D9E1 */
     --accent-foreground:     321 38% 26%;      /* #5B294A */
 
     /* Semantic */
-    --success:               100 26% 35%;      /* #527243 Moss green */
-    --success-subtle:        102 28% 93%;      /* #EAF1E7 */
+    --success:               100 27% 33%;      /* #4B6B3D */
+    --success-subtle:        102 24% 94%;      /* #EAF1E7 */
     --success-foreground:    40 43% 97%;
 
-    --warning:               25 64% 40%;       /* #A65A24 Toasted amber */
-    --warning-subtle:        25 60% 94%;       /* #F9EFE7 */
+    --warning:               25 65% 38%;       /* #9E5522 */
+    --warning-subtle:        25 50% 95%;       /* #F9EFE7 */
     --warning-foreground:    40 43% 97%;
 
-    --danger:                3 48% 44%;        /* #A63F3A Brick red */
-    --danger-subtle:         4 58% 95%;        /* #FBEBEA */
+    --danger:                3 50% 41%;        /* #9E3A35 */
+    --danger-subtle:         4 50% 95.5%;      /* #FBEBEA */
     --danger-foreground:     40 43% 97%;
 
     /* Chart palette — restrained, editorial warm palette */
@@ -234,15 +234,15 @@
     --chart-5:               30 7% 43%;        /* Warm Slate */
     --chart-6:               324 26% 59%;      /* Dusty Rose */
 
-    /* Theme-aware shadow values */
-    --_shadow-xs:      0 1px 2px 0 rgb(36 32 30 / 0.04);
-    --_shadow-sm:      0 1px 3px 0 rgb(36 32 30 / 0.05), 0 1px 2px -1px rgb(36 32 30 / 0.03);
-    --_shadow-md:      0 4px 6px -1px rgb(36 32 30 / 0.06), 0 2px 4px -2px rgb(36 32 30 / 0.04);
-    --_shadow-lg:      0 10px 15px -3px rgb(36 32 30 / 0.07), 0 4px 6px -4px rgb(36 32 30 / 0.04);
-    --_shadow-xl:      0 20px 25px -5px rgb(36 32 30 / 0.08), 0 8px 10px -6px rgb(36 32 30 / 0.05);
-    --_shadow-card:    0 1px 2px 0 rgb(36 32 30 / 0.04), 0 2px 8px -2px rgb(36 32 30 / 0.03);
-    --_shadow-popover: 0 8px 24px -4px rgb(36 32 30 / 0.10), 0 2px 8px -2px rgb(36 32 30 / 0.07);
-    --_shadow-modal:   0 20px 25px -5px rgb(36 32 30 / 0.12), 0 10px 10px -5px rgb(36 32 30 / 0.04);
+    /* Theme-aware shadow values — quiet natural elevation */
+    --_shadow-xs:      0 1px 2px 0 rgb(34 30 28 / 0.03);
+    --_shadow-sm:      0 1px 3px 0 rgb(34 30 28 / 0.04), 0 1px 2px -1px rgb(34 30 28 / 0.02);
+    --_shadow-md:      0 4px 6px -1px rgb(34 30 28 / 0.05), 0 2px 4px -2px rgb(34 30 28 / 0.03);
+    --_shadow-lg:      0 10px 15px -3px rgb(34 30 28 / 0.06), 0 4px 6px -4px rgb(34 30 28 / 0.03);
+    --_shadow-xl:      0 20px 25px -5px rgb(34 30 28 / 0.07), 0 8px 10px -6px rgb(34 30 28 / 0.04);
+    --_shadow-card:    0 1px 2px 0 rgb(34 30 28 / 0.03), 0 2px 6px -2px rgb(34 30 28 / 0.02);
+    --_shadow-popover: 0 8px 20px -4px rgb(34 30 28 / 0.08), 0 2px 6px -2px rgb(34 30 28 / 0.05);
+    --_shadow-modal:   0 16px 24px -4px rgb(34 30 28 / 0.10), 0 8px 8px -4px rgb(34 30 28 / 0.03);
   }
 
   /* ─── Dark Mode: "Espresso Desk" (Warm Graphite & Plum) ────────── */
@@ -251,37 +251,37 @@
   [data-theme="night-shelf"],
   [data-theme="espresso-desk"] {
     /* Sweep — Dark Mode Direct Hex Variables */
-    --color-bg:               #191516;
-    --color-surface:          #211C1E;
-    --color-surface-2:        #261F22;
-    --color-surface-offset:   #1D1719;
-    --color-border:           #352D30;
-    --color-divider:          #2D2528;
-    --color-text:             #F3EDE5;
-    --color-text-muted:       #A89A94;
-    --color-text-faint:       #6B5F5A;
-    --color-brand:            #C98AAE;  /* Muted Orchid for dark mode */
-    --color-brand-hover:      #B06F96;
-    --color-brand-highlight:  #3C2933;
+    --color-bg:               #181415;
+    --color-surface:          #201B1D;
+    --color-surface-2:        #251E20;
+    --color-surface-offset:   #1C1618;
+    --color-border:           #332B2E;
+    --color-divider:          #2B2326;
+    --color-text:             #F2ECE4;
+    --color-text-muted:       #A49791;
+    --color-text-faint:       #685C57;
+    --color-brand:            #C889AD;  /* Muted Orchid for dark mode */
+    --color-brand-hover:      #AF6E95;
+    --color-brand-highlight:  #3A2731;
 
     /* Backgrounds — near-black espresso */
-    --background:            345 9% 9%;        /* #191516 */
-    --card:                  336 9% 12%;       /* #211C1E */
-    --card-foreground:       34 30% 92%;       /* #F3EDE5 */
-    --popover:               336 9% 12%;       /* #211C1E */
-    --popover-foreground:    34 30% 92%;       /* #F3EDE5 */
-    --surface:               340 7% 16%;       /* #2C2527 */
-    --surface-muted:         340 7% 20%;       /* #352D30 */
-    --surface-raised:        340 8% 14%;       /* #262022 */
+    --background:            345 9% 8.5%;      /* #181415 */
+    --card:                  336 8% 11.5%;     /* #201B1D */
+    --card-foreground:       34 28% 92%;       /* #F2ECE4 */
+    --popover:               336 8% 11.5%;     /* #201B1D */
+    --popover-foreground:    34 28% 92%;       /* #F2ECE4 */
+    --surface:               340 7% 15.5%;     /* #2A2325 */
+    --surface-muted:         340 7% 19.5%;     /* #342C2E */
+    --surface-raised:        340 7% 13.5%;     /* #241E20 */
 
     /* Text */
-    --foreground:            34 30% 92%;       /* #F3EDE5 Warm ivory */
-    --muted:                 340 7% 16%;       /* #2C2527 */
-    --muted-foreground:      24 10% 69%;       /* #B8AEA8 Soft mushroom */
+    --foreground:            34 28% 92%;       /* #F2ECE4 Warm ivory */
+    --muted:                 340 7% 15.5%;     /* #2A2325 */
+    --muted-foreground:      24 9% 68%;        /* #B6ACA5 Soft mushroom */
 
     /* Borders */
-    --border:                340 9% 20%;       /* #382F32 */
-    --border-strong:         340 10% 28%;      /* #4D4044 */
+    --border:                340 8% 19%;       /* #332B2E */
+    --border-strong:         340 9% 26%;       /* #483C40 */
     --input:                 340 7% 16%;       /* #2C2527 */
     --ring:                  326 38% 66%;      /* #C98AAE Muted orchid */
 

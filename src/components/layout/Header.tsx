@@ -27,7 +27,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-background/90 backdrop-blur-md border-b border-border/80 transition-colors">
+      <header className="sticky top-0 z-30 w-full bg-background/90 backdrop-blur-md border-b border-border/50 transition-colors">
         <div className="w-full px-4 sm:px-6 lg:px-8 h-13 sm:h-14 flex items-center justify-between gap-4">
           {/* Mobile Brand (visible only on mobile where sidebar is hidden) */}
           <div className="flex md:hidden items-center gap-2.5">
@@ -40,11 +40,11 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3 flex-1 max-w-md">
             <Link
               href="/subscriptions?focusSearch=true"
-              className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-surface/60 hover:bg-surface border border-border/70 text-muted-foreground hover:text-foreground text-xs w-full transition-all group cursor-pointer"
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-surface/40 hover:bg-surface/70 border border-border/50 text-muted-foreground hover:text-foreground text-xs w-full transition-all group cursor-pointer"
             >
               <Search className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
               <span className="flex-1 text-left">Search subscriptions, categories, payment methods…</span>
-              <kbd className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-card border border-border/80 text-muted-foreground">
+              <kbd className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-card border border-border/60 text-muted-foreground">
                 /
               </kbd>
             </Link>
@@ -55,11 +55,11 @@ export function Header() {
             {/* Active Currency Badge */}
             <Link
               href="/settings"
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface/40 hover:bg-surface border border-border/60 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface/40 hover:bg-surface border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               title="Currency preferences in Settings"
             >
               <span className="font-mono font-semibold text-foreground">{targetCurrency}</span>
-              <span className="text-[10px] opacity-60">Ledger</span>
+              <span className="text-[11px] opacity-60">Ledger</span>
             </Link>
 
             {/* Reminders Bell with Active Alert Count */}
@@ -77,9 +77,9 @@ export function Header() {
               <Bell className="w-4 h-4" aria-hidden="true" />
               {totalAlertsCount > 0 ? (
                 <span
-                  className={`absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold shadow-xs ${
+                  className={`absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold shadow-xs ${
                     urgentAlertsCount > 0
-                      ? 'bg-danger text-danger-foreground animate-pulse'
+                      ? 'bg-danger text-danger-foreground'
                       : 'bg-primary text-primary-foreground'
                   }`}
                   aria-label={`${totalAlertsCount} alerts`}

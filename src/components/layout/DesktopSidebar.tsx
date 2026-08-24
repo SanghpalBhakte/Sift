@@ -86,7 +86,7 @@ export function DesktopSidebar() {
 
       {/* 3. Primary Navigation */}
       <div className="flex-1 overflow-y-auto px-3.5 py-2 space-y-1">
-        <div className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase px-2.5 py-1 font-sans">
+        <div className="text-xs font-medium text-muted-foreground px-2.5 py-1">
           Workspace
         </div>
 
@@ -100,8 +100,8 @@ export function DesktopSidebar() {
                 className={cn(
                   'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group cursor-pointer',
                   item.active
-                    ? 'bg-card text-foreground shadow-xs border border-border font-semibold'
-                    : 'text-muted-foreground hover:bg-surface/80 hover:text-foreground'
+                    ? 'bg-card text-foreground shadow-2xs border border-border/50 font-semibold'
+                    : 'text-muted-foreground hover:bg-surface/70 hover:text-foreground'
                 )}
                 aria-current={item.active ? 'page' : undefined}
               >
@@ -119,12 +119,12 @@ export function DesktopSidebar() {
                 {item.count !== undefined ? (
                   <span
                     className={cn(
-                      'text-[10px] tabular-nums font-mono px-1.5 py-0.2 rounded-md',
+                      'text-[11px] tabular-nums font-mono px-1.5 py-0.2 rounded-md',
                       item.countVariant === 'alert'
-                        ? 'bg-danger-subtle text-danger font-semibold'
+                        ? 'bg-danger/12 text-danger font-semibold'
                         : item.active
                         ? 'bg-surface text-foreground'
-                        : 'text-muted-foreground bg-surface/60'
+                        : 'text-muted-foreground bg-surface/50'
                     )}
                   >
                     {item.count}
@@ -137,10 +137,10 @@ export function DesktopSidebar() {
       </div>
 
       {/* 4. Quick Monthly Snapshot & Intelligence */}
-      <div className="p-3.5 border-t border-border/70 space-y-3">
-        <div className="p-3 rounded-xl bg-card border border-border/80 shadow-xs space-y-2">
+      <div className="p-3.5 border-t border-border/50 space-y-3">
+        <div className="p-3 rounded-xl bg-card border border-border/50 shadow-2xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground font-sans">
+            <span className="text-xs font-medium text-muted-foreground">
               Monthly Run-Rate
             </span>
             <span className="text-xs font-bold tabular-nums text-foreground">
@@ -151,11 +151,11 @@ export function DesktopSidebar() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/50">
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-1.5 border-t border-border/40">
             <span>{stats.activeCount} active services</span>
             {stats.trialCount > 0 ? (
-              <span className="text-warning flex items-center gap-0.5 text-[10px] font-medium">
-                <ShieldAlert className="w-2.5 h-2.5" />
+              <span className="text-warning flex items-center gap-1 text-xs font-medium">
+                <ShieldAlert className="w-3 h-3" />
                 {stats.trialCount} trial{stats.trialCount > 1 ? 's' : ''}
               </span>
             ) : null}
