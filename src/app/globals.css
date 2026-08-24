@@ -529,6 +529,33 @@
     color: hsl(var(--muted-foreground));
   }
 
+  /* ── KPI & Desktop Card Utilities ────────────────────────────── */
+  .sweep-kpi-card {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.875rem;
+    padding: 1.15rem 1.25rem;
+    box-shadow: var(--_shadow-xs);
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  .sweep-kpi-card:hover {
+    border-color: hsl(var(--border-strong) / 0.8);
+    box-shadow: var(--_shadow-sm);
+  }
+
+  .sweep-table-card {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.875rem;
+    box-shadow: var(--_shadow-xs);
+    overflow: hidden;
+  }
+
   /* ── Mobile Safe Padding ──────────────────────────────────────── */
   @supports (padding: env(safe-area-inset-bottom)) {
     .safe-bottom-padding {

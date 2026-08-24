@@ -77,19 +77,19 @@ export function SubscriptionCard({
       <Link
         href={`/subscriptions/${subscription.id}/edit`}
         className={cn(
-          'sweep-card p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:border-primary/50 transition-all block group',
-          subscription.status === 'paused' && 'opacity-60',
+          'p-3 sm:p-3.5 rounded-xl bg-card border border-border/80 flex items-center justify-between gap-3 hover:border-primary/50 hover:shadow-xs transition-all block group',
+          subscription.status === 'paused' && 'opacity-60 bg-surface/30',
           subscription.status === 'canceled' && 'opacity-50 border-dashed'
         )}
       >
         {/* Left: Icon Badge & Name & Next Billing Date */}
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-transform group-hover:scale-105"
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-transform group-hover:scale-105 border border-border/50 shadow-xs"
             style={{
               backgroundColor: subscription.category?.color
-                ? `${subscription.category.color}20`
-                : 'hsl(var(--surface-muted))',
+                ? `${subscription.category.color}15`
+                : 'hsl(var(--surface))',
               color: subscription.category?.color || 'hsl(var(--primary))',
             }}
           >
@@ -102,7 +102,7 @@ export function SubscriptionCard({
                 {subscription.name}
               </span>
               {subscription.is_trial ? (
-                <span className="inline-block px-1.5 py-0.2 bg-warning/15 text-warning rounded text-[9px] font-medium shrink-0">
+                <span className="inline-block px-1.5 py-0.2 bg-warning-subtle text-warning border border-warning/30 rounded text-[9px] font-bold shrink-0">
                   Trial
                 </span>
               ) : null}
@@ -125,18 +125,27 @@ export function SubscriptionCard({
 
         {/* Right: Cost & Cycle */}
         <div className="text-right shrink-0">
-          <div className="text-xs sm:text-sm font-semibold tracking-tight text-foreground tabular-nums">
+          <div className="text-xs sm:text-sm font-bold font-mono tracking-tight text-foreground tabular-nums">
             {formatCurrency(subscription.amount, subscription.currency)}
-            <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
+            <span className="text-[10px] font-normal font-sans text-muted-foreground ml-0.5">
               {formatCycle(subscription.billing_cycle, subscription.custom_interval_days)}
             </span>
           </div>
 
           {countdown.urgent || countdown.warning ? (
-            <span className="text-[10px] text-warning font-medium block">
+            <span
+              className={cn(
+                'text-[10px] font-medium block mt-0.5',
+                countdown.urgent ? 'text-danger font-bold' : 'text-warning'
+              )}
+            >
               {countdown.label}
             </span>
-          ) : null}
+          ) : (
+            <span className="text-[10px] text-muted-foreground block mt-0.5 capitalize">
+              {subscription.status}
+            </span>
+          )}
         </div>
       </Link>
     );

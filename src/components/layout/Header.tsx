@@ -3,11 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Plus, LogOut, Bell } from 'lucide-react';
+import { Plus, Bell, Search, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { Button } from '../ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useSubscriptions } from '@/context/SubscriptionContext';
 import { SweepLogo } from '../brand/SweepLogo';
 
 // Dynamically import non-critical AlertsSlideOver drawer (only loaded on interaction)
@@ -17,43 +18,68 @@ const AlertsSlideOver = dynamic(
 );
 
 export function Header() {
-  const { user, signOut, isConfigured } = useAuth();
+  const { isConfigured } = useAuth();
   const { totalAlertsCount, urgentAlertsCount, isAlertPanelOpen, toggleAlertPanel } =
     useNotifications();
+  const { stats, displayCurrency, profile } = useSubscriptions();
+
+  const targetCurrency = stats.displayCurrency || displayCurrency || 'USD';
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-background/85 backdrop-blur-md border-b border-border transition-colors">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 group" aria-label="Sweep home">
+      <header className="sticky top-0 z-30 w-full bg-background/90 backdrop-blur-md border-b border-border/80 transition-colors">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-13 sm:h-14 flex items-center justify-between gap-4">
+          {/* Mobile Brand (visible only on mobile where sidebar is hidden) */}
+          <div className="flex md:hidden items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2" aria-label="Sweep home">
               <SweepLogo size="sm" />
             </Link>
-            <span className="hidden sm:inline-block text-[11px] font-sans text-muted-foreground border-l border-border pl-3 tracking-normal">
-              A calmer view of what renews
-            </span>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Reminders bell */}
+          {/* Desktop Search / Quick Jump Strip */}
+          <div className="hidden md:flex items-center gap-3 flex-1 max-w-md">
+            <Link
+              href="/subscriptions?focusSearch=true"
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-surface/60 hover:bg-surface border border-border/70 text-muted-foreground hover:text-foreground text-xs w-full transition-all group cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
+              <span className="flex-1 text-left">Search subscriptions, categories, payment methods…</span>
+              <kbd className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-card border border-border/80 text-muted-foreground">
+                /
+              </kbd>
+            </Link>
+          </div>
+
+          {/* Right Header Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Active Currency Badge */}
+            <Link
+              href="/settings"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface/40 hover:bg-surface border border-border/60 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+              title="Currency preferences in Settings"
+            >
+              <span className="font-mono font-semibold text-foreground">{targetCurrency}</span>
+              <span className="text-[10px] opacity-60">Ledger</span>
+            </Link>
+
+            {/* Reminders Bell with Active Alert Count */}
             <button
               type="button"
               onClick={toggleAlertPanel}
               title={
                 totalAlertsCount > 0
-                  ? `${totalAlertsCount} upcoming alerts`
+                  ? `${totalAlertsCount} upcoming renewals & alerts`
                   : 'Upcoming reminders & alerts'
               }
-              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors cursor-pointer"
+              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+              aria-label="Alerts and Reminders"
             >
               <Bell className="w-4 h-4" aria-hidden="true" />
               {totalAlertsCount > 0 ? (
                 <span
-                  className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                  className={`absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold shadow-xs ${
                     urgentAlertsCount > 0
-                      ? 'bg-danger text-danger-foreground'
+                      ? 'bg-danger text-danger-foreground animate-pulse'
                       : 'bg-primary text-primary-foreground'
                   }`}
                   aria-label={`${totalAlertsCount} alerts`}
@@ -63,37 +89,20 @@ export function Header() {
               ) : null}
             </button>
 
-            <div className="hidden sm:block">
+            {/* Mobile Theme Toggle */}
+            <div className="md:hidden">
               <ThemeToggle />
             </div>
 
-            <Link href="/subscriptions/new">
-              <Button variant="primary" size="sm" className="gap-1.5 shadow-xs">
-                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                <span className="hidden xs:inline">Add Subscription</span>
-                <span className="xs:hidden">Add</span>
-                <kbd className="hidden sm:inline-flex text-[10px] bg-primary-foreground/20 border border-primary-foreground/20 rounded px-1 font-mono font-normal">
-                  N
-                </kbd>
-              </Button>
-            </Link>
-
-            {user ? (
-              <button
-                type="button"
-                onClick={() => signOut()}
-                title={`Sign out (${user.email})`}
-                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" aria-hidden="true" />
-              </button>
-            ) : isConfigured ? (
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-xs">
-                  Sign In
+            {/* Mobile Quick Add Button */}
+            <div className="md:hidden">
+              <Link href="/subscriptions/new">
+                <Button variant="primary" size="sm" className="gap-1 shadow-xs px-2.5 py-1 text-xs">
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Add</span>
                 </Button>
               </Link>
-            ) : null}
+            </div>
           </div>
         </div>
       </header>
