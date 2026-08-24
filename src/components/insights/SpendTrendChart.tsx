@@ -71,11 +71,11 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
 
       <CardContent className="pt-2 space-y-3">
         {/* Hover info pill */}
-        <div className="h-7 flex items-center justify-between text-xs px-2.5 rounded-md bg-surface/60 border border-border transition-all">
-          <span className="text-[11px] text-muted-foreground">
+        <div className="h-7 flex items-center justify-between text-xs px-2.5 rounded-md bg-surface/40 border border-border/40 transition-all">
+          <span className="text-xs text-muted-foreground">
             {hoveredPoint ? `${hoveredPoint.monthLabel} Snapshot` : 'Latest Month'}
           </span>
-          <span className="font-semibold text-foreground text-xs font-mono">
+          <span className="font-semibold text-foreground text-xs font-mono tabular-nums">
             {hoveredPoint
               ? `${formatCurrency(hoveredPoint.totalMonthly, currency)}/mo (${hoveredPoint.activeCount} services)`
               : `${formatCurrency(currentMonth.totalMonthly, currency)}/mo (${currentMonth.activeCount} active)`}
@@ -84,7 +84,7 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
 
         {/* Calm Bar / Area Chart Container */}
         <div className="pt-4 pb-2">
-          <div className="grid grid-cols-6 items-end gap-2 sm:gap-3 h-36 border-b border-border pb-2 px-1">
+          <div className="grid grid-cols-6 items-end gap-2 sm:gap-3 h-36 border-b border-border/40 pb-2 px-1">
             {data.map((point) => {
               const heightPercent = Math.max(
                 Math.round((point.totalMonthly / maxSpend) * 100),
@@ -103,8 +103,8 @@ export function SpendTrendChart({ data, currency = 'USD' }: SpendTrendChartProps
                 >
                   {/* Tooltip on bar */}
                   {isHovered ? (
-                    <div className="absolute -top-7 z-10 px-2 py-0.5 rounded bg-foreground text-background text-[10px] font-semibold whitespace-nowrap shadow-xs pointer-events-none font-mono">
-                      {formatCurrency(point.totalMonthly, currency)}
+                    <div className="absolute -top-8 z-10 sweep-chart-tooltip whitespace-nowrap font-mono text-[11px] font-semibold flex items-center gap-1.5 animate-in fade-in zoom-in-[0.98] duration-instant">
+                      <span>{formatCurrency(point.totalMonthly, currency)}</span>
                     </div>
                   ) : null}
 

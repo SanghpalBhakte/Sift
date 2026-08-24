@@ -229,25 +229,25 @@ export function ColumnMapper({
       </Card>
 
       {/* CSV Preview Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xs">Statement Data Preview (First 3 Rows)</CardTitle>
+      <Card className="border border-border/60 shadow-xs overflow-hidden">
+        <CardHeader className="py-3 px-4 border-b border-border/40">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Statement Data Preview (First 3 Rows)</CardTitle>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
-              <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--surface)/0.6)] text-[hsl(var(--muted-foreground))]">
+              <tr className="border-b border-border/40 bg-surface/35 text-muted-foreground">
                 {headers.map((h) => {
                   const isMapped =
                     h === mapping.dateColumn ||
                     h === mapping.descriptionColumn ||
                     h === mapping.amountColumn;
                   return (
-                    <th key={h} className="p-3 font-semibold whitespace-nowrap">
+                    <th key={h} className="px-3.5 py-2.5 font-medium whitespace-nowrap text-xs">
                       <div className="flex items-center gap-1.5">
                         <span>{h}</span>
                         {isMapped ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--primary))]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                         ) : null}
                       </div>
                     </th>
@@ -255,13 +255,13 @@ export function ColumnMapper({
                 })}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[hsl(var(--border))]">
+            <tbody className="divide-y divide-border/35">
               {previewRows.slice(0, 3).map((row, rIndex) => (
-                <tr key={rIndex} className="hover:bg-[hsl(var(--surface)/0.3)]">
+                <tr key={rIndex} className="hover:bg-surface/30 transition-colors">
                   {headers.map((h) => (
                     <td
                       key={h}
-                      className="p-3 text-[hsl(var(--foreground))] whitespace-nowrap font-mono text-[11px]"
+                      className="px-3.5 py-2.5 text-foreground/90 whitespace-nowrap font-mono text-xs tabular-nums"
                     >
                       {row[h] || '—'}
                     </td>

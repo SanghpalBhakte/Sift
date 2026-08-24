@@ -574,6 +574,20 @@
                 border-color 140ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  .sweep-chart-tooltip {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: var(--_shadow-sm);
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    pointer-events: none;
+    transition: opacity 120ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   .sweep-skeleton {
     background-color: hsl(var(--surface-muted));
     border-radius: 0.375rem;

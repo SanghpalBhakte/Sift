@@ -249,21 +249,21 @@ export function CandidateReviewCard({
           </button>
 
           {isExpanded ? (
-            <div className="mt-2 p-2.5 rounded-lg bg-surface/60 border border-border space-y-1.5 text-xs">
-              <div className="text-[11px] font-semibold text-muted-foreground pb-1 border-b border-border">
+            <div className="mt-2 p-3 rounded-lg bg-surface/40 border border-border/40 space-y-2 text-xs">
+              <div className="text-xs font-medium text-muted-foreground pb-1.5 border-b border-border/40">
                 Matched Statement Charges:
               </div>
-              <div className="space-y-1 max-h-36 overflow-y-auto">
+              <div className="divide-y divide-border/30 max-h-36 overflow-y-auto">
                 {candidate.matchedTransactions.map((tx, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between text-[11px] text-muted-foreground"
+                    className="py-1.5 first:pt-0 last:pb-0 flex items-center justify-between text-xs text-muted-foreground"
                   >
-                    <span className="font-mono">{formatDate(tx.date)}</span>
-                    <span className="truncate max-w-[200px] text-foreground font-mono text-[10px]">
+                    <span className="font-mono tabular-nums">{formatDate(tx.date)}</span>
+                    <span className="truncate max-w-[200px] text-foreground font-mono text-[11px]">
                       {tx.rawDescription}
                     </span>
-                    <span className="font-mono font-semibold text-foreground">
+                    <span className="font-mono font-semibold text-foreground tabular-nums">
                       {formatCurrency(tx.amount, candidate.currency)}
                     </span>
                   </div>
