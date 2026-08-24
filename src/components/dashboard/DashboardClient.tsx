@@ -168,7 +168,7 @@ export function DashboardClient() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Recurring Spend Overview
             </h1>
             <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-surface text-muted-foreground border border-border/80">
@@ -394,7 +394,7 @@ export function DashboardClient() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-serif font-bold text-foreground">
+                  <h2 className="text-base font-bold tracking-tight text-foreground">
                     Active Subscriptions
                   </h2>
                   <span className="text-xs font-mono font-medium px-2 py-0.2 rounded-md bg-surface text-muted-foreground border border-border/60">
@@ -543,7 +543,7 @@ export function DashboardClient() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-serif font-bold text-foreground">
+                <h3 className="text-sm font-bold tracking-tight text-foreground">
                   Upcoming Renewal Horizon
                 </h3>
               </div>
@@ -614,7 +614,7 @@ export function DashboardClient() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-serif font-bold text-foreground">
+                <h3 className="text-sm font-bold tracking-tight text-foreground">
                   Spend by Category
                 </h3>
               </div>

@@ -96,7 +96,7 @@ export function SubscriptionList({
           <Layers className="w-6 h-6" aria-hidden="true" />
         </div>
         <div className="space-y-1">
-          <h3 className="font-serif text-lg font-semibold text-foreground">
+          <h3 className="text-lg font-bold text-foreground">
             Your subscriptions ledger is empty
           </h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">

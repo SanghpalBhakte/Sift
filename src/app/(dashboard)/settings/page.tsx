@@ -330,7 +330,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-xl mx-auto pb-16">
       {/* Header */}
       <div className="pb-2 border-b border-border">
-        <h1 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Settings
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
