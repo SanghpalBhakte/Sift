@@ -16,7 +16,7 @@ export function AnimatedCurrency({
   value,
   currency,
   className,
-  duration = 320,
+  duration = 180,
   showCents = true,
 }: AnimatedCurrencyProps) {
   const [displayValue, setDisplayValue] = useState(value);

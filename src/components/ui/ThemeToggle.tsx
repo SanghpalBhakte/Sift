@@ -28,7 +28,7 @@ export function ThemeToggle({ showLabels = false }: { showLabels?: boolean }) {
           title={title}
           aria-pressed={theme === value}
           className={cn(
-            'flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all',
+            'flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors duration-fast cursor-pointer',
             theme === value
               ? 'bg-card text-foreground shadow-xs border border-border'
               : 'text-muted-foreground hover:text-foreground'

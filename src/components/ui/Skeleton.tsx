@@ -9,7 +9,7 @@ export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-md bg-surface-muted',
+        'sweep-skeleton',
         className
       )}
       {...props}

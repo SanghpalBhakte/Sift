@@ -54,10 +54,10 @@ export function MobileNav() {
               href={item.href}
               aria-current={item.active ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center justify-center min-h-[44px] min-w-[48px] px-2 py-1 rounded-xl text-[10px] font-medium transition-colors relative',
+                'flex flex-col items-center justify-center min-h-[44px] min-w-[48px] px-2 py-1 rounded-xl text-[10px] font-medium transition-all duration-instant relative',
                 item.active
                   ? 'text-primary font-semibold'
-                  : 'text-muted-foreground hover:text-foreground active:scale-95'
+                  : 'text-muted-foreground hover:text-foreground active:scale-[0.98]'
               )}
             >
               <div className="relative mb-0.5">

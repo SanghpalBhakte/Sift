@@ -113,11 +113,19 @@
   --shadow-popover: var(--_shadow-popover);
   --shadow-modal:   var(--_shadow-modal);
 
-  /* ── Easing ────────────────────────────────── */
-  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
-  --ease-linear: linear;
+  /* ── Easing & Motion Timing Scale ─────────── */
+  --duration-instant:    80ms;   /* Tap/active press feedback */
+  --duration-fast:       120ms;  /* Icons, toggles, switches, small badges */
+  --duration-standard:   170ms;  /* Buttons, inputs, rows, surfaces, hover states */
+  --duration-medium:     220ms;  /* Dropdowns, popovers, small modals, collapse */
+  --duration-deliberate: 280ms;  /* Drawers, sheet slide-overs, major panels */
+
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1); /* Calm, deceleration UI curve */
+  --ease-snappy:   cubic-bezier(0.2, 0, 0, 1);
+  --ease-smooth:   cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in:       cubic-bezier(0.4, 0, 1, 1);
+  --ease-out:      cubic-bezier(0, 0, 0.2, 1);
+  --ease-linear:   linear;
 
   /* ── Letter Spacing ────────────────────────── */
   --tracking-tighter: -0.04em;
@@ -436,15 +444,18 @@
     padding: 0.55rem 1rem;
     min-height: 2.5rem;
     cursor: pointer;
-    transition: background-color 0.12s ease, border-color 0.12s ease,
-                color 0.12s ease, transform 0.08s ease;
+    transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+                color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 80ms cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
     user-select: none;
     text-decoration: none;
     border: 1px solid transparent;
     position: relative;
   }
   .sweep-btn:active:not(:disabled) {
-    transform: scale(0.982);
+    transform: scale(0.98);
   }
   .sweep-btn:disabled {
     opacity: 0.45;
@@ -537,7 +548,8 @@
     border-radius: 0.875rem;
     padding: 1.15rem 1.25rem;
     box-shadow: var(--_shadow-xs);
-    transition: all 0.15s ease;
+    transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -556,10 +568,50 @@
     overflow: hidden;
   }
 
+  /* ── Motion & Skeleton Utilities ──────────────────────────────── */
+  .sweep-row-interactive {
+    transition: background-color 140ms cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sweep-skeleton {
+    background-color: hsl(var(--surface-muted));
+    border-radius: 0.375rem;
+    animation: sweep-shimmer 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes sweep-shimmer {
+    0%, 100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+
   /* ── Mobile Safe Padding ──────────────────────────────────────── */
   @supports (padding: env(safe-area-inset-bottom)) {
     .safe-bottom-padding {
       padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
     }
+  }
+}
+
+/* ================================================================
+   REDUCED MOTION ACCESSIBILITY (Mandatory compliance)
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .sweep-skeleton {
+    animation: none !important;
+    opacity: 0.7 !important;
   }
 }

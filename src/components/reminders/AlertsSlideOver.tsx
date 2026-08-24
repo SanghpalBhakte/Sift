@@ -29,19 +29,31 @@ export function AlertsSlideOver() {
     requestPermission,
   } = useNotifications();
 
+  React.useEffect(() => {
+    if (!isAlertPanelOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeAlertPanel();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isAlertPanelOpen, closeAlertPanel]);
+
   if (!isAlertPanelOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true" aria-label="Upcoming Alerts and Reminders">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200 transition-opacity"
         onClick={closeAlertPanel}
       />
 
       {/* Slide-Over Drawer */}
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[hsl(var(--card))] border-l border-[hsl(var(--border))] shadow-2xl flex flex-col">
+        <div className="w-screen max-w-md bg-[hsl(var(--card))] border-l border-[hsl(var(--border))] shadow-2xl flex flex-col animate-in slide-in-from-right duration-250 ease-out">
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-[hsl(var(--border))] flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -61,7 +73,8 @@ export function AlertsSlideOver() {
             <button
               type="button"
               onClick={closeAlertPanel}
-              className="p-1.5 rounded-lg text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors"
+              className="p-1.5 rounded-lg text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface))] transition-colors cursor-pointer"
+              aria-label="Close panel"
             >
               <X className="w-4 h-4" />
             </button>

@@ -116,7 +116,7 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-xs animate-in fade-in duration-180"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -124,7 +124,7 @@ export function AddSubscriptionModal({ isOpen, onClose }: AddSubscriptionModalPr
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-card border border-border rounded-modal shadow-popover overflow-hidden max-h-[88vh] flex flex-col"
+        className="w-full max-w-lg bg-card border border-border rounded-modal shadow-popover overflow-hidden max-h-[88vh] flex flex-col animate-in zoom-in-[0.985] fade-in duration-200 ease-out"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
