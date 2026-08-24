@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSubscriptions } from '@/context/SubscriptionContext';
+import { subscriptionService } from '@/lib/services/subscriptionService';
 import { SubscriptionDetailView } from '@/components/subscriptions/SubscriptionDetailView';
-import { SubscriptionFormData } from '@/lib/types';
+import { Subscription, SubscriptionFormData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -15,10 +16,44 @@ export default function EditSubscriptionPage() {
   const params = useParams();
   const router = useRouter();
   const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
-  const { subscriptions, categories, paymentMethods, updateSubscription, deleteSubscription, isLoading } =
+  const { subscriptions, categories, paymentMethods, updateSubscription, deleteSubscription, isLoading: isContextLoading } =
     useSubscriptions();
 
-  const subscription = subscriptions.find((s) => s.id === id);
+  const [directSubscription, setDirectSubscription] = useState<Subscription | null>(null);
+  const [isDirectLoading, setIsDirectLoading] = useState(false);
+
+  const contextSubscription = subscriptions.find((s) => s.id === id);
+  const subscription = contextSubscription || directSubscription;
+
+  useEffect(() => {
+    if (!contextSubscription && id && !isContextLoading) {
+      let isMounted = true;
+      setIsDirectLoading(true);
+      subscriptionService
+        .getSubscriptionById(id)
+        .then((data) => {
+          if (isMounted) {
+            setDirectSubscription(data);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setDirectSubscription(null);
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setIsDirectLoading(false);
+          }
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [contextSubscription, id, isContextLoading]);
+
+  const isLoading = (isContextLoading && !subscription) || isDirectLoading;
 
   if (isLoading) {
     return (

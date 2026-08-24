@@ -290,6 +290,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('sweep_subscriptions_v1');
+        localStorage.removeItem('sift_subscriptions_v1');
+        localStorage.removeItem('sweep_categories_v1');
+        localStorage.removeItem('sift_categories_v1');
+        localStorage.removeItem('sweep_payment_methods_v1');
+        localStorage.removeItem('sift_payment_methods_v1');
+        localStorage.removeItem('sweep_profile_v1');
+        localStorage.removeItem('sift_profile_v1');
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+
     setUser(null);
     setSession(null);
     setIsLoading(false);

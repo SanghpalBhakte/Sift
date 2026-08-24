@@ -3,6 +3,8 @@
 // Path: src/lib/services/pushNotificationService.ts
 // =============================================================================
 
+import { createClient } from '@/lib/supabase/client';
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -73,6 +75,19 @@ export class PushNotificationService {
     }
   }
 
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      const supabase = createClient();
+      if (!supabase) return null;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      return session?.access_token || null;
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Request native permission and subscribe to Web Push
    */
@@ -119,10 +134,16 @@ export class PushNotificationService {
         return { success: false, error: 'Incomplete push subscription generated.' };
       }
 
+      const token = await this.getAuthToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       // 4. Save to backend
       const res = await fetch('/api/push/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           endpoint: subJson.endpoint,
           p256dh: subJson.keys.p256dh,
@@ -158,10 +179,16 @@ export class PushNotificationService {
           const endpoint = sub.endpoint;
           await sub.unsubscribe();
 
+          const token = await this.getAuthToken();
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
           // Inform backend to remove subscription
           await fetch('/api/push/unsubscribe', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ endpoint }),
           });
         }
@@ -178,8 +205,15 @@ export class PushNotificationService {
    */
   async sendTestPush(): Promise<{ success: boolean; error?: string }> {
     try {
+      const token = await this.getAuthToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/push/test', {
         method: 'POST',
+        headers,
       });
       const data = await res.json();
       if (!res.ok || !data.success) {

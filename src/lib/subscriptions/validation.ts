@@ -8,6 +8,15 @@ const optionalDate = z
   })
   .transform((value) => (value && value.trim() ? value : null));
 
+const optionalUuid = z
+  .string()
+  .nullable()
+  .optional()
+  .transform((value) => (value && value.trim() ? value.trim() : null))
+  .refine((value) => value == null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value), {
+    message: "Must be a valid UUID or null",
+  });
+
 export const subscriptionFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   amount: z
@@ -22,8 +31,8 @@ export const subscriptionFormSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
-  categoryId: z.string().uuid().nullable(),
-  paymentMethodId: z.string().uuid().nullable(),
+  categoryId: optionalUuid,
+  paymentMethodId: optionalUuid,
   description: z.string(),
   notes: z.string(),
   isActive: z.boolean(),

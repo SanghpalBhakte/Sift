@@ -73,7 +73,7 @@ export interface Database {
       payment_methods: {
         Row: {
           id: string;
-          user_id: string | null;
+          user_id: string;
           name: string;
           type: string;
           last4: string | null;
@@ -83,7 +83,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id?: string | null;
+          user_id: string;
           name: string;
           type: string;
           last4?: string | null;
@@ -93,7 +93,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          user_id?: string | null;
+          user_id?: string;
           name?: string;
           type?: string;
           last4?: string | null;

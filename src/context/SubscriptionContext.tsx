@@ -115,20 +115,28 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const userId = user?.id;
 
   useEffect(() => {
-    // 1. Seed immediately from local storage cache on client mount for 0ms initial render
-    try {
-      const cachedSubs =
-        localStorage.getItem('sweep_subscriptions_v1') ||
-        localStorage.getItem('sift_subscriptions_v1');
-      if (cachedSubs) {
-        const parsed = JSON.parse(cachedSubs);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setSubscriptions(parsed);
-          setIsLoading(false);
+    // Reset state when switching user accounts
+    inFlightLoadRef.current = null;
+    if (userId) {
+      setIsLoading(true);
+    }
+
+    // Seed from local storage cache only when offline / initial guest mode
+    if (!userId) {
+      try {
+        const cachedSubs =
+          localStorage.getItem('sweep_subscriptions_v1') ||
+          localStorage.getItem('sift_subscriptions_v1');
+        if (cachedSubs) {
+          const parsed = JSON.parse(cachedSubs);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSubscriptions(parsed);
+            setIsLoading(false);
+          }
         }
+      } catch {
+        // Continue with regular fetch
       }
-    } catch {
-      // Continue with regular fetch
     }
 
     loadAll(true);
@@ -145,7 +153,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const addSubscription = async (data: SubscriptionFormData): Promise<Subscription> => {
     const created = await subscriptionService.createSubscription(data);
     setSubscriptions((prev) => [created, ...prev.filter((s) => s.id !== created.id)]);
-    // Revalidate in background
+    // Revalidate with fresh query
+    inFlightLoadRef.current = null;
     loadAll();
     return created;
   };
@@ -158,6 +167,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }): Promise<Category> => {
     const created = await subscriptionService.createCategory(data);
     setCategories((prev) => [...prev.filter((c) => c.id !== created.id), created]);
+    inFlightLoadRef.current = null;
     loadAll();
     return created;
   };
@@ -168,6 +178,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   ): Promise<Category> => {
     const updated = await subscriptionService.updateCategory(id, data);
     setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    inFlightLoadRef.current = null;
     loadAll();
     return updated;
   };
@@ -181,38 +192,60 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }): Promise<PaymentMethod> => {
     const created = await subscriptionService.createPaymentMethod(data);
     setPaymentMethods((prev) => [...prev.filter((p) => p.id !== created.id), created]);
+    inFlightLoadRef.current = null;
     loadAll();
     return created;
   };
 
-  // Optimistic Update
+  // Optimistic Update with rollback
   const updateSubscription = async (
     id: string,
     data: Partial<SubscriptionFormData>
   ): Promise<Subscription> => {
-    const updated = await subscriptionService.updateSubscription(id, data);
-    setSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)));
-    loadAll();
-    return updated;
+    const previous = subscriptions;
+    try {
+      const updated = await subscriptionService.updateSubscription(id, data);
+      setSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      inFlightLoadRef.current = null;
+      loadAll();
+      return updated;
+    } catch (err) {
+      setSubscriptions(previous);
+      throw err;
+    }
   };
 
-  // Optimistic Delete
+  // Optimistic Delete with rollback
   const deleteSubscription = async (id: string): Promise<void> => {
+    const previous = subscriptions;
     setSubscriptions((prev) => prev.filter((s) => s.id !== id));
-    await subscriptionService.deleteSubscription(id);
-    loadAll();
+    try {
+      await subscriptionService.deleteSubscription(id);
+      inFlightLoadRef.current = null;
+      loadAll();
+    } catch (err) {
+      setSubscriptions(previous);
+      throw err;
+    }
   };
 
-  // Optimistic Toggle Status
+  // Optimistic Toggle Status with rollback
   const toggleStatus = async (id: string, currentStatus: string): Promise<void> => {
+    const previous = subscriptions;
     const newStatus = currentStatus === 'active' ? 'paused' : 'active';
     setSubscriptions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: newStatus as Subscription['status'] } : s))
     );
-    await subscriptionService.updateSubscription(id, {
-      status: newStatus as Subscription['status'],
-    });
-    loadAll();
+    try {
+      await subscriptionService.updateSubscription(id, {
+        status: newStatus as Subscription['status'],
+      });
+      inFlightLoadRef.current = null;
+      loadAll();
+    } catch (err) {
+      setSubscriptions(previous);
+      throw err;
+    }
   };
 
   const handleUpdateProfile = async (updates: Partial<Profile>): Promise<void> => {

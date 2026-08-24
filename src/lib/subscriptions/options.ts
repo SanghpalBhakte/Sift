@@ -4,7 +4,7 @@ import { mapCategoryToOption, mapPaymentMethodToOption } from "./mappers";
 export async function fetchCategoryOptions() {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, slug")
+    .select("id, user_id, name, slug, color, icon, created_at")
     .order("name", { ascending: true });
 
   if (error) {
@@ -18,7 +18,8 @@ export async function fetchCategoryOptions() {
 export async function fetchPaymentMethodOptions() {
   const { data, error } = await supabase
     .from("payment_methods")
-    .select("id, name, slug")
+    .select("id, user_id, name, type, last4, color, is_default, created_at")
+    .order("is_default", { ascending: false })
     .order("name", { ascending: true });
 
   if (error) {

@@ -9,7 +9,6 @@ import {
 } from '../types';
 import { defaultProfile, mockCategories, mockSubscriptions } from '../mock/sampleData';
 import { CANONICAL_CATEGORIES } from '../constants/categories';
-import { CANONICAL_PAYMENT_METHODS } from '../constants/paymentMethods';
 import {
   buildSubscriptionInsertPayload,
   buildSubscriptionUpdatePayload,

@@ -41,9 +41,13 @@ export async function GET(request: NextRequest) {
       // Check MFA Assurance Level
       const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
-        response = NextResponse.redirect(
+        const mfaResponse = NextResponse.redirect(
           new URL(`/mfa/challenge?next=${encodeURIComponent(next)}`, origin)
         );
+        response.cookies.getAll().forEach((cookie) => {
+          mfaResponse.cookies.set(cookie.name, cookie.value, cookie);
+        });
+        return mfaResponse;
       }
       return response;
     } else {

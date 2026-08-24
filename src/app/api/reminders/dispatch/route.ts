@@ -20,8 +20,17 @@ async function runDispatch(targetUser: { id: string; email: string }) {
   const resendApiKey = serverEnv.RESEND_API_KEY;
   const resendFromEmail = serverEnv.RESEND_FROM_EMAIL;
 
-  const profile = await subscriptionService.getProfile();
-  const subscriptions = await subscriptionService.getSubscriptions();
+  const { data: profile } = await (supabase.from('profiles') as any)
+    .select('*')
+    .eq('id', targetUser.id)
+    .maybeSingle();
+
+  const { data: subscriptionsData } = await (supabase.from('subscriptions') as any)
+    .select('*, category:categories(*), payment_method:payment_methods(*)')
+    .eq('user_id', targetUser.id)
+    .eq('status', 'active');
+
+  const subscriptions = subscriptionsData || [];
 
   const alerts = deriveAppAlerts(subscriptions, {
     enabled: profile?.notifications_enabled !== false,
@@ -41,14 +50,21 @@ async function runDispatch(targetUser: { id: string; email: string }) {
   };
 
   for (const alert of alerts) {
-    const { data: existingLog } = await (supabase.from('reminder_dispatch_logs') as any)
-      .select('id')
-      .eq('subscription_id', alert.subscriptionId)
-      .eq('reminder_type', alert.isTrial ? 'trial_expiry' : 'renewal')
-      .eq('target_date', alert.targetDate)
-      .eq('offset_days', alert.daysUntil)
-      .eq('status', 'sent')
-      .maybeSingle();
+    let existingLog = null;
+    try {
+      const { data } = await (supabase.from('reminder_dispatch_logs') as any)
+        .select('id')
+        .eq('subscription_id', alert.subscriptionId)
+        .eq('reminder_type', alert.isTrial ? 'trial_expiry' : 'renewal')
+        .eq('target_date', alert.targetDate)
+        .eq('offset_days', alert.daysUntil)
+        .eq('status', 'sent')
+        .maybeSingle();
+      existingLog = data;
+    } catch {
+      // Graceful fallback if reminder_dispatch_logs table does not exist
+      existingLog = null;
+    }
 
     if (!existingLog) {
       let emailDispatched = false;
@@ -144,16 +160,20 @@ async function runDispatch(targetUser: { id: string; email: string }) {
 
       // 3. Record dispatch log
       const status = emailDispatched || pushDispatched ? 'sent' : 'failed';
-      await (supabase.from('reminder_dispatch_logs') as any).insert({
-        user_id: targetUser.id,
-        subscription_id: alert.subscriptionId,
-        reminder_type: alert.isTrial ? 'trial_expiry' : 'renewal',
-        target_date: alert.targetDate,
-        offset_days: alert.daysUntil,
-        recipient_email: targetUser.email,
-        status,
-        error_message: dispatchError,
-      });
+      try {
+        await (supabase.from('reminder_dispatch_logs') as any).insert({
+          user_id: targetUser.id,
+          subscription_id: alert.subscriptionId,
+          reminder_type: alert.isTrial ? 'trial_expiry' : 'renewal',
+          target_date: alert.targetDate,
+          offset_days: alert.daysUntil,
+          recipient_email: targetUser.email,
+          status,
+          error_message: dispatchError,
+        });
+      } catch (logErr) {
+        console.warn('Could not record reminder_dispatch_log:', logErr);
+      }
 
       if (emailDispatched) results.sent++;
       if (pushDispatched) results.pushSent++;
