@@ -71,15 +71,15 @@ export function SubscriptionCard({
       )
     : null;
 
-  // Streamlined Compact Card (for fast dashboard scanning - Logo/Name/Cost/Renewal)
+  // Streamlined Compact Ledger Row (for table-led dashboard scanning)
   if (compact) {
     return (
       <Link
         href={`/subscriptions/${subscription.id}/edit`}
         className={cn(
-          'p-3 sm:p-3.5 rounded-xl bg-card border border-border/80 flex items-center justify-between gap-3 hover:border-primary/50 hover:shadow-xs transition-all block group',
-          subscription.status === 'paused' && 'opacity-60 bg-surface/30',
-          subscription.status === 'canceled' && 'opacity-50 border-dashed'
+          'p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:bg-surface/50 transition-colors block group cursor-pointer',
+          subscription.status === 'paused' && 'opacity-60 bg-surface/20',
+          subscription.status === 'canceled' && 'opacity-50'
         )}
       >
         {/* Left: Icon Badge & Name & Next Billing Date */}

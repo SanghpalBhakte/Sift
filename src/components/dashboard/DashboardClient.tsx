@@ -163,26 +163,26 @@ export function DashboardClient() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
-      {/* ─── 1. Desktop Command Header ───────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+    <div className="space-y-6 sm:space-y-7 animate-in fade-in duration-150">
+      {/* ─── 1. Top Workspace Command Header ─────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Recurring Spend Overview
+              Recurring Spend Workspace
             </h1>
             <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-surface text-muted-foreground border border-border/80">
               {activeSubscriptions.length} Active
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Real-time commitments, renewal horizon, and cashflow distribution.
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Real-time recurring commitments, 30-day cashflow horizon, and spend allocation.
           </p>
         </div>
 
         {/* Header Action Controls */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          {/* Period Selector */}
+          {/* Period Toggle */}
           <div className="flex items-center gap-0.5 p-1 bg-surface border border-border/80 rounded-lg text-xs">
             <button
               type="button"
@@ -219,21 +219,21 @@ export function DashboardClient() {
         </div>
       </div>
 
-      {/* ─── 2. Top Balanced KPI Strip (4 Columns) ───────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        {/* KPI 1: Monthly / Yearly Commitments */}
-        <div className="sweep-kpi-card min-h-[120px] bg-gradient-to-br from-card to-surface/30">
+      {/* ─── 2. Unified Desk Summary Band (Single cohesive band, NOT 4 cards) ── */}
+      <div className="rounded-xl bg-card border border-border/80 shadow-xs divide-y lg:divide-y-0 lg:divide-x divide-border/70 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Metric 1: Total Recurring Commitment */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans">
-              {period === 'monthly' ? 'Monthly Spend' : 'Yearly Spend'}
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {period === 'monthly' ? 'Monthly Commitment' : 'Annual Commitment'}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground px-1.5 py-0.2 rounded bg-surface border border-border/60">
               {period === 'monthly' ? '/mo' : '/yr'}
             </span>
           </div>
 
-          <div className="my-1.5">
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
+          <div>
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums font-mono">
               {formatCurrency(
                 period === 'monthly' ? stats.monthlyTotal : stats.yearlyProjected,
                 targetCurrency
@@ -244,7 +244,7 @@ export function DashboardClient() {
             </p>
           </div>
 
-          <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
             <span>Annual Run-Rate</span>
             <span className="font-mono font-semibold text-foreground">
               {formatCurrency(stats.yearlyProjected, targetCurrency)}/yr
@@ -252,38 +252,38 @@ export function DashboardClient() {
           </div>
         </div>
 
-        {/* KPI 2: Next 7-Day Horizon */}
-        <div className="sweep-kpi-card min-h-[120px]">
+        {/* Metric 2: 7-Day Renewal Window */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <Calendar className="w-3 h-3 opacity-60" />
-              <span>7-Day Renewals</span>
+              <span>7-Day Cashflow</span>
             </span>
             {next7DaysRenewals.length > 0 ? (
               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-warning-subtle text-warning border border-warning/30">
                 {next7DaysRenewals.length} due
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground">All clear</span>
+              <span className="text-[10px] text-muted-foreground">Clear</span>
             )}
           </div>
 
-          <div className="my-1.5">
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
+          <div>
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums font-mono">
               {next7DaysRenewals.length > 0 ? (
                 formatCurrency(next7DaysTotal, targetCurrency)
               ) : (
-                <span className="text-muted-foreground text-xl font-normal">None due</span>
+                <span className="text-muted-foreground text-xl font-normal font-sans">None due</span>
               )}
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               {next7DaysRenewals.length > 0
-                ? `${next7DaysRenewals.length} service${next7DaysRenewals.length === 1 ? '' : 's'} renewing soon`
-                : 'No upcoming renewal charges'}
+                ? `${next7DaysRenewals.length} charge${next7DaysRenewals.length === 1 ? '' : 's'} scheduled this week`
+                : 'No charges in next 7 days'}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
             <span>30-Day Outlook</span>
             <span className="font-mono font-semibold text-foreground">
               {formatCurrency(stats.upcoming30DaysTotal, targetCurrency)}
@@ -291,10 +291,10 @@ export function DashboardClient() {
           </div>
         </div>
 
-        {/* KPI 3: Next Immediate Renewal */}
-        <div className="sweep-kpi-card min-h-[120px]">
+        {/* Metric 3: Next Up Imminent Renewal */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <Receipt className="w-3 h-3 opacity-60" />
               <span>Next Renewal</span>
             </span>
@@ -313,9 +313,9 @@ export function DashboardClient() {
           </div>
 
           {nextRenewal ? (
-            <div className="my-1.5 min-w-0">
+            <div className="min-w-0">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-base sm:text-lg font-bold text-foreground truncate block">
+                <span className="text-base font-semibold text-foreground truncate block">
                   {nextRenewal.name}
                 </span>
                 <span className="text-base font-mono font-bold text-foreground tabular-nums shrink-0">
@@ -327,24 +327,24 @@ export function DashboardClient() {
               </p>
             </div>
           ) : (
-            <div className="my-1.5">
-              <p className="text-base font-semibold text-foreground">Peace of mind</p>
+            <div>
+              <p className="text-base font-medium text-foreground">All caught up</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">No renewals pending</p>
             </div>
           )}
 
-          <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>Billing Mode</span>
+          <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+            <span>Cycle</span>
             <span className="capitalize">{nextRenewal?.billing_cycle || 'None'}</span>
           </div>
         </div>
 
-        {/* KPI 4: Intelligence & Health */}
-        <div className="sweep-kpi-card min-h-[120px] bg-gradient-to-br from-card to-surface/20">
+        {/* Metric 4: Ledger Health & Optimization */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-primary opacity-80" />
-              <span>Optimization</span>
+              <span>Ledger Health</span>
             </span>
             <Link
               href="/insights"
@@ -355,22 +355,22 @@ export function DashboardClient() {
             </Link>
           </div>
 
-          <div className="my-1.5">
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums flex items-baseline gap-2">
+          <div>
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums font-mono flex items-baseline gap-2">
               <span>{stats.cancelCandidateCount + stats.trialCount}</span>
-              <span className="text-xs font-normal text-muted-foreground">items flagged</span>
+              <span className="text-xs font-normal text-muted-foreground font-sans">flagged</span>
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               {stats.trialCount > 0
-                ? `${stats.trialCount} free trial${stats.trialCount > 1 ? 's' : ''} in progress`
+                ? `${stats.trialCount} free trial${stats.trialCount > 1 ? 's' : ''} active`
                 : stats.cancelCandidateCount > 0
                 ? `${stats.cancelCandidateCount} candidate${stats.cancelCandidateCount > 1 ? 's' : ''} to review`
-                : 'Ledger in optimal health'}
+                : 'All subscriptions optimal'}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px]">
-            <span className="text-muted-foreground">Candidate Audit</span>
+          <div className="pt-2 border-t border-border/50 text-[11px] flex items-center justify-between">
+            <span className="text-muted-foreground">Audit Status</span>
             <span
               className={cn(
                 'font-semibold font-mono',
@@ -378,150 +378,151 @@ export function DashboardClient() {
               )}
             >
               {stats.cancelCandidateCount > 0
-                ? `${stats.cancelCandidateCount} for review`
+                ? `${stats.cancelCandidateCount} to review`
                 : 'Optimal'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* ─── 3. Two-Column Desktop Workspace (7:5 Split) ─────────────── */}
+      {/* ─── 3. Composed Two-Zone Workspace (7:5 Split) ──────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Primary Active Subscriptions Ledger (7 Cols) */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="sweep-table-card p-4 sm:p-5 space-y-4">
-            {/* Ledger Header & Search */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold tracking-tight text-foreground">
-                    Active Subscriptions
-                  </h2>
-                  <span className="text-xs font-mono font-medium px-2 py-0.2 rounded-md bg-surface text-muted-foreground border border-border/60">
-                    {filteredSubscriptions.length}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Click any subscription to view details, billing history, or cancel notes.
-                </p>
+        {/* Left Primary Zone: Active Operational Ledger (7/12 Cols) */}
+        <div className="lg:col-span-7 space-y-3">
+          {/* Section Header & Search Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold tracking-tight text-foreground">
+                  Active Subscriptions
+                </h2>
+                <span className="text-xs font-mono font-medium px-2 py-0.2 rounded-md bg-surface text-muted-foreground border border-border/60">
+                  {filteredSubscriptions.length}
+                </span>
               </div>
-
-              {/* Fast Filter Search */}
-              <div className="relative w-full sm:w-56">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Filter active list…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="sweep-input pl-8 pr-3 py-1 text-xs"
-                  aria-label="Filter active subscriptions"
-                />
-              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Primary recurring commitments and services ledger.
+              </p>
             </div>
 
-            {/* Category Filter Pills */}
-            {activeSubscriptions.length > 2 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 whitespace-nowrap">
-                <button
+            {/* Instant Filter Search */}
+            <div className="relative w-full sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Filter ledger…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="sweep-input pl-8 pr-3 py-1 text-xs"
+                aria-label="Filter active subscriptions"
+              />
+            </div>
+          </div>
+
+          {/* Category Filter Pills (Inline Strip) */}
+          {activeSubscriptions.length > 2 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap">
+              <button
+                type="button"
+                onClick={() => setSelectedCategoryId('all')}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0',
+                  selectedCategoryId === 'all'
+                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                    : 'bg-surface/80 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/70'
+                )}
+              >
+                All ({activeSubscriptions.length})
+              </button>
+
+              {topCategories.map((category) => {
+                const count = activeSubscriptions.filter(
+                  (s) => s.category_id === category.id
+                ).length;
+                const isSelected = selectedCategoryId === category.id;
+
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setSelectedCategoryId(category.id)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                        : 'bg-surface/80 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/70'
+                    )}
+                  >
+                    {category.color ? (
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{
+                          backgroundColor: isSelected ? 'currentColor' : category.color,
+                        }}
+                      />
+                    ) : null}
+                    <span>{category.name}</span>
+                    {count > 0 ? (
+                      <span
+                        className={cn(
+                          'text-[10px] tabular-nums font-mono',
+                          isSelected ? 'opacity-80' : 'text-muted-foreground'
+                        )}
+                      >
+                        ({count})
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Composed Ledger List (Single cohesive container with dividing lines) */}
+          <div className="rounded-xl bg-card border border-border/80 shadow-xs divide-y divide-border/60 overflow-hidden">
+            {isLoading ? (
+              [1, 2, 3].map((i) => (
+                <div key={i} className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-surface-muted animate-pulse" />
+                    <div className="space-y-1.5">
+                      <div className="w-24 h-3.5 bg-surface-muted rounded animate-pulse" />
+                      <div className="w-36 h-2.5 bg-surface-muted rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="w-16 h-4 bg-surface-muted rounded animate-pulse" />
+                </div>
+              ))
+            ) : filteredSubscriptions.length === 0 ? (
+              <div className="p-8 text-center space-y-2 text-xs">
+                <p className="text-muted-foreground">No subscriptions match your search or filter.</p>
+                <Button
                   type="button"
-                  onClick={() => setSelectedCategoryId('all')}
-                  className={cn(
-                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0',
-                    selectedCategoryId === 'all'
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                      : 'bg-surface/80 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/70'
-                  )}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedCategoryId('all');
+                    setSearchQuery('');
+                  }}
+                  className="text-xs text-primary cursor-pointer"
                 >
-                  All ({activeSubscriptions.length})
-                </button>
-
-                {topCategories.map((category) => {
-                  const count = activeSubscriptions.filter(
-                    (s) => s.category_id === category.id
-                  ).length;
-                  const isSelected = selectedCategoryId === category.id;
-
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => setSelectedCategoryId(category.id)}
-                      className={cn(
-                        'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
-                        isSelected
-                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                          : 'bg-surface/80 hover:bg-surface text-muted-foreground hover:text-foreground border border-border/70'
-                      )}
-                    >
-                      {category.color ? (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: isSelected ? 'currentColor' : category.color,
-                          }}
-                        />
-                      ) : null}
-                      <span>{category.name}</span>
-                      {count > 0 ? (
-                        <span
-                          className={cn(
-                            'text-[10px] tabular-nums',
-                            isSelected ? 'opacity-80' : 'text-muted-foreground'
-                          )}
-                        >
-                          ({count})
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
+                  Reset filters
+                </Button>
               </div>
+            ) : (
+              filteredSubscriptions.map((sub) => (
+                <SubscriptionCard
+                  key={sub.id}
+                  subscription={sub}
+                  onToggleStatus={toggleStatus}
+                  onDelete={deleteSubscription}
+                  compact={true}
+                />
+              ))
             )}
 
-            {/* Subscription Rows List */}
-            <div className="space-y-2.5 pt-1">
-              {isLoading ? (
-                [1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="skeleton sweep-card"
-                    style={{ height: '72px', borderRadius: '12px' }}
-                  />
-                ))
-              ) : filteredSubscriptions.length === 0 ? (
-                <div className="p-8 text-center rounded-xl bg-surface/30 border border-border text-xs space-y-2">
-                  <p className="text-muted-foreground">No subscriptions match your filter.</p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCategoryId('all');
-                      setSearchQuery('');
-                    }}
-                    className="text-xs text-primary cursor-pointer"
-                  >
-                    Reset filters
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {filteredSubscriptions.map((sub) => (
-                    <SubscriptionCard
-                      key={sub.id}
-                      subscription={sub}
-                      onToggleStatus={toggleStatus}
-                      onDelete={deleteSubscription}
-                      compact={true}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-
-            {/* Footer Navigation */}
-            <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
+            {/* Footer summary row */}
+            <div className="p-3 bg-surface/30 flex items-center justify-between text-xs px-4">
               <span className="text-muted-foreground">
                 Showing {filteredSubscriptions.length} of {activeSubscriptions.length} commitments
               </span>
@@ -529,137 +530,139 @@ export function DashboardClient() {
                 href="/subscriptions"
                 className="text-primary font-medium hover:underline flex items-center gap-1"
               >
-                <span>Open Full Management Table</span>
+                <span>Full Ledger Management</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Companion Intelligence & Timeline Hub (5 Cols) */}
+        {/* Right Support Zone: Unified Intelligence & Horizon Panel (5/12 Cols) */}
         <div className="lg:col-span-5 space-y-4">
-          {/* Card 1: Chronological 30-Day Renewal Horizon */}
-          <div className="sweep-table-card p-4 sm:p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold tracking-tight text-foreground">
-                  Upcoming Renewal Horizon
-                </h3>
+          <div className="rounded-xl bg-card border border-border/80 shadow-xs p-4 sm:p-5 space-y-5">
+            {/* Section A: 30-Day Renewal Horizon */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-bold tracking-tight text-foreground">
+                    Renewal Horizon
+                  </h3>
+                </div>
+                <span className="text-[10px] uppercase font-mono text-muted-foreground">
+                  Next 30 Days
+                </span>
               </div>
-              <span className="text-[10px] uppercase font-mono text-muted-foreground">
-                Next 30 Days
-              </span>
-            </div>
 
-            {upcomingChronological.length > 0 ? (
-              <div className="divide-y divide-border/60">
-                {upcomingChronological.map((sub) => {
-                  const countdown = getCountdownBadge(sub.next_renewal_date);
-                  return (
-                    <Link
-                      key={sub.id}
-                      href={`/subscriptions/${sub.id}/edit`}
-                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-surface/50 px-2 rounded-lg transition-colors group block"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                            {sub.name}
-                          </span>
-                          {sub.is_trial ? (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-warning-subtle text-warning border border-warning/30">
-                              Trial
+              {upcomingChronological.length > 0 ? (
+                <div className="divide-y divide-border/50">
+                  {upcomingChronological.map((sub) => {
+                    const countdown = getCountdownBadge(sub.next_renewal_date);
+                    return (
+                      <Link
+                        key={sub.id}
+                        href={`/subscriptions/${sub.id}/edit`}
+                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-surface/50 px-2 rounded-lg transition-colors group block"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                              {sub.name}
                             </span>
-                          ) : null}
+                            {sub.is_trial ? (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-warning-subtle text-warning border border-warning/30">
+                                Trial
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {formatDate(sub.next_renewal_date)}
+                          </p>
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {formatDate(sub.next_renewal_date)}
-                        </p>
-                      </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-xs font-bold font-mono text-foreground tabular-nums">
-                          {formatCurrency(sub.amount, sub.currency)}
+                        <div className="text-right shrink-0">
+                          <div className="text-xs font-bold font-mono text-foreground tabular-nums">
+                            {formatCurrency(sub.amount, sub.currency)}
+                          </div>
+                          <span
+                            className={cn(
+                              'text-[10px] block mt-0.5',
+                              countdown.urgent ? 'text-danger font-bold' : 'text-muted-foreground'
+                            )}
+                          >
+                            {countdown.label}
+                          </span>
                         </div>
-                        <span
-                          className={cn(
-                            'text-[10px] block mt-0.5',
-                            countdown.urgent ? 'text-danger font-bold' : 'text-muted-foreground'
-                          )}
-                        >
-                          {countdown.label}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="py-6 text-center text-xs text-muted-foreground">
-                No renewals in the next 30 days.
-              </div>
-            )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-4 text-center text-xs text-muted-foreground">
+                  No renewals in the next 30 days.
+                </div>
+              )}
 
-            <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground">Total 30d projection</span>
-              <span className="font-mono font-bold text-foreground">
-                {formatCurrency(stats.upcoming30DaysTotal, targetCurrency)}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 2: Spend Allocation by Top Categories */}
-          <div className="sweep-table-card p-4 sm:p-5 space-y-3.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold tracking-tight text-foreground">
-                  Spend by Category
-                </h3>
+              <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">30-day projection</span>
+                <span className="font-mono font-bold text-foreground">
+                  {formatCurrency(stats.upcoming30DaysTotal, targetCurrency)}
+                </span>
               </div>
-              <Link
-                href="/insights"
-                className="text-[10px] text-primary hover:underline font-medium"
-              >
-                Full Analytics
-              </Link>
             </div>
 
-            {categorySpendDistribution.length > 0 ? (
-              <div className="space-y-3">
-                {categorySpendDistribution.map((cat) => (
-                  <div key={cat.categoryId} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-foreground truncate pr-2">
-                        {cat.categoryName}
-                      </span>
-                      <div className="flex items-center gap-2 font-mono text-[11px] tabular-nums shrink-0">
-                        <span className="text-muted-foreground">{cat.percentage}%</span>
-                        <span className="font-semibold text-foreground">
-                          {formatCurrency(cat.monthlyAmount, targetCurrency)}/mo
+            {/* Section B: Category Spend Distribution (Divided quietly, not separate box) */}
+            <div className="pt-4 border-t border-border/70 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-bold tracking-tight text-foreground">
+                    Spend by Category
+                  </h3>
+                </div>
+                <Link
+                  href="/insights"
+                  className="text-[10px] text-primary hover:underline font-medium"
+                >
+                  Insights
+                </Link>
+              </div>
+
+              {categorySpendDistribution.length > 0 ? (
+                <div className="space-y-2.5">
+                  {categorySpendDistribution.map((cat) => (
+                    <div key={cat.categoryId} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground truncate pr-2">
+                          {cat.categoryName}
                         </span>
+                        <div className="flex items-center gap-2 font-mono text-[11px] tabular-nums shrink-0">
+                          <span className="text-muted-foreground">{cat.percentage}%</span>
+                          <span className="font-semibold text-foreground">
+                            {formatCurrency(cat.monthlyAmount, targetCurrency)}/mo
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="w-full h-1.5 bg-surface rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${cat.percentage}%`,
+                            backgroundColor: cat.color || 'hsl(var(--primary))',
+                          }}
+                        />
                       </div>
                     </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full h-1.5 bg-surface rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${cat.percentage}%`,
-                          backgroundColor: cat.color || 'hsl(var(--primary))',
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-6 text-center text-xs text-muted-foreground">
-                No categorized recurring commitments recorded.
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="py-4 text-center text-xs text-muted-foreground">
+                  No categorized commitments recorded.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
